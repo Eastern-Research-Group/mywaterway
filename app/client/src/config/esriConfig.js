@@ -1,1 +1,1 @@
-export const esriApiUrl = 'https://js.arcgis.com/4.15';
+export const esriApiUrl = 'https://js.arcgis.com/4.14';
