@@ -37,6 +37,7 @@ export class EsriModulesProvider extends React.Component<Props, State> {
         'esri/Graphic',
         'esri/Viewpoint',
         'esri/core/Collection',
+        'esri/core/Handles',
         'esri/core/watchUtils',
         'esri/geometry/Point',
         'esri/geometry/Polygon',
@@ -69,6 +70,7 @@ export class EsriModulesProvider extends React.Component<Props, State> {
           Graphic,
           Viewpoint,
           Collection,
+          Handles,
           watchUtils,
           Point,
           Polygon,
@@ -99,6 +101,7 @@ export class EsriModulesProvider extends React.Component<Props, State> {
             Graphic,
             Viewpoint,
             Collection,
+            Handles,
             watchUtils,
             Point,
             Polygon,
@@ -142,7 +145,7 @@ export class EsriModulesProvider extends React.Component<Props, State> {
 
             // Workaround for ESRI CORS cacheing issue, when switching between
             // environments.
-            before: function(params) {
+            before: function (params) {
               // if this environment has a phony variable use it
               const envString = getEnvironmentString();
               if (envString) {
@@ -160,7 +163,7 @@ export class EsriModulesProvider extends React.Component<Props, State> {
             },
 
             // Log esri api calls to Google Analytics
-            after: function(response) {
+            after: function (response) {
               // get the execution time for the call
               const callId = response.requestOptions.query.callId;
               const startTime = callDurations[callId];
@@ -171,7 +174,7 @@ export class EsriModulesProvider extends React.Component<Props, State> {
               delete callDurations[callId];
             },
 
-            error: function(error) {
+            error: function (error) {
               // get the execution time for the call
               const details = error.details;
               const callId = details.requestOptions.query.callId;
@@ -189,7 +192,7 @@ export class EsriModulesProvider extends React.Component<Props, State> {
           });
         },
       )
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
       });
   }
