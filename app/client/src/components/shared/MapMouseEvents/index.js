@@ -157,9 +157,11 @@ function MapMouseEvents({ map, view }: Props) {
           // get and update the selected graphic
           const graphic = getGraphicFromResponse(res);
           if (graphic && graphic.attributes) {
+            graphic.attributes['selectedFrom'] = 'map-click';
+            setHighlightedGraphic(null);
             setSelectedGraphic(graphic);
           } else {
-            setSelectedGraphic('');
+            setSelectedGraphic(null);
           }
 
           // get the currently selected huc boundaries, if applicable
@@ -198,6 +200,7 @@ function MapMouseEvents({ map, view }: Props) {
       SpatialReference.WQGS84,
       getHucBoundaries,
       processBoundariesData,
+      setHighlightedGraphic,
       setSelectedGraphic,
       webMercatorUtils,
     ],
@@ -246,6 +249,8 @@ function MapMouseEvents({ map, view }: Props) {
     });
 
     view.popup.watch('selectedFeature', (graphic) => {
+      setHighlightedGraphic(null);
+
       // check if monitoring station is clicked, load the popup and call the waterqualitydata service
       if (
         graphic &&

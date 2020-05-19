@@ -373,6 +373,7 @@ function useWaterbodyHighlight(findOthers: boolean = true) {
         .catch((err) => console.error(err));
     } else if (
       layer.type === 'feature' &&
+      graphicToHighlight.attributes.selectedFrom !== 'map-click' &&
       (findOthers ||
         (graphicOrgId === selectedGraphicOrgId &&
           graphicAuId === selectedGraphicAuId))
