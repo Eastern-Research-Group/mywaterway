@@ -134,6 +134,7 @@ function Attains({ ...props }: Props) {
       style={{ width: '100%' }}
       value={filter ? filter.value : ''}
       onChange={event => onChange(event.target.value)}
+      aria-label="Filter column..."
     />
   );
 

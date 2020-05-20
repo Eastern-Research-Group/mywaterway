@@ -157,7 +157,7 @@ const StyledTabs = styled(Tabs)`
       &:hover,
       &:focus {
         z-index: 1;
-        background-color: ${colors.purple()};
+        background-color: ${colors.navyBlue()};
         box-shadow: inset 0 -5px 0 ${colors.teal()};
       }
 
@@ -478,6 +478,7 @@ function CommunityTabs({ urlSearch, tabName, ...props }: Props) {
               <Switch
                 checked={infoToggleChecked}
                 onChange={checked => setInfoToggleChecked(checked)}
+                ariaLabel="Show Text"
               />
             </label>
           </div>

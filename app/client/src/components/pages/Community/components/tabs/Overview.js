@@ -103,7 +103,7 @@ function Overview({ esriModules, infoToggleChecked }: Props) {
     });
 
     const { Graphic } = esriModules;
-    plotStations(Graphic, stations, '#c500ff', monitoringStationsLayer);
+    plotStations(Graphic, stations, monitoringStationsLayer);
   }, [monitoringLocations.data, esriModules, monitoringStationsLayer]);
 
   // draw the permitted dischargers on the map
@@ -214,6 +214,7 @@ function Overview({ esriModules, infoToggleChecked }: Props) {
                     });
                   }}
                   disabled={!Boolean(waterbodyCount)}
+                  ariaLabel="Waterbodies"
                 />
               </SwitchContainer>
             </>
@@ -257,6 +258,7 @@ function Overview({ esriModules, infoToggleChecked }: Props) {
                     });
                   }}
                   disabled={!Boolean(monitoringLocationCount)}
+                  ariaLabel="Monitoring Locations"
                 />
               </SwitchContainer>
             </>
@@ -297,6 +299,7 @@ function Overview({ esriModules, infoToggleChecked }: Props) {
                     });
                   }}
                   disabled={!Boolean(permittedDischargerCount)}
+                  ariaLabel="Permitted Dischargers"
                 />
               </SwitchContainer>
             </>

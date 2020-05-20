@@ -20,6 +20,7 @@ import { LocationSearchContext } from 'contexts/locationSearch';
 import { useWaterbodyFeatures, useWaterbodyOnMap } from 'utils/hooks';
 // errors
 import { countyError, withdrawerError } from 'config/errorMessages';
+import { colors } from 'styles';
 
 const Table = styled.table`
   thead {
@@ -259,7 +260,7 @@ function DrinkingWater({ esriModules, infoToggleChecked }: Props) {
       symbol: new SimpleFillSymbol({
         color: [0, 0, 0, 0.15],
         outline: {
-          color: [255, 255, 0],
+          color: colors.yellow,
           width: 3,
           style: 'solid',
         },
@@ -758,6 +759,7 @@ function DrinkingWater({ esriModules, infoToggleChecked }: Props) {
                                           !surfaceWaterDisplayed,
                                         )
                                       }
+                                      ariaLabel="Surface Water"
                                     />
                                     <span>Surface Water</span>
                                   </Toggle>
@@ -778,6 +780,7 @@ function DrinkingWater({ esriModules, infoToggleChecked }: Props) {
                                           !groundWaterDisplayed,
                                         )
                                       }
+                                      ariaLabel="Ground Water"
                                     />
                                     <span>Ground Water</span>
                                   </Toggle>
@@ -794,6 +797,7 @@ function DrinkingWater({ esriModules, infoToggleChecked }: Props) {
                                         onChange={ev =>
                                           setBothDisplayed(!bothDisplayed)
                                         }
+                                        ariaLabel="Ground Water and Surface Water"
                                       />
                                       <span>
                                         Ground Water &amp; Surface Water

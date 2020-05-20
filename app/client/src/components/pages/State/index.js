@@ -30,7 +30,7 @@ import { fetchCheck } from 'utils/fetchUtils';
 // data
 import introText from 'components/pages/State/lookups/introText';
 // styles
-import { colors, fonts } from 'styles/index.js';
+import { colors, fonts, reactSelectStyles } from 'styles/index.js';
 // errors
 import {
   stateListError,
@@ -62,7 +62,8 @@ const Container = styled.div`
   }
 `;
 
-const Prompt = styled.p`
+const Prompt = styled.label`
+  margin: 0;
   padding-bottom: 0;
 `;
 
@@ -90,7 +91,7 @@ const Button = styled.button`
   &:hover,
   &:focus {
     color: ${colors.white()};
-    background-color: ${colors.purple()};
+    background-color: ${colors.navyBlue()};
   }
 `;
 
@@ -205,7 +206,7 @@ function State({ children, ...props }: Props) {
 
         {states.status === 'success' && (
           <>
-            <Prompt>
+            <Prompt htmlFor="hmw-state-select-input">
               <strong>Let’s get started!</strong>&nbsp;&nbsp;
               <em>
                 Select your state or territory from the drop down to begin
@@ -220,9 +221,6 @@ function State({ children, ...props }: Props) {
                 navigate(`/state/${selectedState.code}/water-quality-overview`);
               }}
             >
-              <label htmlFor="hmw-state-select-input" className="sr-only">
-                State
-              </label>
               <SelectStyled
                 id="hmw-state-select"
                 inputId="hmw-state-select-input"
@@ -245,14 +243,7 @@ function State({ children, ...props }: Props) {
                     name: ev.label,
                   })
                 }
-                styles={{
-                  placeholder: defaultStyles => {
-                    return {
-                      ...defaultStyles,
-                      color: '#495057',
-                    };
-                  },
-                }}
+                styles={reactSelectStyles}
               />
 
               <Button type="submit" className="btn">
