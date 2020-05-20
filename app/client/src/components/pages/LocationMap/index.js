@@ -433,13 +433,40 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
             uniqueValueInfos: createUniqueValueInfos('point'),
           };
 
+          // get the features from the response
+          let features = [];
+          if (res.geometryType === 'point') {
+            features = res.features;
+          }
+          if (res.geometryType === 'multipoint') {
+            // convert multipoint geometry into points.
+            // This is to get around an esri bug where random graphics are
+            // placed on the map when using SimpleMarkerSymbol with
+            // multipoint geometry.
+            res.features.forEach(feature => {
+              feature.geometry.points.forEach(point => {
+                features.push({
+                  attributes: feature.attributes,
+                  geometry: {
+                    type: 'point',
+                    x: point[0],
+                    y: point[1],
+                    spatialReference: feature.geometry.spatialReference,
+                  },
+                });
+              });
+            });
+          }
+
+          console.log('features: ', features);
+
           const newPointsLayer = new FeatureLayer({
             id: 'waterbodyPoints',
             name: 'Points',
-            geometryType: res.geometryType,
+            geometryType: 'point',
             spatialReference: res.spatialReference,
             fields: res.fields,
-            source: res.features,
+            source: features,
             outFields: ['*'],
             renderer: pointsRenderer,
             popupTemplate,
@@ -1157,7 +1184,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     view.popup.close();
 
     // zoom to the graphic, and update the home widget, and close any popups
-    view.goTo(graphic).then(function() {
+    view.goTo(graphic).then(function () {
       setAtHucBoundaries(true);
     });
   }, [
