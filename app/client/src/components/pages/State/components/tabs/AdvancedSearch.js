@@ -964,6 +964,10 @@ function AdvancedSearch({ ...props }: Props) {
       filter={currentFilter}
       activeState={activeState}
       numberOfRecords={numberOfRecords}
+      onError={() => {
+        setSearchLoading(false);
+        setServiceError(true);
+      }}
     >
       <MapFooter style={{ width: fullscreenActive ? width : '100%' }}>
         <strong>303(d) List Status / Year Last Reported:</strong>

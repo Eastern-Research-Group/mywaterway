@@ -51,6 +51,7 @@ type Props = {
   filter: string,
   activeState: Object,
   numberOfRecords: number,
+  onError: Function,
   children?: Node,
 };
 
@@ -61,6 +62,7 @@ function StateMap({
   filter,
   activeState,
   numberOfRecords,
+  onError,
   children,
 }: Props) {
   const [view, setView] = React.useState(null);
@@ -71,6 +73,8 @@ function StateMap({
     FeatureLayer,
     GroupLayer,
     MapImageLayer,
+    Query,
+    QueryTask,
     Viewpoint,
   } = React.useContext(EsriModulesContext);
 
@@ -95,6 +99,13 @@ function StateMap({
   const [layers, setLayers] = React.useState(null);
 
   useWaterbodyHighlight(false);
+
+  // popup template to be used for all waterbody sublayers
+  const popupTemplate = {
+    outFields: ['*'],
+    title: feature => getPopupTitle(feature.graphic.attributes),
+    content: feature => getPopupContent({ feature: feature.graphic }),
+  };
 
   // Initializes the layers
   const [layersInitialized, setLayersInitialized] = React.useState(false);
@@ -125,34 +136,6 @@ function StateMap({
       listMode: 'show',
       visible: false,
     });
-
-    const popupTemplate = {
-      outFields: ['*'],
-      title: feature => getPopupTitle(feature.graphic.attributes),
-      content: feature => getPopupContent({ feature: feature.graphic }),
-    };
-
-    // Build the feature layers that will make up the waterbody layer
-    const pointsRenderer = {
-      type: 'unique-value',
-      field: 'isassessed',
-      field2: 'isimpaired',
-      fieldDelimiter: ', ',
-      defaultSymbol: createWaterbodySymbol({
-        condition: 'unassessed',
-        selected: false,
-        geometryType: 'point',
-      }),
-      uniqueValueInfos: createUniqueValueInfos('point'),
-    };
-    const pointsLayer = new FeatureLayer({
-      url: waterbodyService.points,
-      definitionExpression: 'objectid = 0', //hide everything at first
-      outFields: ['*'],
-      renderer: pointsRenderer,
-      popupTemplate,
-    });
-    setPointsLayer(pointsLayer);
 
     const linesRenderer = {
       type: 'unique-value',
@@ -196,19 +179,7 @@ function StateMap({
     });
     setAreasLayer(areasLayer);
 
-    // Make the waterbody layer into a single layer
-    const waterbodyLayer = new GroupLayer({
-      id: 'waterbodyLayer',
-      title: 'Waterbodies',
-      listMode: 'hide',
-      visible: false,
-    });
-    waterbodyLayer.addMany([areasLayer, linesLayer, pointsLayer]);
-    setWaterbodyLayer(waterbodyLayer);
-
-    setLayers([mappedWaterLayer, countyLayer, watershedsLayer, waterbodyLayer]);
-
-    setVisibleLayers({ waterbodyLayer: true });
+    setLayers([mappedWaterLayer, countyLayer, watershedsLayer]);
 
     setLayersInitialized(true);
   }, [
@@ -217,10 +188,119 @@ function StateMap({
     MapImageLayer,
     setAreasLayer,
     setLinesLayer,
-    setPointsLayer,
-    setVisibleLayers,
     setWaterbodyLayer,
     layersInitialized,
+    popupTemplate,
+  ]);
+
+  // Gets the points data and builds the associated feature layer
+  const retrievePoints = React.useCallback(
+    filter => {
+      const query = new Query({
+        returnGeometry: true,
+        where: filter,
+        outFields: ['*'],
+      });
+
+      new QueryTask({ url: waterbodyService.points })
+        .execute(query)
+        .then(res => {
+          const pointsRenderer = {
+            type: 'unique-value',
+            field: 'isassessed',
+            field2: 'isimpaired',
+            fieldDelimiter: ', ',
+            defaultSymbol: createWaterbodySymbol({
+              condition: 'unassessed',
+              selected: false,
+              geometryType: 'point',
+            }),
+            uniqueValueInfos: createUniqueValueInfos('point'),
+          };
+
+          // get the features from the response
+          let features = [];
+          if (res.geometryType === 'point') {
+            features = res.features;
+          }
+          if (res.geometryType === 'multipoint') {
+            // convert multipoint geometry into points.
+            // This is to get around an esri bug where random graphics are
+            // placed on the map when using SimpleMarkerSymbol with
+            // multipoint geometry.
+            res.features.forEach(feature => {
+              feature.geometry.points.forEach(point => {
+                features.push({
+                  attributes: feature.attributes,
+                  geometry: {
+                    type: 'point',
+                    x: point[0],
+                    y: point[1],
+                    spatialReference: feature.geometry.spatialReference,
+                  },
+                });
+              });
+            });
+          }
+
+          const newPointsLayer = new FeatureLayer({
+            id: 'waterbodyPoints',
+            name: 'Points',
+            geometryType: 'point',
+            spatialReference: res.spatialReference,
+            fields: res.fields,
+            source: features,
+            outFields: ['*'],
+            renderer: pointsRenderer,
+            popupTemplate,
+          });
+          setPointsLayer(newPointsLayer);
+          setMapLoading(true);
+        })
+        .catch(err => {
+          console.error(err);
+          if (onError) onError();
+        });
+    },
+    [FeatureLayer, Query, QueryTask, popupTemplate, setPointsLayer, onError],
+  );
+
+  // Builds the waterbody layer once data has been fetched for all sub layers
+  React.useEffect(() => {
+    if (
+      waterbodyLayer ||
+      !layers ||
+      layers.length === 0 ||
+      !areasLayer ||
+      !linesLayer ||
+      !pointsLayer
+    ) {
+      return;
+    }
+
+    // Make the waterbody layer into a single layer
+    const newWaterbodyLayer = new GroupLayer({
+      id: 'waterbodyLayer',
+      title: 'Waterbodies',
+      listMode: 'hide',
+      visible: false,
+    });
+    newWaterbodyLayer.addMany([areasLayer, linesLayer, pointsLayer]);
+    setWaterbodyLayer(newWaterbodyLayer);
+
+    setLayers(layers => [...layers, newWaterbodyLayer]);
+
+    setVisibleLayers({ waterbodyLayer: true });
+  }, [
+    layers,
+    waterbodyLayer,
+    areasLayer,
+    linesLayer,
+    pointsLayer,
+    GroupLayer,
+    setVisibleLayers,
+    setWaterbodyLayer,
+    setLayers,
   ]);
 
   // Function for resetting the LocationSearch context when the map is removed
@@ -230,89 +310,122 @@ function StateMap({
     };
   }, [resetData]);
 
-  const [lastFilter, setLastFilter] = React.useState('');
-
-  // cDU
   // detect when user changes their search
+  const [lastFilter, setLastFilter] = React.useState('');
+  React.useEffect(() => {
+    // query geocode server for every new search
+    if (filter === lastFilter || !view || !linesLayer || !areasLayer) {
+      return;
+    }
+
+    setLastFilter(filter);
+
+    // change the where clause of the feature layers
+    if (!filter) return;
+
+    if (pointsLayer) setPointsLayer(null);
+    if (waterbodyLayer) {
+      setWaterbodyLayer(null);
+
+      // Remove the waterbody layer from the map
+      if (view) {
+        for (let i = view.map.layers.items.length - 1; i >= 0; i--) {
+          const item = view.map.layers.items[i];
+          if (item.id === 'waterbodyLayer') {
+            view.map.layers.items.splice(i, 1);
+          }
+        }
+      }
+    }
+
+    retrievePoints(filter);
+    linesLayer.definitionExpression = filter;
+    areasLayer.definitionExpression = filter;
+  }, [
+    filter,
+    lastFilter,
+    pointsLayer,
+    linesLayer,
+    areasLayer,
+    view,
+    waterbodyLayer,
+    setWaterbodyLayer,
+    setPointsLayer,
+    retrievePoints,
+  ]);
+
+  // zoom to the features when the waterbodies layer is loaded
   const [homeWidgetSet, setHomeWidgetSet] = React.useState(false);
   React.useEffect(() => {
     // query geocode server for every new search
     if (
-      filter !== lastFilter &&
-      view &&
-      pointsLayer &&
-      linesLayer &&
-      areasLayer &&
-      homeWidget &&
-      numberOfRecords
+      !view ||
+      !pointsLayer ||
+      !linesLayer ||
+      !areasLayer ||
+      !waterbodyLayer ||
+      !homeWidget ||
+      !numberOfRecords
     ) {
-      setLastFilter(filter);
+      return;
+    }
 
-      // change the where clause of the feature layers
-      if (!filter) return;
-      if (filter) {
-        pointsLayer.definitionExpression = filter;
-        linesLayer.definitionExpression = filter;
-        areasLayer.definitionExpression = filter;
-      }
+    // zoom and set the home widget viewpoint
+    let fullExtent = null;
+    // get the points layer extent
+    pointsLayer.queryExtent().then(pointsExtent => {
+      // set the extent if 1 or more features
+      if (pointsExtent.count > 0) fullExtent = pointsExtent.extent;
 
-      // zoom and set the home widget viewpoint
-      let fullExtent = null;
-      // get the points layer extent
-      pointsLayer.queryExtent().then(pointsExtent => {
-        // set the extent if 1 or more features
-        if (pointsExtent.count > 0) fullExtent = pointsExtent.extent;
+      // get the lines layer extent
+      linesLayer.queryExtent().then(linesExtent => {
+        // set the extent or union the extent if 1 or more features
+        if (linesExtent.count > 0) {
+          if (fullExtent) fullExtent.union(linesExtent.extent);
+          else fullExtent = linesExtent.extent;
+        }
 
-        // get the lines layer extent
-        linesLayer.queryExtent().then(linesExtent => {
+        // get the areas layer extent
+        areasLayer.queryExtent().then(areasExtent => {
           // set the extent or union the extent if 1 or more features
-          if (linesExtent.count > 0) {
-            if (fullExtent) fullExtent.union(linesExtent.extent);
-            else fullExtent = linesExtent.extent;
+          if (areasExtent.count > 0) {
+            if (fullExtent) fullExtent.union(areasExtent.extent);
+            else fullExtent = areasExtent.extent;
           }
 
-          // get the areas layer extent
-          areasLayer.queryExtent().then(areasExtent => {
-            // set the extent or union the extent if 1 or more features
-            if (areasExtent.count > 0) {
-              if (fullExtent) fullExtent.union(areasExtent.extent);
-              else fullExtent = areasExtent.extent;
-            }
+          // if there is an extent then zoom to it and set the home widget
+          if (fullExtent) {
+            let zoomParams = fullExtent;
+            let homeParams = { targetGeometry: fullExtent };
+            if (!selectedGraphic) {
+              if (numberOfRecords === 1 && pointsExtent.count === 1) {
+                zoomParams = { target: fullExtent, zoom: 15 };
+                homeParams = {
+                  targetGeometry: fullExtent,
+                  scale: 18056, // same as zoom 15, viewpoint only takes scale
+                };
+              }
 
-            // if there is an extent then zoom to it and set the home widget
-            if (fullExtent) {
-              let zoomParams = fullExtent;
-              let homeParams = { targetGeometry: fullExtent };
-              if (!selectedGraphic) {
-                if (numberOfRecords === 1 && pointsExtent.count === 1) {
-                  zoomParams = { target: fullExtent, zoom: 15 };
-                  homeParams = {
-                    targetGeometry: fullExtent,
-                    scale: 18056, // same as zoom 15, viewpoint only takes scale
-                  };
-                }
-
-                view.goTo(zoomParams).then(() => {
-                  // only show the waterbody layer after everything has loaded to
-                  // cut down on unnecessary service calls
-                  waterbodyLayer.listMode = 'hide-children';
-                  waterbodyLayer.visible = true;
-                });
-              } else {
+              view.goTo(zoomParams).then(() => {
+                // only show the waterbody layer after everything has loaded to
+                // cut down on unnecessary service calls
                 waterbodyLayer.listMode = 'hide-children';
                 waterbodyLayer.visible = true;
-              }
-
-              // only set the home widget if the user selects a different state
-              if (!homeWidgetSet) {
-                homeWidget.viewpoint = new Viewpoint(homeParams);
-                setHomeWidgetSet(true);
-              }
+              });
+            } else {
+              waterbodyLayer.listMode = 'hide-children';
+              waterbodyLayer.visible = true;
             }
-          });
+
+            // only set the home widget if the user selects a different state
+            if (!homeWidgetSet) {
+              homeWidget.viewpoint = new Viewpoint(homeParams);
+              setHomeWidgetSet(true);
+            }
+          }
         });
       });
-    }
+    });
   }, [
     Viewpoint,
     filter,
