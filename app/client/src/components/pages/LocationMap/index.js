@@ -458,8 +458,6 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
             });
           }
 
-          console.log('features: ', features);
-
           const newPointsLayer = new FeatureLayer({
             id: 'waterbodyPoints',
             name: 'Points',
