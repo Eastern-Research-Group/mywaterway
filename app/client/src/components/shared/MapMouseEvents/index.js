@@ -1,7 +1,6 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { navigate } from '@reach/router';
-import styled from 'styled-components';
 // contexts
 import { MapHighlightContext } from 'contexts/MapHighlight';
 import { EsriModulesContext } from 'contexts/EsriModules';
@@ -15,10 +14,6 @@ import {
 } from 'components/pages/LocationMap/MapFunctions';
 // styles
 import { colors } from 'styles/index.js';
-
-const PopupRow = styled.div`
-  margin-right: 0;
-`;
 
 // --- components ---
 type Props = {
@@ -67,20 +62,13 @@ function MapMouseEvents({ map, view }: Props) {
       popupContent.innerHTML = renderToStaticMarkup(
         <>
           <br />
-          <PopupRow className="row">
-            <div className="col-xs-6 col-sm-6">
-              <p>
-                <strong>Watershed Name:</strong>
-                <br /> {attributes.name}
-              </p>
-            </div>
-            <div className="col-xs-6 col-sm-6">
-              <p>
-                <strong>HUC 12:</strong>
-                <br /> {clickedHuc12}
-              </p>
-            </div>
-          </PopupRow>
+          <div>
+            <p>
+              <strong style={{ fontSize: '0.875em' }}>WATERSHED:</strong>
+              <br />
+              {attributes.name} ({clickedHuc12})
+            </p>
+          </div>
         </>,
       );
       const buttonContainer = document.createElement('div');
@@ -157,11 +145,9 @@ function MapMouseEvents({ map, view }: Props) {
           // get and update the selected graphic
           const graphic = getGraphicFromResponse(res);
           if (graphic && graphic.attributes) {
-            graphic.attributes['selectedFrom'] = 'map-click';
-            setHighlightedGraphic(null);
             setSelectedGraphic(graphic);
           } else {
-            setSelectedGraphic(null);
+            setSelectedGraphic('');
           }
 
           // get the currently selected huc boundaries, if applicable
@@ -200,7 +186,6 @@ function MapMouseEvents({ map, view }: Props) {
       SpatialReference.WQGS84,
       getHucBoundaries,
       processBoundariesData,
-      setHighlightedGraphic,
       setSelectedGraphic,
       webMercatorUtils,
     ],
@@ -249,8 +234,6 @@ function MapMouseEvents({ map, view }: Props) {
     });
 
     view.popup.watch('selectedFeature', (graphic) => {
-      setHighlightedGraphic(null);
-
       // check if monitoring station is clicked, load the popup and call the waterqualitydata service
       if (
         graphic &&
