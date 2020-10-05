@@ -23,7 +23,7 @@ import {
 import { FullscreenContext, FullscreenProvider } from 'contexts/Fullscreen';
 import { useReportStatusMappingContext } from 'contexts/LookupFiles';
 // utilities
-import { getEnvironmentString, fetchCheck } from 'utils/fetchUtils';
+import { getEnvironmentString, fetchCheck, proxyFetch } from 'utils/fetchUtils';
 import { chunkArray } from 'utils/utils';
 import { useWaterbodyFeaturesState, useWaterbodyOnMap } from 'utils/hooks';
 // data
@@ -589,7 +589,7 @@ function AdvancedSearch({ ...props }: Props) {
       if (!watershedResults.hasOwnProperty(watershed.value)) {
         // run a fetch to get the assessments in the huc
         requests.push(
-          fetchCheck(
+          proxyFetch(
             `${attains.serviceUrl}huc12summary?huc=${watershed.value}`,
           ),
         );

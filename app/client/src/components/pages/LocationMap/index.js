@@ -44,7 +44,7 @@ import {
   useWaterbodyHighlight,
   useWaterbodyFeatures,
 } from 'utils/hooks';
-import { fetchCheck } from 'utils/fetchUtils';
+import { fetchCheck, proxyFetch } from 'utils/fetchUtils';
 import { isHuc12, updateCanonicalLink, createJsonLD } from 'utils/utils';
 // styles
 import './mapStyles.css';
@@ -606,7 +606,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
   const queryAttainsPlans = React.useCallback(
     (huc12) => {
       // get the plans for the selected huc
-      fetchCheck(`${attains.serviceUrl}plans?huc=${huc12}&summarize=Y`, 120000)
+      proxyFetch(`${attains.serviceUrl}plans?huc=${huc12}&summarize=Y`, 120000)
         .then((res) => {
           setAttainsPlans({
             data: res,
@@ -713,7 +713,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
       if (statesData.status !== 'success') {
         setStatesData({ status: 'fetching', data: [] });
 
-        fetchCheck(`${attains.serviceUrl}states`)
+        proxyFetch(`${attains.serviceUrl}states`)
           .then((res) => {
             setStatesData({ status: 'success', data: res.data });
           })
@@ -723,7 +723,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
           });
       }
 
-      fetchCheck(`${attains.serviceUrl}huc12summary?huc=${huc12}`).then(
+      proxyFetch(`${attains.serviceUrl}huc12summary?huc=${huc12}`).then(
         handleMapServices,
         handleMapServiceError,
       );

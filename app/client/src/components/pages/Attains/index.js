@@ -12,7 +12,7 @@ import ReactTable from 'components/shared/ReactTable';
 // styled components
 import { StyledErrorBox } from 'components/shared/MessageBoxes';
 // utilities
-import { fetchCheck } from 'utils/fetchUtils';
+import { proxyFetch } from 'utils/fetchUtils';
 // config
 import { attains } from 'config/webServiceConfig';
 // data
@@ -77,7 +77,7 @@ function Attains({ ...props }: Props) {
   React.useEffect(() => {
     const url = attains.serviceUrl + 'domains?domainName=ParameterName';
 
-    fetchCheck(url)
+    proxyFetch(url)
       .then((res) => {
         setLoading(false);
         setAttainsData(res.sort(compareContextName)); // sorted alphabetically by ATTAINS context

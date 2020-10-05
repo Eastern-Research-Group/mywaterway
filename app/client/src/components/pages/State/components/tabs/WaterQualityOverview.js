@@ -29,7 +29,7 @@ import {
   useWaterTypeOptionsContext,
 } from 'contexts/LookupFiles';
 // utilities
-import { fetchCheck } from 'utils/fetchUtils';
+import { fetchCheck, proxyFetch } from 'utils/fetchUtils';
 import { titleCase } from 'utils/utils';
 // config
 import { attains, grts } from 'config/webServiceConfig';
@@ -307,7 +307,7 @@ function WaterQualityOverview({ ...props }: Props) {
       // use the excludeAsssessments flag to improve performance, since we only
       // need the documents and reportStatusCode
       const url = `${attains.serviceUrl}assessments?organizationId=${orgID}&reportingCycle=${year}&excludeAssessments=Y`;
-      fetchCheck(url)
+      proxyFetch(url)
         .then((res) => {
           setAssessmentsLoading(false);
 
@@ -334,7 +334,7 @@ function WaterQualityOverview({ ...props }: Props) {
   const fetchIntroText = React.useCallback(
     (orgID) => {
       const url = `${attains.serviceUrl}metrics?organizationId=${orgID}`;
-      fetchCheck(url)
+      proxyFetch(url)
         .then((res) => {
           // check for missing data
           if (res.length === 0) {
@@ -386,7 +386,7 @@ function WaterQualityOverview({ ...props }: Props) {
       `?organizationId=${organizationId}` +
       reportingCycleParam;
 
-    fetchCheck(url)
+    proxyFetch(url)
       .then((res) => {
         // for states like Alaska that have no reporting cycles
         if (
@@ -459,7 +459,7 @@ function WaterQualityOverview({ ...props }: Props) {
   const fetchStateOrgId = React.useCallback(
     (stateID: string) => {
       const url = `${attains.serviceUrl}states/${stateID}/organizations`;
-      fetchCheck(url)
+      proxyFetch(url)
         .then((res) => {
           let orgID;
 
@@ -547,7 +547,7 @@ function WaterQualityOverview({ ...props }: Props) {
   // Get the survey data and survey documents
   const fetchSurveyData = (orgID) => {
     const url = `${attains.serviceUrl}surveys?organizationId=${orgID}`;
-    fetchCheck(url)
+    proxyFetch(url)
       .then((res) => {
         setSurveyLoading(false);
 

@@ -26,7 +26,7 @@ import { StateTabsContext, StateTabsProvider } from 'contexts/StateTabs';
 // config
 import { attains } from 'config/webServiceConfig';
 // utilities
-import { fetchCheck } from 'utils/fetchUtils';
+import { proxyFetch } from 'utils/fetchUtils';
 // styles
 import { colors, fonts, reactSelectStyles } from 'styles/index.js';
 // errors
@@ -157,7 +157,7 @@ function State({ children, ...props }: Props) {
   // query attains for the list of states
   const [states, setStates] = React.useState({ status: 'fetching', data: [] });
   React.useEffect(() => {
-    fetchCheck(`${attains.serviceUrl}states`)
+    proxyFetch(`${attains.serviceUrl}states`)
       .then((res) => setStates({ status: 'success', data: res.data }))
       .catch((err) => setStates({ status: 'failure', data: [] }));
   }, []);
