@@ -33,7 +33,7 @@ import { MapHighlightProvider } from 'contexts/MapHighlight';
 // config
 import { attains } from 'config/webServiceConfig';
 // utilities
-import { fetchCheck } from 'utils/fetchUtils';
+import { fetchCheck, proxyFetch } from 'utils/fetchUtils';
 import { chunkArray } from 'utils/utils';
 // styles
 import { colors } from 'styles/index.js';
@@ -59,7 +59,7 @@ function getAssessmentUnitNames(orgId: string, action: Object) {
         `${attains.serviceUrl}` +
         `assessmentUnits?organizationId=${orgId}` +
         `&assessmentUnitIdentifier=${chunk.join(',')}`;
-      const request = fetchCheck(url);
+      const request = proxyFetch(url);
       requests.push(request);
     });
 
@@ -267,7 +267,7 @@ function Actions({ fullscreen, orgId, actionId, ...props }: Props) {
       `actions?ActionIdentifier=${actionId}` +
       `&organizationIdentifier=${orgId}`;
 
-    fetchCheck(url)
+    proxyFetch(url)
       .then((res) => {
         if (res.items.length < 1) {
           setLoading(false);
