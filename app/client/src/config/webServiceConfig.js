@@ -32,7 +32,7 @@ export const grts = {
 export const attains = {
   serviceUrlDev: 'http://54.209.48.156/attains-public/api/',
   // serviceUrl: 'https://attains.epa.gov/attains-public/api/',
-  serviceUrl: 'https://50.19.96.5/attains-public/api/', // backup service url
+  serviceUrl: 'http://50.19.96.5/attains-public/api/', // backup service url
 };
 
 export const fishingInformationService = {
