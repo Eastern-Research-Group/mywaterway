@@ -306,7 +306,7 @@ function WaterQualityOverview({ ...props }: Props) {
     (orgID, year) => {
       // use the excludeAsssessments flag to improve performance, since we only
       // need the documents and reportStatusCode
-      const url = `${attains.serviceUrl}assessments?organizationId=${orgID}&reportingCycle=${year}&excludeAssessments=Y`;
+      const url = `${attains.assessmentServiceTestUrl}assessments?organizationId=${orgID}&reportingCycle=${year}&excludeAssessments=Y`;
       proxyFetch(url)
         .then((res) => {
           setAssessmentsLoading(false);

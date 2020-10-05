@@ -33,6 +33,7 @@ export const attains = {
   serviceUrlDev: 'http://54.209.48.156/attains-public/api/',
   // serviceUrl: 'https://attains.epa.gov/attains-public/api/',
   serviceUrl: 'http://50.19.96.5/attains-public/api/', // backup service url
+  assessmentServiceTestUrl: 'http://35.171.123.13/attains-public/api/test/',
 };
 
 export const fishingInformationService = {

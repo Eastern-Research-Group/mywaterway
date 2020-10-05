@@ -368,7 +368,7 @@ function WaterbodyReport({ fullscreen, orgId, auId, reportingCycle }) {
     setAssessmentsCalled(true);
 
     const url =
-      attains.serviceUrl +
+      attains.assessmentServiceTestUrl +
       `assessments?organizationId=${orgId}` +
       `&assessmentUnitIdentifier=${auId}` +
       (reportingCycleParam ? `&reportingCycle=${reportingCycleParam}` : '');
