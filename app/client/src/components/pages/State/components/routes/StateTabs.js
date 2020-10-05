@@ -15,7 +15,7 @@ import { StateTabsContext } from 'contexts/StateTabs';
 // config
 import { attains } from 'config/webServiceConfig';
 // utilities
-import { fetchCheck } from 'utils/fetchUtils';
+import { proxyFetch } from 'utils/fetchUtils';
 
 // --- components ---
 type Props = {
@@ -63,7 +63,7 @@ function StateTabs({ stateCode, tabName, ...props }: Props) {
   // string, so we'll need to query the attains states service for the states
   React.useEffect(() => {
     if (activeState.code === '') {
-      fetchCheck(`${attains.serviceUrl}states`)
+      proxyFetch(`${attains.serviceUrl}states`)
         .then((res) => {
           // get matched state from web service response
           const match = res.data.filter(

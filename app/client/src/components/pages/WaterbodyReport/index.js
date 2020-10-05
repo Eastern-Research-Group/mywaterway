@@ -31,7 +31,7 @@ import { MapHighlightProvider } from 'contexts/MapHighlight';
 // config
 import { attains, waterQualityPortal } from 'config/webServiceConfig';
 // utilities
-import { fetchCheck, fetchPost } from 'utils/fetchUtils';
+import { fetchPost, proxyFetch } from 'utils/fetchUtils';
 import { titleCaseWithExceptions } from 'utils/utils';
 // styles
 import { colors } from 'styles/index.js';
@@ -228,7 +228,7 @@ function WaterbodyReport({ fullscreen, orgId, auId, reportingCycle }) {
       `assessmentUnits?organizationId=${orgId}` +
       `&assessmentUnitIdentifier=${auId}`;
 
-    fetchCheck(url).then(
+    proxyFetch(url).then(
       (res) => {
         if (res.items.length < 1) {
           setNoWaterbodies(true);
@@ -373,7 +373,7 @@ function WaterbodyReport({ fullscreen, orgId, auId, reportingCycle }) {
       `&assessmentUnitIdentifier=${auId}` +
       (reportingCycleParam ? `&reportingCycle=${reportingCycleParam}` : '');
 
-    fetchCheck(url).then(
+    proxyFetch(url).then(
       (res) => {
         if (res.items.length === 0) {
           setWaterbodyStatus({
@@ -627,7 +627,7 @@ function WaterbodyReport({ fullscreen, orgId, auId, reportingCycle }) {
       `actions?organizationIdentifier=${orgId}` +
       `&assessmentUnitIdentifier=${auId}`;
 
-    fetchCheck(url).then(
+    proxyFetch(url).then(
       (res) => {
         if (res.items.length < 1) {
           setWaterbodyActions({ status: 'pending', data: [] });
@@ -704,7 +704,7 @@ function WaterbodyReport({ fullscreen, orgId, auId, reportingCycle }) {
 
       setActionsFetchedAgain(true);
 
-      fetchCheck(url)
+      proxyFetch(url)
         .then((res) => {
           if (res.items.length < 1) {
             // if there are no new items (there should be), at least use the
