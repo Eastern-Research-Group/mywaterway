@@ -1,6 +1,6 @@
-﻿// const watersGeoBase = 'https://gispub.epa.gov/arcgis/rest/services/';
-const watersGeoBase =
-  'https://inlandwaters.geoplatform.gov/arcgis/rest/services/'; // backup service url
+﻿const watersGeoBase = 'https://gispub.epa.gov/arcgis/rest/services/';
+// const watersGeoBase =
+//   'https://inlandwaters.geoplatform.gov/arcgis/rest/services/'; // backup service url
 
 const geopubBase = 'https://geopub.epa.gov/arcgis/rest/services/';
 
