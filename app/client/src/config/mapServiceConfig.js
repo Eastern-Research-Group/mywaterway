@@ -26,10 +26,10 @@ export const congressional =
   'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_116th_Congressional_Districts_all/FeatureServer';
 
 export const waterbodyService = {
-  points: `${watersGeoBase}OW/ATTAINS_Assessments/MapServer/0`,
-  lines: `${watersGeoBase}OW/ATTAINS_Assessments/MapServer/1`,
-  areas: `${watersGeoBase}OW/ATTAINS_Assessments/MapServer/2`,
-  summary: `${watersGeoBase}OW/ATTAINS_Assessments/MapServer/4`,
+  points: `${watersGeoBase}OW/ATTAINS_Assessment/MapServer/0`,
+  lines: `${watersGeoBase}OW/ATTAINS_Assessment/MapServer/1`,
+  areas: `${watersGeoBase}OW/ATTAINS_Assessment/MapServer/2`,
+  summary: `${watersGeoBase}OW/ATTAINS_Assessment/MapServer/4`,
 };
 
 export const mapServiceMapping = [
