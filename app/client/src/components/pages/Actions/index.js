@@ -33,7 +33,7 @@ import { MapHighlightProvider } from 'contexts/MapHighlight';
 // config
 import { attains } from 'config/webServiceConfig';
 // utilities
-import { fetchCheck, proxyFetch } from 'utils/fetchUtils';
+import { proxyFetch } from 'utils/fetchUtils';
 import { chunkArray } from 'utils/utils';
 // styles
 import { colors } from 'styles/index.js';
