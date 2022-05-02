@@ -140,6 +140,7 @@ const textStyles = css`
 `;
 
 const titleStyles = css`
+  cursor: pointer;
   padding: 0.375em;
   font-family: ${fonts.secondary};
   font-size: 1.5em;
