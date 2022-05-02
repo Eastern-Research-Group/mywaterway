@@ -80,6 +80,94 @@
     <meta name="theme-color" content="#ffffff" />
     <style>
       /* epa template overrides */
+      .l-constrain {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      p {
+        margin-bottom: 0;
+        line-height: 1.125;
+      }
+
+      @media screen {
+        main,
+        main button,
+        main input,
+        main select,
+        main textarea {
+          font-family: 'Source Sans Pro', 'Helvetica Neue', 'Helvetica',
+            'Roboto', 'Arial', sans-serif;
+        }
+      }
+
+      main button,
+      main fieldset.collapsed legend,
+      main input[type='button'],
+      main input[type='reset'],
+      main input[type='submit'],
+      main .archive,
+      main .button,
+      main ins.new::before,
+      main .password-suggestions,
+      main .progress .bar,
+      main #edit-cancel,
+      main .addtocal {
+        border-radius: 3px;
+      }
+      
+      main button,
+      main input[type='button'],
+      main input[type='reset'],
+      main input[type='submit'],
+      main .button,
+      main #edit-cancel,
+      main .addtocal {
+        background-color: #0071bc;
+        border: 0;
+        color: #fff;
+        cursor: pointer;
+        display: inline-block;
+        font-weight: bold;
+        line-height: 1;
+        margin: 0 0 1.5em;
+        padding: 0.5882em 1.1765em;
+        text-align: center;
+        text-decoration: none;
+        vertical-align: baseline;
+        white-space: normal;
+      }
+
+      .l-page {
+        margin-bottom: 0;
+      }
+
+      @media screen {
+        main dd,
+        main ol,
+        main p,
+        main ul,
+        main .fieldset-description,
+        main .form-actions,
+        main .form-item,
+        main .pane-content > .node,
+        main .node-teaser,
+        main :not(.file).view-mode-teaser,
+        main .view-mode-teaser2,
+        main .view-mode-title2,
+        main ul.accordion ul {
+          margin: 0;
+          padding-bottom: 1.5em;
+          word-wrap: break-word;
+        }
+
+        main li {
+          margin: 0;
+          line-height: 20px;
+        }
+      }
+
       .footer {
         font-family: Source Sans Pro Web, 'Noto Sans Arabic', 'Noto Sans KR',
           'Noto Sans SC', 'Noto Sans TC', 'Helvetica Neue', Helvetica, Arial,
@@ -110,11 +198,6 @@
 
       .no-js .back-to-top {
         visibility: hidden;
-      }
-
-      #root button {
-        border: 0;
-        border-radius: 3px;
       }
 
       .unsupportedMessageContainer {
