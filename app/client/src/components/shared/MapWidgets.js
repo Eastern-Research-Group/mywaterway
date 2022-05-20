@@ -223,6 +223,7 @@ type Props = {
   map: any,
   view: any,
   layers: Array<any>,
+  legendExpanded?: boolean,
   scrollToComponent: string,
   onHomeWidgetRendered: (homeWidget: any) => void,
 };
@@ -231,6 +232,7 @@ function MapWidgets({
   map,
   view,
   layers,
+  legendExpanded = false,
   scrollToComponent,
   onHomeWidgetRendered = () => {},
 }: Props) {
@@ -490,15 +492,15 @@ function MapWidgets({
     const newLegend = new Expand({
       content: legendNode,
       view,
-      expanded: false,
+      expanded: legendExpanded,
       expandIconClass: 'esri-icon-layer-list',
       expandTooltip: 'Toggle Legend',
-      autoCollapse: true,
+      autoCollapse: !legendExpanded,
       mode: 'floating',
     });
     view.ui.add(newLegend, { position: 'bottom-left', index: 0 });
     setLegend(newLegend);
-  }, [view, legend, legendNode]);
+  }, [view, legend, legendExpanded, legendNode]);
 
   // Create the layer list toolbar widget
   const [esriLegend, setEsriLegend] = useState(null);

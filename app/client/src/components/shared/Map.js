@@ -18,11 +18,17 @@ const mapContainerStyles = css`
 
 type Props = {
   layers: Object,
+  legendExpanded?: boolean,
   startingExtent?: Object,
   children?: Node,
 };
 
-function Map({ layers = null, startingExtent = null, children }: Props) {
+function Map({
+  layers = null,
+  legendExpanded = false,
+  startingExtent = null,
+  children,
+}: Props) {
   const { initialExtent, highlightOptions, getBasemap, mapView, setMapView } =
     useContext(LocationSearchContext);
 
@@ -66,7 +72,12 @@ function Map({ layers = null, startingExtent = null, children }: Props) {
     <div id="hmw-map-container" css={mapContainerStyles}>
       {map && mapView && (
         <>
-          <MapWidgets map={map} view={mapView} layers={layers} />
+          <MapWidgets
+            map={map}
+            legendExpanded={legendExpanded}
+            view={mapView}
+            layers={layers}
+          />
           <MapMouseEvents map={map} view={mapView} />
         </>
       )}

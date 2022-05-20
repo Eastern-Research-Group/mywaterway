@@ -2176,7 +2176,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
               : windowHeight - searchTextHeight - 3 * mapPadding,
         }}
       >
-        <Map layers={layers} />
+        <Map layers={layers} legendExpanded={true} />
         {mapView && mapLoading && <MapLoadingSpinner />}
       </div>
     </>
