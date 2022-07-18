@@ -29,12 +29,12 @@ const buttonStyles = css`
 
 type Props = {
   feature: Object,
-  fieldName: ?fieldName,
-  idField: ?string,
-  layers: ?Array<Object>,
-  customQuery: ?Function,
-  onClick: ?Function,
-  disabled: boolean,
+  fieldName?: ?fieldName,
+  idField?: ?string,
+  layers?: ?Array<Object>,
+  customQuery?: ?Function,
+  onClick?: ?Function,
+  disabled?: boolean,
 };
 
 function ViewOnMapButton({

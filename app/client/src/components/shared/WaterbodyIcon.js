@@ -6,7 +6,8 @@ import { colors } from 'styles/index.js';
 
 // --- components ---
 type Props = {
-  condition: 'good' | 'polluted' | 'unassessed',
+  // condition: 'good' | 'polluted' | 'unassessed',
+  condition: string,
   selected: boolean,
 };
 

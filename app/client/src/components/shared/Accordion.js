@@ -66,8 +66,8 @@ const titleStyles = css`
 
 type AccordionListProps = {
   children: Node,
-  className: string,
-  title: Node,
+  className?: string,
+  title?: Node,
   expandDisabled: boolean,
   sortOptions: { value: string, label: string }[],
   onSortChange: Function,

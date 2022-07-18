@@ -237,10 +237,10 @@ const tableFooterStyles = css`
 type Props = {
   type: string,
   feature: Object,
-  fieldName: ?string,
-  extraContent: ?Object,
-  services: ?Object,
-  fields: ?Object,
+  fieldName?: ?string,
+  extraContent?: ?Object,
+  services?: ?Object,
+  fields?: ?Object,
 };
 
 function WaterbodyInfo({
