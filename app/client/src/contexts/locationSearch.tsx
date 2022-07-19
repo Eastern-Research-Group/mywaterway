@@ -16,13 +16,51 @@ import type Home from '@arcgis/core/widgets/Home';
 
 export const LocationSearchContext = createContext({});
 
-interface StateData {
-  domain: 'State';
-  name: string;
-  code: string;
-  context: 'SYSTEM';
-  id: string;
+/*
+ * Types
+ */
+interface AnnualStationData {
+  uniqueId: string;
+  stationTotalMeasurements: number;
+  stationTotalSamples: number;
+  stationTotalsByCharacteristic: { [characteristic: string]: number };
+  stationTotalsByGroup: { [group: string]: number };
+  stationTotalsByLabel: { [label: string]: number };
 }
+
+interface DrinkingWaterData {
+  pwsid: string;
+  pws_name: string;
+  primacy_agency_code: string;
+  pws_type_code: string;
+  pws_type: string;
+  population_served_count: number;
+  pws_activity_code: string;
+  pws_activity: string;
+  violations: string;
+  geo_ind: number;
+  huc12: string | null;
+  upstr_ind: number;
+  gw_sw_code: string;
+  gw_sw: string;
+  water_type_code: string | null;
+  water_type_calc: string | null;
+  primacy_type: string;
+  tribal_code: string | null;
+  tribal_name: string | null;
+}
+
+type FeaturesDataState =
+  | { status: 'fetching'; data: [] }
+  | { status: 'failure'; data: [] }
+  | { status: 'success'; data: Graphic[] };
+
+type FetchDataState = { status: Status; data: Object };
+
+type FishingInfoState =
+  | { status: 'fetching'; data: [] }
+  | { status: 'failure'; data: [] }
+  | { status: 'success'; data: Array<{ url: string; stateCode: string }> };
 
 interface GrtsData {
   state: string;
@@ -51,169 +89,6 @@ type GrtsDataState = {
     previous?: { $ref: string };
   };
 };
-
-type StatesDataState =
-  | { status: 'fetching'; data: [] }
-  | { status: 'failure'; data: [] }
-  | { status: 'success'; data: StateData[] };
-
-type FeaturesDataState =
-  | { status: 'fetching'; data: [] }
-  | { status: 'failure'; data: [] }
-  | { status: 'success'; data: Graphic[] };
-
-type ProtectedAreasDataState =
-  | { status: 'fetching'; data: []; fields: [] }
-  | { status: 'failure'; data: []; fields: [] }
-  | { status: 'success'; data: Graphic[]; fields: any[] };
-
-type Status = 'fetching' | 'success' | 'failure';
-
-type FetchDataState = { status: Status; data: Object };
-
-type FishingInfoState =
-  | { status: 'fetching'; data: [] }
-  | { status: 'failure'; data: [] }
-  | { status: 'success'; data: Array<{ url: string; stateCode: string }> };
-
-type MonitoringLocationGroups = {
-  [label: string]: {
-    label: string;
-    characteristicGroups?: Array<string>;
-    stations: StationData[];
-    toggled: boolean;
-  };
-} | null;
-
-interface MonitoringFeatureUpdate {
-  stationTotalMeasurements: number;
-  stationTotalsByGroup: { [group: string]: number };
-  timeframe: [number, number];
-}
-
-interface DrinkingWaterData {
-  pwsid: string;
-  pws_name: string;
-  primacy_agency_code: string;
-  pws_type_code: string;
-  pws_type: string;
-  population_served_count: number;
-  pws_activity_code: string;
-  pws_activity: string;
-  violations: string;
-  geo_ind: number;
-  huc12: string | null;
-  upstr_ind: number;
-  gw_sw_code: string;
-  gw_sw: string;
-  water_type_code: string | null;
-  water_type_calc: string | null;
-  primacy_type: string;
-  tribal_code: string | null;
-  tribal_name: string | null;
-}
-
-interface AnnualStationData {
-  uniqueId: string;
-  stationTotalMeasurements: number;
-  stationTotalSamples: number;
-  stationTotalsByCharacteristic: { [characteristic: string]: number };
-  stationTotalsByGroup: { [group: string]: number };
-  stationTotalsByLabel: { [label: string]: number };
-}
-
-interface StationData {
-  monitoringType: 'Past Water Conditions';
-  siteId: string;
-  orgId: string;
-  orgName: string;
-  locationLongitude: number;
-  locationLatitude: number;
-  locationName: string;
-  locationType: string;
-  locationUrl: string;
-  stationDataByYear: { [year: string | number]: AnnualStationData };
-  stationProviderName: string;
-  stationTotalSamples: number;
-  stationTotalMeasurements: number;
-  stationTotalsByGroup: { [groups: string]: number };
-  stationTotalsByLabel: { [label: string]: number };
-  timeframe: [number, number] | null;
-  uniqueId: string;
-}
-
-type MonitoringLocationsData = {
-  features: {
-    geometry: {
-      coordinates: [number, number];
-      type: 'Point';
-    };
-    properties: {
-      CountyName: string;
-      HUCEightDigitCode: string;
-      MonitoringLocationIdentifier: string;
-      MonitoringLocationName: string;
-      MonitoringLocationTypeName: string;
-      OrganizationFormalName: string;
-      OrganizationIdentifier: string;
-      ProviderName: string;
-      ResolvedMonitoringLocationTypeName: string;
-      StateName: string;
-      activityCount: string;
-      characteristicGroupResultCount: {
-        Physical: number;
-      };
-      resultCount: string;
-      siteUrl: string;
-    };
-    type: 'Feature';
-  }[];
-  type: 'FeatureCollection';
-};
-
-type PermittedDischargersData = {
-  Results: {
-    BadSystemIDs: null;
-    BioCVRows: string;
-    BioV3Rows: string;
-    CVRows: string;
-    FEARows: string;
-    Facilities: {
-      CWPFormalEaCnt: string;
-      CWPInspectionCount: string;
-      CWPName: string;
-      CWPPermitStatusDesc: string;
-      CWPQtrsWithNC: string;
-      CWPSNCStatus: null;
-      CWPStatus: string;
-      CWPViolStatus: string;
-      E90Exceeds1yr: string;
-      FacLat: string;
-      FacLong: string;
-      RegistryID: string;
-      SourceID: string;
-    }[];
-    INSPRows: string;
-    IndianCountryRows: string;
-    InfFEARows: string;
-    Message: string;
-    PageNo: string;
-    QueryID: string;
-    QueryRows: string;
-    SVRows: string;
-    TotalPenalties: string;
-    V3Rows: string;
-    Version: string;
-  };
-};
-
-type WsioHealthIndexDataState =
-  | { status: 'fetching'; data: [] }
-  | { status: 'failure'; data: [] }
-  | {
-      status: 'success';
-      data: Array<{ states: string; phwaHealthNdxSt: number }>;
-    };
 
 type Huc12SummaryData = {
   count: number;
@@ -280,6 +155,95 @@ type Huc12SummaryData = {
     totalHucAreaSqMi: number;
   }[];
 };
+
+interface MonitoringFeatureUpdate {
+  stationTotalMeasurements: number;
+  stationTotalsByGroup: { [group: string]: number };
+  timeframe: [number, number];
+}
+
+type MonitoringLocationGroups = {
+  [label: string]: {
+    label: string;
+    characteristicGroups?: Array<string>;
+    stations: StationData[];
+    toggled: boolean;
+  };
+} | null;
+
+type MonitoringLocationsData = {
+  features: {
+    geometry: {
+      coordinates: [number, number];
+      type: 'Point';
+    };
+    properties: {
+      CountyName: string;
+      HUCEightDigitCode: string;
+      MonitoringLocationIdentifier: string;
+      MonitoringLocationName: string;
+      MonitoringLocationTypeName: string;
+      OrganizationFormalName: string;
+      OrganizationIdentifier: string;
+      ProviderName: string;
+      ResolvedMonitoringLocationTypeName: string;
+      StateName: string;
+      activityCount: string;
+      characteristicGroupResultCount: {
+        Physical: number;
+      };
+      resultCount: string;
+      siteUrl: string;
+    };
+    type: 'Feature';
+  }[];
+  type: 'FeatureCollection';
+};
+
+type PermittedDischargersData = {
+  Results: {
+    BadSystemIDs: null;
+    BioCVRows: string;
+    BioV3Rows: string;
+    CVRows: string;
+    FEARows: string;
+    Facilities: {
+      CWPFormalEaCnt: string;
+      CWPInspectionCount: string;
+      CWPName: string;
+      CWPPermitStatusDesc: string;
+      CWPQtrsWithNC: string;
+      CWPSNCStatus: null;
+      CWPStatus: string;
+      CWPViolStatus: string;
+      E90Exceeds1yr: string;
+      FacLat: string;
+      FacLong: string;
+      RegistryID: string;
+      SourceID: string;
+    }[];
+    INSPRows: string;
+    IndianCountryRows: string;
+    InfFEARows: string;
+    Message: string;
+    PageNo: string;
+    QueryID: string;
+    QueryRows: string;
+    SVRows: string;
+    TotalPenalties: string;
+    V3Rows: string;
+    Version: string;
+  };
+};
+
+type Props = {
+  children: ReactNode;
+};
+
+type ProtectedAreasDataState =
+  | { status: 'fetching'; data: []; fields: [] }
+  | { status: 'failure'; data: []; fields: [] }
+  | { status: 'success'; data: Graphic[]; fields: any[] };
 
 type State = {
   actionsLayer: GraphicsLayer | null;
@@ -484,12 +448,74 @@ type State = {
   setWsioHealthIndexLayer: (wsioHealthIndexLayer: FeatureLayer) => void;
 };
 
-type Props = {
-  children: ReactNode;
-};
+interface StateData {
+  domain: 'State';
+  name: string;
+  code: string;
+  context: 'SYSTEM';
+  id: string;
+}
+
+type StatesDataState =
+  | { status: 'fetching'; data: [] }
+  | { status: 'failure'; data: [] }
+  | { status: 'success'; data: StateData[] };
+
+type Status = 'fetching' | 'success' | 'failure';
+
+interface StationData {
+  monitoringType: 'Past Water Conditions';
+  siteId: string;
+  orgId: string;
+  orgName: string;
+  locationLongitude: number;
+  locationLatitude: number;
+  locationName: string;
+  locationType: string;
+  locationUrl: string;
+  stationDataByYear: { [year: string | number]: AnnualStationData };
+  stationProviderName: string;
+  stationTotalSamples: number;
+  stationTotalMeasurements: number;
+  stationTotalsByGroup: { [groups: string]: number };
+  stationTotalsByLabel: { [label: string]: number };
+  timeframe: [number, number] | null;
+  uniqueId: string;
+}
+
+type WsioHealthIndexDataState =
+  | { status: 'fetching'; data: [] }
+  | { status: 'failure'; data: [] }
+  | {
+      status: 'success';
+      data: Array<{ states: string; phwaHealthNdxSt: number }>;
+    };
 
 export class LocationSearchProvider extends Component<Props, State> {
   state: State = {
+    actionsLayer: null,
+    address: '',
+    allWaterbodiesLayer: null,
+    allWaterbodiesWidgetDisabled: false,
+    areasData: null,
+    assessmentUnitId: '',
+    assessmentUnitIds: [],
+    atHucBoundaries: false,
+    attainsPlans: { status: 'fetching', data: {} },
+    basemap: 'gray-vector',
+    boundariesLayer: null,
+    cipSummary: { status: 'fetching', data: {} },
+    countyBoundaries: null,
+    currentExtent: null,
+    dischargersLayer: null,
+    drinkingWater: { status: 'fetching', data: [] },
+    FIPS: { status: 'fetching', stateCode: '', countyCode: '' },
+    fishingInfo: { status: 'fetching', data: [] },
+    grts: { status: 'fetching', data: { items: [] } },
+    homeWidget: null,
+    highlightOptions: { color: '#32C5FD', fillOpacity: 1 },
+    huc12: '',
+    hucBoundaries: null,
     initialExtent: new Extent({
       xmin: -15634679.853814237,
       ymin: -3023256.7294788733,
@@ -497,65 +523,41 @@ export class LocationSearchProvider extends Component<Props, State> {
       ymax: 12180985.440778064,
       spatialReference: { wkid: 102100 },
     }),
-    currentExtent: null,
-    upstreamExtent: null,
-    highlightOptions: { color: '#32C5FD', fillOpacity: 1 },
-    searchText: '',
-    lastSearchText: '',
-    huc12: '',
-    assessmentUnitIds: [],
-    watershed: '',
-    address: '',
-    fishingInfo: { status: 'fetching', data: [] },
-    statesData: { status: 'fetching', data: [] },
-    wsioHealthIndexData: { status: 'fetching', data: [] },
-    wildScenicRiversData: { status: 'fetching', data: [] },
-    protectedAreasData: { status: 'fetching', data: [], fields: [] },
-    assessmentUnitId: '',
-    monitoringLocations: { status: 'fetching', data: {} },
-    permittedDischargers: { status: 'fetching', data: {} },
-    grts: { status: 'fetching', data: { items: [] } },
-    attainsPlans: { status: 'fetching', data: {} },
-    drinkingWater: { status: 'fetching', data: [] },
-    cipSummary: { status: 'fetching', data: {} },
-    nonprofits: { status: 'fetching', data: [] },
-    mapView: null,
-    layers: [],
-    waterbodyLayer: null,
     issuesLayer: null,
+    lastSearchText: '',
+    layers: [],
+    linesData: null,
+    mapView: null,
+    monitoringLocations: { status: 'fetching', data: {} },
     monitoringLocationsLayer: null,
-    usgsStreamgagesLayer: null,
-    dischargersLayer: null,
+    nonprofits: { status: 'fetching', data: [] },
     nonprofitsLayer: null,
-    wildScenicRiversLayer: null,
-    protectedAreasLayer: null,
+    orphanFeatures: { status: 'fetching', features: [] },
+    permittedDischargers: { status: 'fetching', data: {} },
+    pointsData: null,
+    protectedAreasData: { status: 'fetching', data: [], fields: [] },
     protectedAreasHighlightLayer: null,
+    protectedAreasLayer: null,
     providersLayer: null,
-    boundariesLayer: null,
     searchIconLayer: null,
-    actionsLayer: null,
+    searchText: '',
     selWaterbodyLayer: null,
     showDischargers: false,
     showPolluted: true,
-    wsioHealthIndexLayer: null,
-    allWaterbodiesLayer: null,
-    homeWidget: null,
+    statesData: { status: 'fetching', data: [] },
+    upstreamExtent: null,
     upstreamWidget: null,
     upstreamWidgetDisabled: false,
-    allWaterbodiesWidgetDisabled: false,
+    usgsStreamgagesLayer: null,
     visibleLayers: {},
-    basemap: 'gray-vector',
-    hucBoundaries: null,
-    atHucBoundaries: false,
-    countyBoundaries: null,
     waterbodyData: null,
-    linesData: null,
-    areasData: null,
-    pointsData: null,
-    orphanFeatures: { status: 'fetching', features: [] },
+    waterbodyLayer: null,
     waterbodyCountMismatch: null,
-    FIPS: { status: 'fetching', stateCode: '', countyCode: '' },
-
+    watershed: '',
+    wildScenicRiversData: { status: 'fetching', data: [] },
+    wildScenicRiversLayer: null,
+    wsioHealthIndexData: { status: 'fetching', data: [] },
+    wsioHealthIndexLayer: null,
     pointsLayer: null,
     linesLayer: null,
     areasLayer: null,

@@ -49,7 +49,7 @@ type LookupFiles = {
   setWaterTypeOptions: Function,
 };
 
-const LookupFilesContext: Object = createContext<LookupFiles>({
+const LookupFilesContext = createContext<LookupFiles>({
   documentOrder: { status: 'fetching', data: null },
   setDocumentOrder: () => {},
   educatorMaterials: { status: 'fetching', data: null },
