@@ -16,8 +16,6 @@ import {
 } from 'utils/mapFunctions';
 // contexts
 import { MapHighlightContext } from 'contexts/MapHighlight';
-// types
-import type {} from 'styled-components/cssprop';
 
 const textStyles = css`
   margin: 1em;

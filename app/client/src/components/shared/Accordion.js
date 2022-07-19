@@ -212,11 +212,11 @@ type AccordionItemProps = {
   title: Node,
   subTitle: ?Node,
   status: ?string,
-  onAddHighlight: () => void,
-  onRemoveHighlight: () => void,
+  onAddHighlight?: () => void,
+  onRemoveHighlight?: () => void,
   onChange: (isOpen: boolean) => void,
   allExpanded: boolean,
-  highlightContent: ?boolean,
+  highlightContent?: ?boolean,
 };
 
 function AccordionItem({

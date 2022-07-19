@@ -2,12 +2,12 @@ import { Component, createContext } from 'react';
 import type { ReactNode } from 'react';
 import Graphic from '@arcgis/core/Graphic';
 
-interface HighlightContext {
+interface MapHighlightContextProps {
   highlightedGraphic: Graphic | null;
   selectedGraphic: Graphic | null;
 }
 
-export const MapHighlightContext = createContext<HighlightContext>({
+export const MapHighlightContext = createContext<MapHighlightContextProps>({
   highlightedGraphic: null,
   selectedGraphic: null,
 });

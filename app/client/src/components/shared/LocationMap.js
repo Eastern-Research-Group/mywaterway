@@ -173,8 +173,8 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     homeWidget,
     huc12,
     setHuc12,
-    assessmentUnitIDs,
-    setAssessmentUnitIDs,
+    assessmentUnitIds,
+    setAssessmentUnitIds,
     orphanFeatures,
     setOrphanFeatures,
     hucBoundaries,
@@ -522,13 +522,13 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
 
       if (uniqueWaterbodies.length < assessmentUnitCount) {
         if (waterbodyCountMismatch) return;
-        if (assessmentUnitIDs.length === 0) return;
+        if (assessmentUnitIds.length === 0) return;
 
         const gisIDs = uniqueWaterbodies.map(
           (feature) => feature.attributes.assessmentunitidentifier,
         );
 
-        const orphanIDs = assessmentUnitIDs.filter(
+        const orphanIDs = assessmentUnitIds.filter(
           (id) => !gisIDs.includes(id),
         );
 
@@ -590,7 +590,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
   }, [
     areasData,
     assessmentUnitCount,
-    assessmentUnitIDs,
+    assessmentUnitIds,
     checkedForOrphans,
     getAllFeatures,
     handleOrphanedFeatures,
@@ -1572,7 +1572,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
         return item.assessmentUnitId;
       });
 
-      setAssessmentUnitIDs(ids);
+      setAssessmentUnitIds(ids);
 
       const filter = `assessmentunitidentifier in (${createQueryString(ids)})`;
 
@@ -1585,7 +1585,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
       retrieveAreas,
       retrieveLines,
       retrievePoints,
-      setAssessmentUnitIDs,
+      setAssessmentUnitIds,
       setCipSummary,
     ],
   );

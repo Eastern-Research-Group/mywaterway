@@ -76,11 +76,13 @@ function buildStations(locations, layer, services) {
         `${station.properties.OrganizationIdentifier}/` +
         `${station.properties.MonitoringLocationIdentifier}/`,
       // monitoring station specific properties:
+      stationDataByYear: null,
       stationProviderName: station.properties.ProviderName,
       stationTotalSamples: parseInt(station.properties.activityCount),
       stationTotalMeasurements: parseInt(station.properties.resultCount),
       // counts for each lower-tier characteristic group
       stationTotalsByGroup: station.properties.characteristicGroupResultCount,
+      stationTotalsByLabel: null,
       timeframe: null,
       // create a unique id, so we can check if the monitoring station has
       // already been added to the display (since a monitoring station id
@@ -122,12 +124,6 @@ function updateMonitoringGroups(stations, mappings) {
   // build up monitoring stations, toggles, and groups
   let locationGroups = {
     All: { label: 'All', stations: [], toggled: true },
-    Other: {
-      label: 'Other',
-      stations: [],
-      toggled: true,
-      characteristicGroups: [],
-    },
   };
 
   stations.forEach((station) => {
@@ -169,7 +165,16 @@ function updateMonitoringGroups(stations, mappings) {
     // add any leftover lower-tier group counts to the 'Other' top-tier group
     for (const subGroup in station.stationTotalsByGroup) {
       if (subGroupsAdded.has(subGroup)) continue;
-      locationGroups['Other'].stations.push(station);
+      if (!locationGroups['Other']) {
+        locationGroups['Other'] = {
+          characteristicGroups: [subGroup],
+          label: 'Other',
+          stations: [station],
+          toggled: true,
+        };
+      } else {
+        locationGroups['Other'].stations.push(station);
+      }
       station.stationTotalsByLabel['Other'] +=
         station.stationTotalsByGroup[subGroup];
       locationGroups['Other'].characteristicGroups.push(subGroup);
