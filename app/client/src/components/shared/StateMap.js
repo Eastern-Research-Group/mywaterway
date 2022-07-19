@@ -28,8 +28,8 @@ import MapErrorBoundary from 'components/shared/ErrorBoundary.MapErrorBoundary';
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
 import { useFetchedDataDispatch } from 'contexts/FetchedData';
-import { LocationSearchContext } from 'contexts/locationSearch';
-import { MapHighlightContext } from 'contexts/MapHighlight';
+import { useLocationSearchContext } from 'contexts/locationSearch';
+import { useMapHighlightContext } from 'contexts/MapHighlight';
 import { useServicesContext } from 'contexts/LookupFiles';
 // helpers
 import { useSharedLayers, useWaterbodyHighlight } from 'utils/hooks';
@@ -73,7 +73,7 @@ function StateMap({
 
   const services = useServicesContext();
 
-  const { selectedGraphic } = useContext(MapHighlightContext);
+  const { selectedGraphic } = useMapHighlightContext();
 
   const {
     mapView,
@@ -90,7 +90,7 @@ function StateMap({
 
     homeWidget,
     resetData,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const [layers, setLayers] = useState(null);
 

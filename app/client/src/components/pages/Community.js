@@ -13,7 +13,7 @@ import MapVisibilityButton from 'components/shared/MapVisibilityButton';
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
 import { useFetchedDataDispatch } from 'contexts/FetchedData';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 import {
   CommunityTabsContext,
   CommunityTabsProvider,
@@ -123,7 +123,7 @@ function Community() {
 
   // reset searchText and data when navigating away from '/community'
   const { resetData, setSearchText, setLastSearchText, errorMessage } =
-    useContext(LocationSearchContext);
+    useLocationSearchContext();
 
   useEffect(() => {
     return function cleanup() {
@@ -134,7 +134,7 @@ function Community() {
     };
   }, [fetchedDataDispatch, resetData, setLastSearchText, setSearchText]);
 
-  const { setVisibleLayers } = useContext(LocationSearchContext);
+  const { setVisibleLayers } = useLocationSearchContext();
 
   useEffect(() => {
     // don't show any tab based layers if on community landing page

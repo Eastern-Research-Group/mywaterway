@@ -13,7 +13,7 @@ import {
 } from 'components/shared/KeyMetrics';
 import { infoBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 // utils
 import { summarizeAssessments } from 'utils/utils';
 
@@ -30,7 +30,7 @@ type Props = {
 };
 
 function AssessmentSummary({ waterbodies, fieldName, usageName }: Props) {
-  const { cipSummary } = useContext(LocationSearchContext);
+  const { cipSummary } = useLocationSearchContext();
 
   if (cipSummary.status === 'failure') return null;
 

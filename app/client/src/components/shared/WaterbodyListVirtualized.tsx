@@ -15,7 +15,7 @@ import {
   getOrganizationLabel,
 } from 'utils/mapFunctions';
 // contexts
-import { MapHighlightContext } from 'contexts/MapHighlight';
+import { useMapHighlightContext } from 'contexts/MapHighlight';
 
 const textStyles = css`
   margin: 1em;
@@ -72,8 +72,7 @@ function WaterbodyListVirtualized({ waterbodies, fieldName = '' }: Props) {
   // Sort the waterbodies
   const [sortBy, setSortBy] = useState('assessmentunitname');
 
-  const { highlightedGraphic, selectedGraphic } =
-    useContext(MapHighlightContext);
+  const { highlightedGraphic, selectedGraphic } = useMapHighlightContext();
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
 
   if (loading || !waterbodies) return <LoadingSpinner />;

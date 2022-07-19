@@ -7,7 +7,7 @@ import TabErrorBoundary from 'components/shared/ErrorBoundary.TabErrorBoundary';
 import AssessmentSummary from 'components/shared/AssessmentSummary';
 import WaterbodyList from 'components/shared/WaterbodyList';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 // utilities
 import { useWaterbodyFeatures, useWaterbodyOnMap } from 'utils/hooks';
 import { summarizeAssessments } from 'utils/utils';
@@ -19,7 +19,7 @@ const containerStyles = css`
 `;
 
 function AquaticLife() {
-  const { watershed } = useContext(LocationSearchContext);
+  const { watershed } = useLocationSearchContext();
 
   const waterbodies = useWaterbodyFeatures();
 

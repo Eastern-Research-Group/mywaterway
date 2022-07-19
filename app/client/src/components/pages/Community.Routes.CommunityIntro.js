@@ -3,7 +3,7 @@
 import React, { useContext, useEffect } from 'react';
 import { css } from 'styled-components/macro';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 // styles
 import { fonts } from 'styles/index.js';
 // images
@@ -57,7 +57,7 @@ const textStyles = css`
 `;
 
 function CommunityIntro() {
-  const { setVisibleLayers } = useContext(LocationSearchContext);
+  const { setVisibleLayers } = useLocationSearchContext();
 
   // clear the community page layers when a user navigates to the community intro page
   useEffect(() => {

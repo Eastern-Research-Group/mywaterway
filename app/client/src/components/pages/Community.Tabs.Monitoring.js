@@ -27,7 +27,7 @@ import VirtualizedList from 'components/shared/VirtualizedList';
 import WaterbodyInfo from 'components/shared/WaterbodyInfo';
 // contexts
 import { useFetchedDataState } from 'contexts/FetchedData';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 import { useServicesContext } from 'contexts/LookupFiles';
 // utilities
 import { plotFacilities } from 'utils/mapFunctions';
@@ -268,7 +268,7 @@ function Monitoring() {
     visibleLayers,
     setVisibleLayers,
     usgsStreamgagesLayer,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const [usgsStreamgagesDisplayed, setUsgsStreamgagesDisplayed] =
     useState(true);
@@ -493,7 +493,7 @@ function SensorsTab() {
 
   const services = useServicesContext();
 
-  const { watershed } = useContext(LocationSearchContext);
+  const { watershed } = useLocationSearchContext();
 
   const normalizedUsgsStreamgages = useStreamgageData(
     usgsStreamgages,
@@ -613,7 +613,7 @@ function MonitoringTab({ monitoringDisplayed, setMonitoringDisplayed }) {
     setMonitoringFeatureUpdates,
     setMonitoringGroups,
     watershed,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const updateFeatures = useCallback(
     (locations) => {

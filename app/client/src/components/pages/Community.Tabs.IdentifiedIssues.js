@@ -34,7 +34,7 @@ import {
 } from 'components/shared/KeyMetrics';
 // contexts
 import { CommunityTabsContext } from 'contexts/CommunityTabs';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 // utilities
 import { formatNumber } from 'utils/utils';
 import { plotFacilities, plotIssues } from 'utils/mapFunctions';
@@ -96,7 +96,7 @@ function IdentifiedIssues() {
     setShowAllPolluted,
     cipSummary,
     watershed,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const [permittedDischargersData, setPermittedDischargersData] = useState({});
 

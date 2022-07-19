@@ -19,7 +19,7 @@ import LoadingSpinner from 'components/shared/LoadingSpinner';
 import { errorBoxStyles, noteBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
 import { AddDataWidgetContext } from 'contexts/AddDataWidget';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 // utils
 import { fetchPostFile, fetchPostForm } from 'utils/fetchUtils';
 import { getSimplePopupTemplate } from 'utils/utils';
@@ -232,7 +232,7 @@ type UploadStatusType =
 
 function FilePanel() {
   const { widgetLayers, setWidgetLayers } = useContext(AddDataWidgetContext);
-  const { mapView } = useContext(LocationSearchContext);
+  const { mapView } = useLocationSearchContext();
 
   const [generalizeFeatures, setGeneralizeFeatures] = useState(false);
   const [analyzeResponse, setAnalyzeResponse] = useState<any>(null);

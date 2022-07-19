@@ -19,8 +19,8 @@ import { characteristicGroupMappings } from 'config/characteristicGroupMappings'
 import { monitoringClusterSettings } from 'components/shared/LocationMap';
 import { usgsStaParameters } from 'config/usgsStaParameters';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
-import { MapHighlightContext } from 'contexts/MapHighlight';
+import { useLocationSearchContext } from 'contexts/locationSearch';
+import { useMapHighlightContext } from 'contexts/MapHighlight';
 import { useServicesContext } from 'contexts/LookupFiles';
 // utilities
 import {
@@ -291,7 +291,7 @@ function useWaterbodyFeatures() {
     huc12,
     waterbodyCountMismatch,
     orphanFeatures,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const [features, setFeatures] = useState(null);
 
@@ -367,7 +367,7 @@ function useWaterbodyFeatures() {
 // custom hook that combines lines, area, and points features from context,
 // and returns the combined features
 function useWaterbodyFeaturesState() {
-  const { waterbodyData } = useContext(LocationSearchContext);
+  const { waterbodyData } = useLocationSearchContext();
 
   const [features, setFeatures] = useState(null);
 
@@ -402,9 +402,9 @@ function useWaterbodyOnMap(
   const {
     setHighlightedGraphic,
     setSelectedGraphic, //
-  } = useContext(MapHighlightContext);
+  } = useMapHighlightContext();
   const { allWaterbodiesLayer, pointsLayer, linesLayer, areasLayer, mapView } =
-    useContext(LocationSearchContext);
+    useLocationSearchContext();
 
   const setRenderer = useCallback(
     (layer, geometryType, attribute, alpha = null) => {
@@ -481,7 +481,7 @@ function useWaterbodyHighlight(findOthers: boolean = true) {
   const {
     highlightedGraphic,
     selectedGraphic, //
-  } = useContext(MapHighlightContext);
+  } = useMapHighlightContext();
   const {
     mapView,
     pointsLayer, //part of waterbody group layer
@@ -502,7 +502,7 @@ function useWaterbodyHighlight(findOthers: boolean = true) {
     pointsData,
     linesData,
     areasData,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
   const services = useServicesContext();
   const navigate = useNavigate();
 
@@ -866,11 +866,11 @@ function useWaterbodyHighlight(findOthers: boolean = true) {
   ]);
 
   // Closes the popup and clears highlights whenever the tab changes
-  const { visibleLayers } = useContext(LocationSearchContext);
+  const { visibleLayers } = useLocationSearchContext();
   const {
     setHighlightedGraphic,
     setSelectedGraphic, //
-  } = useContext(MapHighlightContext);
+  } = useMapHighlightContext();
   useEffect(() => {
     closePopup({ mapView, setHighlightedGraphic, setSelectedGraphic });
   }, [mapView, setHighlightedGraphic, setSelectedGraphic, visibleLayers]);
@@ -879,9 +879,8 @@ function useWaterbodyHighlight(findOthers: boolean = true) {
 function useDynamicPopup() {
   const navigate = useNavigate();
   const services = useServicesContext();
-  const { getHucBoundaries, getMapView, resetData } = useContext(
-    LocationSearchContext,
-  );
+  const { getHucBoundaries, getMapView, resetData } =
+    useLocationSearchContext();
 
   const setDynamicPopupFields = (fields) => {
     dynamicPopupFields = fields;
@@ -1017,7 +1016,7 @@ function useSharedLayers() {
     setProtectedAreasHighlightLayer,
     setWsioHealthIndexLayer,
     setWildScenicRiversLayer,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const getDynamicPopup = useDynamicPopup();
   const { getTitle, getTemplate } = getDynamicPopup();
@@ -1981,7 +1980,7 @@ function useMonitoringLocations() {
     monitoringLocations,
     monitoringLocationsLayer,
     setMonitoringGroups,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   useEffect(() => {
     if (!monitoringGroups) {

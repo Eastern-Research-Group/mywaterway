@@ -8,7 +8,7 @@ import MapView from '@arcgis/core/views/MapView';
 import MapWidgets from 'components/shared/MapWidgets';
 import MapMouseEvents from 'components/shared/MapMouseEvents';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 
 const mapContainerStyles = css`
   position: absolute;
@@ -24,7 +24,7 @@ type Props = {
 
 function Map({ layers = null, startingExtent = null, children }: Props) {
   const { basemap, highlightOptions, initialExtent, mapView, setMapView } =
-    useContext(LocationSearchContext);
+    useLocationSearchContext();
 
   const [map, setMap] = useState(null);
 

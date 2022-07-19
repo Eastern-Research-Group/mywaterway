@@ -19,7 +19,7 @@ import { linkButtonStyles } from 'components/shared/LinkButton';
 import LoadingSpinner from 'components/shared/LoadingSpinner';
 import { errorBoxStyles, noteBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 import { AddDataWidgetContext } from 'contexts/AddDataWidget';
 // config
 import {
@@ -83,7 +83,7 @@ const modifiedLinkButtonStyles = css`
 // --- components (URLPanel) ---
 function URLPanel() {
   const { widgetLayers, setWidgetLayers } = useContext(AddDataWidgetContext);
-  const { mapView } = useContext(LocationSearchContext);
+  const { mapView } = useLocationSearchContext();
 
   // filters
   const [

@@ -20,7 +20,7 @@ import {
   getOrganizationLabel,
 } from 'utils/mapFunctions';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 // errors
 import { huc12SummaryError } from 'config/errorMessages';
 
@@ -74,7 +74,7 @@ type Props = {
 };
 
 function WaterbodyList({ waterbodies, title, fieldName }: Props) {
-  const { cipSummary } = useContext(LocationSearchContext);
+  const { cipSummary } = useLocationSearchContext();
 
   // if huc12summaryservice is down
   if (cipSummary.status === 'failure') {

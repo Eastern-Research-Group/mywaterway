@@ -27,7 +27,7 @@ import { tabsStyles } from 'components/shared/ContentTabs';
 import VirtualizedList from 'components/shared/VirtualizedList';
 // contexts
 import { useFetchedDataState } from 'contexts/FetchedData';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 import { useServicesContext } from 'contexts/LookupFiles';
 // utilities
 import {
@@ -100,7 +100,7 @@ function Overview() {
     watershed,
     visibleLayers,
     setVisibleLayers,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const [waterbodiesDisplayed, setWaterbodiesDisplayed] = useState(true);
 
@@ -422,7 +422,7 @@ function Overview() {
 }
 
 function WaterbodiesTab() {
-  const { watershed } = useContext(LocationSearchContext);
+  const { watershed } = useLocationSearchContext();
   const waterbodies = useWaterbodyFeatures();
 
   // draw the waterbody on the map
@@ -461,7 +461,7 @@ function MonitoringAndSensorsTab({
     monitoringLocationsLayer,
     usgsStreamgagesLayer,
     watershed,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const services = useServicesContext();
 
@@ -790,9 +790,8 @@ function MonitoringAndSensorsTab({
 
 function PermittedDischargersTab({ totalPermittedDischargers }) {
   const navigate = useNavigate();
-  const { permittedDischargers, dischargersLayer, watershed } = useContext(
-    LocationSearchContext,
-  );
+  const { permittedDischargers, dischargersLayer, watershed } =
+    useLocationSearchContext();
 
   // draw the permitted dischargers on the map
   useEffect(() => {

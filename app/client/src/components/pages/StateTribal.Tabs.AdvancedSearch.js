@@ -23,9 +23,9 @@ import ConfirmModal from 'components/shared/ConfirmModal';
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
 import { StateTribalTabsContext } from 'contexts/StateTribalTabs';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 import {
-  MapHighlightContext,
+  useMapHighlightContext,
   MapHighlightProvider,
 } from 'contexts/MapHighlight';
 import { FullscreenContext } from 'contexts/Fullscreen';
@@ -249,7 +249,7 @@ function AdvancedSearch() {
     watershedsLayerMaxRecordCount,
     setSummaryLayerMaxRecordCount,
     setWatershedsLayerMaxRecordCount,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const [searchLoading, setSearchLoading] = useState(false);
   const [serviceError, setServiceError] = useState(false);
@@ -714,7 +714,7 @@ function AdvancedSearch() {
 
   // Makes the view on map button work for the state page
   // (i.e. switches and scrolls to the map when the selected graphic changes)
-  const { selectedGraphic } = useContext(MapHighlightContext);
+  const { selectedGraphic } = useMapHighlightContext();
   useEffect(() => {
     if (!selectedGraphic) return;
 

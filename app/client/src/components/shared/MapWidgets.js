@@ -30,7 +30,7 @@ import AddDataWidget from 'components/shared/AddDataWidget';
 import MapLegend from 'components/shared/MapLegend';
 // contexts
 import { AddDataWidgetContext } from 'contexts/AddDataWidget';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 import { FullscreenContext } from 'contexts/Fullscreen';
 import { useServicesContext } from 'contexts/LookupFiles';
 // utilities
@@ -268,7 +268,7 @@ function MapWidgets({
     getAllWaterbodiesWidgetDisabled,
     setMapView,
     getHucBoundaries,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const services = useServicesContext();
 

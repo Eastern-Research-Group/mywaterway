@@ -8,7 +8,7 @@ import WaterbodyList from 'components/shared/WaterbodyList';
 import TabErrorBoundary from 'components/shared/ErrorBoundary.TabErrorBoundary';
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 // utilities
 import { useWaterbodyFeatures, useWaterbodyOnMap } from 'utils/hooks';
 import { summarizeAssessments } from 'utils/utils';
@@ -28,7 +28,7 @@ const modifiedErrorBoxStyles = css`
 `;
 
 function Swimming() {
-  const { watershed, cipSummary } = useContext(LocationSearchContext);
+  const { watershed, cipSummary } = useLocationSearchContext();
 
   // set the waterbody features
   const waterbodies = useWaterbodyFeatures();

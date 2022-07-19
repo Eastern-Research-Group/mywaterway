@@ -19,7 +19,7 @@ import Switch from 'components/shared/Switch';
 import { tabsStyles } from 'components/shared/ContentTabs';
 // contexts
 import { CommunityTabsContext } from 'contexts/CommunityTabs';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 import { useServicesContext } from 'contexts/LookupFiles';
 // utilities
 import { useWaterbodyFeatures, useWaterbodyOnMap } from 'utils/hooks';
@@ -256,7 +256,7 @@ function DrinkingWater() {
     drinkingWaterTabIndex,
     setDrinkingWaterTabIndex,
     currentExtent,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   // set the waterbody features
   const waterbodies = useWaterbodyFeatures();

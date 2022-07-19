@@ -37,12 +37,12 @@ import WaterbodyList from 'components/shared/WaterbodyList';
 import { errorBoxStyles, infoBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
 import {
-  LocationSearchContext,
+  useLocationSearchContext,
   LocationSearchProvider,
 } from 'contexts/locationSearch';
 import { useServicesContext } from 'contexts/LookupFiles';
 import {
-  MapHighlightContext,
+  useMapHighlightContext,
   MapHighlightProvider,
 } from 'contexts/MapHighlight';
 // helpers
@@ -144,7 +144,7 @@ function TribalMapList({
     visibleLayers,
     setVisibleLayers,
     waterbodyLayer,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const [waterbodiesDisplayed, setWaterbodiesDisplayed] = useState(true);
   const [monitoringLocationsDisplayed, setMonitoringLocationsDisplayed] =
@@ -277,7 +277,7 @@ function TribalMapList({
   // Makes the view on map button work for the state page
   // (i.e. switches and scrolls to the map when the selected graphic changes)
   const [displayMode, setDisplayMode] = useState('map');
-  const { selectedGraphic } = useContext(MapHighlightContext);
+  const { selectedGraphic } = useMapHighlightContext();
   useEffect(() => {
     if (!selectedGraphic) return;
 
@@ -550,7 +550,7 @@ function TribalMap({
     setVisibleLayers,
     waterbodyLayer,
     setWaterbodyLayer,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const navigate = useNavigate();
   const services = useServicesContext();
@@ -939,9 +939,8 @@ type MonitoringTabProps = {
 };
 
 function MonitoringTab({ activeState }: MonitoringTabProps) {
-  const { monitoringGroups, monitoringLocationsLayer } = useContext(
-    LocationSearchContext,
-  );
+  const { monitoringGroups, monitoringLocationsLayer } =
+    useLocationSearchContext();
   const services = useServicesContext();
 
   // get the monitoring locations from the monitoringGroups variable

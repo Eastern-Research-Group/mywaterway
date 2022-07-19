@@ -16,7 +16,7 @@ import MapErrorBoundary from 'components/shared/ErrorBoundary.MapErrorBoundary';
 // styled components
 import { errorBoxStyles, infoBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 import { useServicesContext } from 'contexts/LookupFiles';
 // helpers
 import { useSharedLayers, useWaterbodyHighlight } from 'utils/hooks';
@@ -51,9 +51,8 @@ type Props = {
 function ActionsMap({ layout, unitIds, onLoad }: Props) {
   const navigate = useNavigate();
 
-  const { actionsLayer, homeWidget, mapView, setActionsLayer } = useContext(
-    LocationSearchContext,
-  );
+  const { actionsLayer, homeWidget, mapView, setActionsLayer } =
+    useLocationSearchContext();
 
   const [layers, setLayers] = useState(null);
 

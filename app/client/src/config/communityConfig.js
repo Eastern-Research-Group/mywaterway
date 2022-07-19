@@ -15,7 +15,7 @@ import Protect from 'components/pages/Community.Tabs.Protect';
 import DisclaimerModal from 'components/shared/DisclaimerModal';
 import ShowLessMore from 'components/shared/ShowLessMore';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 // images
 import overviewIcon from 'images/overview.png';
 import drinkingWaterIcon from 'images/drinking-water.png';
@@ -96,9 +96,7 @@ function SwimmingUpper() {
 }
 
 function EatingFishUpper() {
-  const { watershed, fishingInfo, statesData } = useContext(
-    LocationSearchContext,
-  );
+  const { watershed, fishingInfo, statesData } = useLocationSearchContext();
 
   return (
     <>

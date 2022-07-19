@@ -1,17 +1,11 @@
-// @flow
-
-import React, {
-  Fragment,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { Fragment, useContext, useEffect, useRef, useState } from 'react';
+import styled from 'styled-components';
 import { css } from 'styled-components/macro';
 import Select from 'react-select';
 import Layer from '@arcgis/core/layers/Layer';
 import Portal from '@arcgis/core/portal/Portal';
 import PortalItem from '@arcgis/core/portal/PortalItem';
+import PortalQueryParams from '@arcgis/core/portal/PortalQueryParams';
 import * as watchUtils from '@arcgis/core/core/watchUtils';
 // components
 import LoadingSpinner from 'components/shared/LoadingSpinner';
@@ -23,6 +17,11 @@ import { AddDataWidgetContext } from 'contexts/AddDataWidget';
 import { webServiceErrorMessage } from 'config/errorMessages';
 // styles
 import { reactSelectStyles } from 'styles/index.js';
+// types
+import type { WidgetLayer } from 'contexts/AddDataWidget';
+import type GroupLayer from '@arcgis/core/layers/GroupLayer';
+import type Sublayer from '@arcgis/core/layers/support/Sublayer';
+import type TileLayer from '@arcgis/core/layers/TileLayer';
 
 const searchFlexBoxStyles = css`
   display: flex;
@@ -167,6 +166,32 @@ const newTabDisclaimerStyles = css`
   border-bottom: 1px solid #e0e0e0;
 `;
 
+// --- types ---
+interface QueryParams {
+  query: string;
+  sortOrder: 'asc' | 'desc';
+  sortField?:
+    | 'title'
+    | 'uploaded'
+    | 'modified'
+    | 'username'
+    | 'created'
+    | 'type'
+    | 'owner'
+    | 'avg-rating'
+    | 'num-ratings'
+    | 'num-comments'
+    | 'num-views';
+}
+
+type SortBy =
+  | { value: 'none'; label: 'Relevance'; defaultSort: 'desc' }
+  | { value: 'title'; label: 'Title'; defaultSort: 'asc' }
+  | { value: 'owner'; label: 'Owner'; defaultSort: 'asc' }
+  | { value: 'avg-rating'; label: 'Rating'; defaultSort: 'desc' }
+  | { value: 'num-views'; label: 'Views'; defaultSort: 'desc' }
+  | { value: 'modified'; label: 'Date'; defaultSort: 'desc' };
+
 // --- components (SearchPanel) ---
 function SearchPanel() {
   const { pageNumber, setPageNumber, searchResults, setSearchResults } =
@@ -191,12 +216,12 @@ function SearchPanel() {
   const [kml, setKml] = useState(false);
   const [wms, setWms] = useState(false);
 
-  const [sortBy, setSortBy] = useState({
+  const [sortBy, setSortBy] = useState<SortBy>({
     value: 'none',
     label: 'Relevance',
     defaultSort: 'desc',
   });
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Builds and executes the search query on search button click
   useEffect(() => {
@@ -256,12 +281,13 @@ function SearchPanel() {
     else query = appendToQuery(query, defaultTypePart);
 
     // build the query parameters
-    let queryParams = {
+    let queryParams: QueryParams = {
       query,
       sortOrder,
     };
 
     // if a sort by (other than relevance) is selected, add it to the query params
+
     if (sortBy.value !== 'none') {
       queryParams.sortField = sortBy.value;
     } else {
@@ -270,7 +296,7 @@ function SearchPanel() {
 
     // perform the query
     tmpPortal
-      .queryItems(queryParams)
+      .queryItems(new PortalQueryParams(queryParams))
       .then((res) => {
         if (res.total > 0) {
           setSearchResults({ status: 'success', data: res });
@@ -354,10 +380,12 @@ function SearchPanel() {
               options={locationList}
               value={location}
               onChange={(ev) => {
-                setLocation(ev);
+                if (ev) {
+                  setLocation(ev);
 
-                // trigger a re-query
-                setSearch(searchText);
+                  // trigger a re-query
+                  setSearch(searchText);
+                }
               }}
               styles={reactSelectStyles}
             />
@@ -380,7 +408,7 @@ function SearchPanel() {
               <button
                 css={searchButtonStyles}
                 type="submit"
-                onClick={(ev) => setSearch(searchText)}
+                onClick={(_ev) => setSearch(searchText)}
               >
                 <i className="fas fa-search"></i>
                 <span css={buttonHiddenTextStyles}>Search</span>
@@ -409,7 +437,7 @@ function SearchPanel() {
                       id="map_service_filter"
                       type="checkbox"
                       checked={mapService}
-                      onChange={(ev) => setMapService(!mapService)}
+                      onChange={(_ev) => setMapService(!mapService)}
                     />
                     <label htmlFor="map_service_filter">Map Service</label>
                   </li>
@@ -420,7 +448,7 @@ function SearchPanel() {
                       id="feature_service_filter"
                       type="checkbox"
                       checked={featureService}
-                      onChange={(ev) => setFeatureService(!featureService)}
+                      onChange={(_ev) => setFeatureService(!featureService)}
                     />
                     <label htmlFor="feature_service_filter">
                       Feature Service
@@ -433,7 +461,7 @@ function SearchPanel() {
                       id="image_service_filter"
                       type="checkbox"
                       checked={imageService}
-                      onChange={(ev) => setImageService(!imageService)}
+                      onChange={(_ev) => setImageService(!imageService)}
                     />
                     <label htmlFor="image_service_filter">Image Service</label>
                   </li>
@@ -444,7 +472,7 @@ function SearchPanel() {
                       id="vector_tile_service_filter"
                       type="checkbox"
                       checked={vectorTileService}
-                      onChange={(ev) =>
+                      onChange={(_ev) =>
                         setVectorTileService(!vectorTileService)
                       }
                     />
@@ -459,7 +487,7 @@ function SearchPanel() {
                       id="kml_filter"
                       type="checkbox"
                       checked={kml}
-                      onChange={(ev) => setKml(!kml)}
+                      onChange={(_ev) => setKml(!kml)}
                     />
                     <label htmlFor="kml_filter">KML</label>
                   </li>
@@ -470,7 +498,7 @@ function SearchPanel() {
                       id="wms_filter"
                       type="checkbox"
                       checked={wms}
-                      onChange={(ev) => setWms(!wms)}
+                      onChange={(_ev) => setWms(!wms)}
                     />
                     <label htmlFor="wms_filter">WMS</label>
                   </li>
@@ -541,7 +569,7 @@ function SearchPanel() {
                     setShowSortOptions(false);
                     setSortOrder('desc');
                     setSortBy({
-                      value: 'avgrating',
+                      value: 'avg-rating',
                       label: 'Rating',
                       defaultSort: 'desc',
                     });
@@ -556,7 +584,7 @@ function SearchPanel() {
                     setShowSortOptions(false);
                     setSortOrder('desc');
                     setSortBy({
-                      value: 'numviews',
+                      value: 'num-views',
                       label: 'Views',
                       defaultSort: 'desc',
                     });
@@ -641,12 +669,17 @@ function SearchPanel() {
   );
 }
 
-const cardContainerStyles = css`
+interface CardContainerDivProps {
+  width: number;
+}
+
+const CardContainerDiv = styled.div<CardContainerDivProps>`
   min-height: 70px;
   padding: 5px;
   border: 1px solid #e0e0e0;
   background-color: white;
-  display: ${({ width }) => (width > 200 || width === 0 ? 'block' : 'flex')};
+  display: ${({ width }: { width: number }) =>
+    width > 200 || width === 0 ? 'block' : 'flex'};
   flex-flow: column;
 `;
 
@@ -711,7 +744,7 @@ const cardLinkStyles = css`
 
 // --- components (ResultCard) ---
 type ResultCardProps = {
-  result: any,
+  result: any;
 };
 
 function ResultCard({ result }: ResultCardProps) {
@@ -730,7 +763,7 @@ function ResultCard({ result }: ResultCardProps) {
 
   // removes the esri watch handle when the card is removed from the DOM.
   const [status, setStatus] = useState('');
-  const [watcher, setWatcher] = useState(null);
+  const [watcher, setWatcher] = useState<__esri.WatchHandle | null>(null);
   useEffect(() => {
     return function cleanup() {
       if (watcher) watcher.remove();
@@ -749,8 +782,13 @@ function ResultCard({ result }: ResultCardProps) {
       portalItem: new PortalItem({
         id: result.id,
       }),
-    }).then((layer) => {
+    }).then((layer: Layer | TileLayer | GroupLayer) => {
       // setup the watch event to see when the layer finishes loading
+      function isTileLayer(
+        layer: Layer | TileLayer | GroupLayer,
+      ): layer is TileLayer {
+        return (layer as TileLayer).type === 'tile';
+      }
       const newWatcher = watchUtils.watch(
         layer,
         'loadStatus',
@@ -760,7 +798,7 @@ function ResultCard({ result }: ResultCardProps) {
             setStatus('');
 
             // set the min/max scale for tile layers
-            if (layer.type === 'tile') {
+            if (isTileLayer(layer)) {
               const tileLayer = layer;
               tileLayer.minScale = 0;
               tileLayer.maxScale = 0;
@@ -770,13 +808,13 @@ function ResultCard({ result }: ResultCardProps) {
               layer.visible = true;
 
               // make all child layers visible, if applicable
-              if (layer.layers) {
-                layer.layers.items.forEach((tempLayer) => {
+              if ('layers' in layer) {
+                layer.layers.forEach((tempLayer: Layer) => {
                   tempLayer.visible = true;
                 });
               }
-              if (layer.sublayers) {
-                layer.sublayers.items.forEach((tempLayer) => {
+              if ('sublayers' in layer) {
+                layer.sublayers.forEach((tempLayer: Sublayer) => {
                   tempLayer.visible = true;
                 });
               }
@@ -790,7 +828,10 @@ function ResultCard({ result }: ResultCardProps) {
       setWatcher(newWatcher);
 
       // add the layer to the map
-      setWidgetLayers((currentWidgetLayers) => [...currentWidgetLayers, layer]);
+      setWidgetLayers((currentWidgetLayers: WidgetLayer[]) => [
+        ...currentWidgetLayers,
+        layer,
+      ]);
     });
   }
 
@@ -824,7 +865,7 @@ function ResultCard({ result }: ResultCardProps) {
 
   // Updates the styles when the add data widget shrinks below
   // 200 pixels wide
-  const cardRef = useRef();
+  const cardRef = useRef<HTMLDivElement | null>(null);
   const [cardWidth, setCardWidth] = useState(0);
   useEffect(() => {
     if (!cardRef?.current) return;
@@ -837,7 +878,7 @@ function ResultCard({ result }: ResultCardProps) {
   }, [cardRef]);
 
   return (
-    <div css={cardContainerStyles} ref={cardRef} width={cardWidth}>
+    <CardContainerDiv ref={cardRef} width={cardWidth}>
       <img
         css={cardThumbnailStyles}
         src={result.thumbnailUrl}
@@ -896,7 +937,7 @@ function ResultCard({ result }: ResultCardProps) {
           Exit
         </a>
       </div>
-    </div>
+    </CardContainerDiv>
   );
 }
 

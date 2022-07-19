@@ -39,7 +39,7 @@ import {
   useFetchedDataDispatch,
   useFetchedDataState,
 } from 'contexts/FetchedData';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 import {
   useOrganizationsContext,
   useServicesContext,
@@ -230,7 +230,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     waterbodyCountMismatch,
     setWaterbodyCountMismatch,
     usgsStreamgagesLayer,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const stateNationalUses = useStateNationalUsesContext();
 

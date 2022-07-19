@@ -15,7 +15,7 @@ import Switch from 'components/shared/Switch';
 import { PinIcon } from 'components/shared/Icons';
 // contexts
 import { CommunityTabsContext } from 'contexts/CommunityTabs';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 // config
 import { tabs } from 'config/communityConfig.js';
 // styles
@@ -349,7 +349,7 @@ function CommunityTabs() {
     setShowAllPolluted,
     setPollutionParameters,
     setDrinkingWaterTabIndex,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   // redirect to overview tab if tabName param wasn't provided in the url
   // (e.g. '/community/20001' redirects to '/community/20001/overview')

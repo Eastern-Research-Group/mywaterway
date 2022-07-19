@@ -17,7 +17,7 @@ import * as watchUtils from '@arcgis/core/core/watchUtils';
 // components
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 import { useServicesContext } from 'contexts/LookupFiles';
 // helpers
 import { useKeyPress } from 'utils/hooks';
@@ -178,7 +178,7 @@ function LocationSearch({ route, label }: Props) {
   const sourceEnterPress = useKeyPress('Enter', sourceList);
   const clearButton = useRef();
   const clearEnterPress = useKeyPress('Enter', clearButton);
-  const { searchText, watershed, huc12 } = useContext(LocationSearchContext);
+  const { searchText, watershed, huc12 } = useLocationSearchContext();
 
   const placeholder = 'Search by address, zip code, or place...';
   const [allSources] = useState([

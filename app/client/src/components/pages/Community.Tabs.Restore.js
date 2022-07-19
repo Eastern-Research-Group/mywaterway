@@ -18,7 +18,7 @@ import {
   keyMetricLabelStyles,
 } from 'components/shared/KeyMetrics';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 // utilities
 import { getUrlFromMarkup, getTitleFromMarkup } from 'components/shared/Regex';
 import { useWaterbodyOnMap } from 'utils/hooks';
@@ -53,7 +53,7 @@ function Restore() {
     setVisibleLayers,
     watershed,
     waterbodyLayer,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   // draw the waterbody on the map
   useWaterbodyOnMap('restoreTab', 'overallstatus');

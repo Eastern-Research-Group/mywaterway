@@ -12,7 +12,7 @@ import SearchPanel from 'components/shared/AddDataWidget.SearchPanel';
 import URLPanel from 'components/shared/AddDataWidget.URLPanel';
 // contexts
 import { AddDataWidgetContext } from 'contexts/AddDataWidget';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 
 // --- styles (AddData) ---
 const containerStyles = css`
@@ -154,7 +154,7 @@ const layerIconButtonStyles = css`
 
 // --- components (AddData) ---
 function AddDataWidget() {
-  const { mapView } = useContext(LocationSearchContext);
+  const { mapView } = useLocationSearchContext();
   const {
     setAddDataWidgetVisible,
     pageNumber,

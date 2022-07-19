@@ -3,8 +3,8 @@
 import React, { useContext } from 'react';
 import { css } from 'styled-components/macro';
 // contexts
-import { LocationSearchContext } from 'contexts/locationSearch';
-import { MapHighlightContext } from 'contexts/MapHighlight';
+import { useLocationSearchContext } from 'contexts/locationSearch';
+import { useMapHighlightContext } from 'contexts/MapHighlight';
 // styles
 import { colors } from 'styles/index.js';
 
@@ -46,11 +46,9 @@ function ViewOnMapButton({
   onClick,
   disabled = false,
 }: Props) {
-  const { pointsLayer, linesLayer, areasLayer } = useContext(
-    LocationSearchContext,
-  );
+  const { pointsLayer, linesLayer, areasLayer } = useLocationSearchContext();
 
-  const { setSelectedGraphic } = useContext(MapHighlightContext);
+  const { setSelectedGraphic } = useMapHighlightContext();
 
   function viewClick(featureParam) {
     // update context with the new selected graphic

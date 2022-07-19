@@ -9,8 +9,8 @@ import * as webMercatorUtils from '@arcgis/core/geometry/support/webMercatorUtil
 // contexts
 import { useFetchedDataDispatch } from 'contexts/FetchedData';
 import { FullscreenContext } from 'contexts/Fullscreen';
-import { MapHighlightContext } from 'contexts/MapHighlight';
-import { LocationSearchContext } from 'contexts/locationSearch';
+import { useMapHighlightContext } from 'contexts/MapHighlight';
+import { useLocationSearchContext } from 'contexts/locationSearch';
 import { useServicesContext } from 'contexts/LookupFiles';
 // config
 import { monitoringClusterSettings } from 'components/shared/LocationMap';
@@ -68,7 +68,7 @@ function MapMouseEvents({ view }: Props) {
 
   const services = useServicesContext();
   const { setHighlightedGraphic, setSelectedGraphic } =
-    useContext(MapHighlightContext);
+    useMapHighlightContext();
 
   const {
     getHucBoundaries,
@@ -77,7 +77,7 @@ function MapMouseEvents({ view }: Props) {
     monitoringLocationsLayer,
     resetData,
     protectedAreasLayer,
-  } = useContext(LocationSearchContext);
+  } = useLocationSearchContext();
 
   const { fullscreenActive } = useContext(FullscreenContext);
 

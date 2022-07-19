@@ -1,5 +1,5 @@
 import Extent from '@arcgis/core/geometry/Extent';
-import { Component, createContext } from 'react';
+import { Component, createContext, useContext } from 'react';
 // types
 import type { ReactNode } from 'react';
 import type Basemap from '@arcgis/core/Basemap';
@@ -13,8 +13,6 @@ import type FeatureSet from '@arcgis/core/rest/support/FeatureSet';
 import type Viewpoint from '@arcgis/core/Viewpoint';
 import type MapView from '@arcgis/core/views/MapView';
 import type Home from '@arcgis/core/widgets/Home';
-
-export const LocationSearchContext = createContext({});
 
 /*
  * Types
@@ -490,6 +488,8 @@ type WsioHealthIndexDataState =
       status: 'success';
       data: Array<{ states: string; phwaHealthNdxSt: number }>;
     };
+
+const LocationSearchContext = createContext<State | undefined>(undefined);
 
 export class LocationSearchProvider extends Component<Props, State> {
   state: State = {
@@ -1038,4 +1038,14 @@ export class LocationSearchProvider extends Component<Props, State> {
       </LocationSearchContext.Provider>
     );
   }
+}
+
+export function useLocationSearchContext() {
+  const context = useContext(LocationSearchContext);
+  if (context === undefined) {
+    throw new Error(
+      'useLocationSearchContext must be called within a LocationSearchProvider',
+    );
+  }
+  return context;
 }
