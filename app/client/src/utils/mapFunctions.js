@@ -12,6 +12,8 @@ import WaterbodyIcon from 'components/shared/WaterbodyIcon';
 import { colors } from 'styles/index.js';
 // utilities
 import { getSelectedCommunityTab } from 'utils/utils';
+// types
+import type { ClickedHucState } from 'types';
 
 const waterbodyStatuses = {
   good: { condition: 'good', label: 'Good' },
@@ -590,12 +592,12 @@ export function getPopupContent({
   navigate,
 }: {
   feature: Object,
-  fieldName: ?string,
-  extraContent: ?Object,
-  getClickedHuc: ?Function,
-  resetData: ?Function,
-  services: ?Object,
-  fields: ?Object,
+  fieldName?: string,
+  extraContent?: Object,
+  getClickedHuc?: Promise<ClickedHucState> | null,
+  resetData?: Function,
+  services?: Object,
+  fields?: Object,
   navigate: Function,
 }) {
   let type = 'Unknown';

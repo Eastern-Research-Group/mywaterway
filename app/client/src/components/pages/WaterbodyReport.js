@@ -29,7 +29,7 @@ import {
   boxSectionStyles,
 } from 'components/shared/Box';
 // contexts
-import { FullscreenContext, FullscreenProvider } from 'contexts/Fullscreen';
+import { useFullscreenContext, FullscreenProvider } from 'contexts/Fullscreen';
 import { MapHighlightProvider } from 'contexts/MapHighlight';
 import { useServicesContext } from 'contexts/LookupFiles';
 // utilities
@@ -206,18 +206,16 @@ const disclaimerStyles = css`
   display: inline-block;
 `;
 
-type Props = {
-  fullscreen: Object,
-};
-
 const conditions = {
   impaired: 'Impaired (Issues Identified)',
   good: 'Good',
   unknown: 'Condition Unknown',
 };
 
-function WaterbodyReport({ fullscreen }: Props) {
+function WaterbodyReport() {
   const { orgId, auId, reportingCycle } = useParams();
+
+  const { fullscreenActive } = useFullscreenContext();
 
   const services = useServicesContext();
 
@@ -234,7 +232,7 @@ function WaterbodyReport({ fullscreen }: Props) {
   });
   const [monitoringLocations, setMonitoringLocations] = useState({
     status: 'fetching',
-    data: [],
+    data: {},
   });
   const [mapLayer, setMapLayer] = useState({
     status: 'fetching',
@@ -278,7 +276,7 @@ function WaterbodyReport({ fullscreen }: Props) {
 
         // return early if no monitoring stations were returned
         if (monitoringStations.length === 0) {
-          setMonitoringLocations({ status: 'success', data: [] });
+          setMonitoringLocations({ status: 'success', data: {} });
           return;
         }
 
@@ -329,7 +327,7 @@ function WaterbodyReport({ fullscreen }: Props) {
             setMonitoringLocations({ status: 'success', data: locations });
           },
           (err) => {
-            setMonitoringLocations({ status: 'failure', data: [] });
+            setMonitoringLocations({ status: 'failure', data: {} });
             console.error(err);
           },
         );
@@ -1024,7 +1022,7 @@ function WaterbodyReport({ fullscreen }: Props) {
     );
   }
 
-  if (fullscreen.fullscreenActive) {
+  if (fullscreenActive) {
     return (
       <WindowSize>
         {({ width, height }) => {
@@ -1533,9 +1531,7 @@ export default function WaterbodyReportContainer() {
   return (
     <MapHighlightProvider>
       <FullscreenProvider>
-        <FullscreenContext.Consumer>
-          {(fullscreen) => <WaterbodyReport fullscreen={fullscreen} />}
-        </FullscreenContext.Consumer>
+        <WaterbodyReport />
       </FullscreenProvider>
     </MapHighlightProvider>
   );

@@ -410,13 +410,21 @@ function indicesOf(text: string, searchString: string) {
 }
 
 // Parses ArcGIS attributes including stringified JSON
-function parseAttributes(structuredAttributes: any, attributes: any) {
-  const parsed: any = {};
+function parseAttributes<Type>(
+  structuredAttributes: string[],
+  attributes: Type,
+): Type {
+  const parsed: {
+    [property: string]: Type[keyof Type];
+  } = {};
   for (const property of structuredAttributes) {
-    try {
-      parsed[property] = JSON.parse(attributes[property]);
-    } catch {
-      parsed[property] = attributes[property];
+    if (property in attributes) {
+      const value = attributes[property as keyof Type];
+      if (typeof value === 'string') {
+        parsed[property] = JSON.parse(value);
+      } else {
+        parsed[property] = value;
+      }
     }
   }
   return { ...attributes, ...parsed };

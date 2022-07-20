@@ -13,10 +13,11 @@ import type FeatureSet from '@arcgis/core/rest/support/FeatureSet';
 import type Viewpoint from '@arcgis/core/Viewpoint';
 import type MapView from '@arcgis/core/views/MapView';
 import type Home from '@arcgis/core/widgets/Home';
+import type { MonitoringFeatureUpdates } from 'types';
 
 /*
- * Types
- */
+## types
+*/
 interface AnnualStationData {
   uniqueId: string;
   stationTotalMeasurements: number;
@@ -53,7 +54,9 @@ type FeaturesDataState =
   | { status: 'failure'; data: [] }
   | { status: 'success'; data: Graphic[] };
 
-type FetchDataState = { status: Status; data: Object };
+type FetchDataState<Type> =
+  | { status: 'idle' | 'fetching' | 'failure'; data: {} }
+  | { status: 'success'; data: Type };
 
 type FishingInfoState =
   | { status: 'fetching'; data: [] }
@@ -154,12 +157,6 @@ type Huc12SummaryData = {
   }[];
 };
 
-interface MonitoringFeatureUpdate {
-  stationTotalMeasurements: number;
-  stationTotalsByGroup: { [group: string]: number };
-  timeframe: [number, number];
-}
-
 type MonitoringLocationGroups = {
   [label: string]: {
     label: string;
@@ -234,10 +231,6 @@ type PermittedDischargersData = {
   };
 };
 
-type Props = {
-  children: ReactNode;
-};
-
 type ProtectedAreasDataState =
   | { status: 'fetching'; data: []; fields: [] }
   | { status: 'failure'; data: []; fields: [] }
@@ -253,7 +246,7 @@ type State = {
   assessmentUnitId: string;
   assessmentUnitIds: string[];
   atHucBoundaries: boolean;
-  attainsPlans: FetchDataState;
+  attainsPlans: FetchDataState<Object>;
   basemap: Basemap | string;
   boundariesLayer: GraphicsLayer | null;
   cipSummary: { status: Status; data: Huc12SummaryData | {} };
@@ -277,7 +270,7 @@ type State = {
   linesData: { features: Graphic[] } | null;
   linesLayer: FeatureLayer | null;
   mapView: MapView | null;
-  monitoringLocations: { status: Status; data: MonitoringLocationsData | {} };
+  monitoringLocations: FetchDataState<MonitoringLocationsData>;
   monitoringLocationsLayer: FeatureLayer | null;
   nonprofits: Object;
   nonprofitsLayer: GraphicsLayer | null;
@@ -285,7 +278,7 @@ type State = {
     status: 'fetching' | 'error' | 'success';
     features: Graphic[];
   };
-  permittedDischargers: { status: Status; data: PermittedDischargersData | {} };
+  permittedDischargers: FetchDataState<PermittedDischargersData>;
   pointsData: { features: Graphic[] } | null;
   pointsLayer: FeatureLayer | null;
   protectedAreasData: ProtectedAreasDataState;
@@ -317,9 +310,7 @@ type State = {
 
   // monitoring panel
   monitoringGroups: MonitoringLocationGroups;
-  monitoringFeatureUpdates: {
-    [locationId: string]: MonitoringFeatureUpdate;
-  } | null;
+  monitoringFeatureUpdates: MonitoringFeatureUpdates;
 
   // identified issues panel
   showDischargers: boolean;
@@ -353,7 +344,7 @@ type State = {
   setAssessmentUnitId: (assessmentUnitId: string) => void;
   setAssessmentUnitIds: (assessmentUnitIds: string[]) => void;
   setAtHucBoundaries: (atHucBoundaries: boolean) => void;
-  setAttainsPlans: (attainsPlans: FetchDataState) => void;
+  setAttainsPlans: (attainsPlans: FetchDataState<Object>) => void;
   setBasemap: (basemap: Basemap | string) => void;
   setBoundariesLayer: (boundariesLayer: GraphicsLayer) => void;
   setCipSummary: (cipSummary: {
@@ -385,14 +376,13 @@ type State = {
   setLinesData: (linesData: { features: Graphic[] }) => void;
   setLinesLayer: (linesLayer: FeatureLayer) => void;
   setMapView: (mapView: MapView | null) => void;
-  setMonitoringFeatureUpdates: (monitoringFeatureUpdates: {
-    [locationId: string]: MonitoringFeatureUpdate;
-  }) => void;
+  setMonitoringFeatureUpdates: (
+    monitoringFeatureUpdates: MonitoringFeatureUpdates,
+  ) => void;
   setMonitoringGroups: (monitoringGroups: MonitoringLocationGroups) => void;
-  setMonitoringLocations: (monitoringLocations: {
-    status: Status;
-    data: MonitoringLocationsData;
-  }) => void;
+  setMonitoringLocations: (
+    monitoringLocations: FetchDataState<MonitoringLocationsData>,
+  ) => void;
   setMonitoringLocationsLayer: (monitoringLocationsLayer: FeatureLayer) => void;
   setNoDataAvailable: () => void;
   setNonprofits: (nonprofits: Object) => void;
@@ -401,10 +391,9 @@ type State = {
     status: 'fetching' | 'error' | 'success';
     features: Graphic[];
   }) => void;
-  setPermittedDischargers: (permittedDischargers: {
-    status: Status;
-    data: PermittedDischargersData;
-  }) => void;
+  setPermittedDischargers: (
+    permittedDischargers: FetchDataState<PermittedDischargersData>,
+  ) => void;
   setPointsData: (pointsData: { features: Graphic[] }) => void;
   setPointsLayer: (pointsLayer: FeatureLayer) => void;
   setPollutionParameters: (pollutionParameters: {
@@ -489,7 +478,14 @@ type WsioHealthIndexDataState =
       data: Array<{ states: string; phwaHealthNdxSt: number }>;
     };
 
+/*
+## components
+*/
 const LocationSearchContext = createContext<State | undefined>(undefined);
+
+type Props = {
+  children: ReactNode;
+};
 
 export class LocationSearchProvider extends Component<Props, State> {
   state: State = {
@@ -584,16 +580,14 @@ export class LocationSearchProvider extends Component<Props, State> {
     setLastSearchText: (lastSearchText) => {
       this.setState({ lastSearchText });
     },
-    setMonitoringLocations: (monitoringLocations: {
-      status: Status;
-      data: MonitoringLocationsData;
-    }) => {
+    setMonitoringLocations: (
+      monitoringLocations: FetchDataState<MonitoringLocationsData>,
+    ) => {
       this.setState({ monitoringLocations });
     },
-    setPermittedDischargers: (permittedDischargers: {
-      status: Status;
-      data: PermittedDischargersData;
-    }) => {
+    setPermittedDischargers: (
+      permittedDischargers: FetchDataState<PermittedDischargersData>,
+    ) => {
       this.setState({ permittedDischargers });
     },
     setNonprofits: (nonprofits: Object) => {
@@ -1016,8 +1010,8 @@ export class LocationSearchProvider extends Component<Props, State> {
         orphanFeatures: { status: 'fetching', features: [] },
         waterbodyCountMismatch: null,
         countyBoundaries: null,
-        monitoringLocations: { status: 'success', data: {} },
-        permittedDischargers: { status: 'success', data: {} },
+        monitoringLocations: { status: 'idle', data: {} },
+        permittedDischargers: { status: 'idle', data: {} },
         nonprofits: { status: 'success', data: [] },
         grts: { status: 'success', data: { items: [] } },
         attainsPlans: { status: 'success', data: {} },

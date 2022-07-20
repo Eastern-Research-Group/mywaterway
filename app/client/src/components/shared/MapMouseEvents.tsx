@@ -1,14 +1,15 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
 import Point from '@arcgis/core/geometry/Point';
+import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import Query from '@arcgis/core/rest/support/Query';
 import QueryTask from '@arcgis/core/tasks/QueryTask';
 import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 import * as webMercatorUtils from '@arcgis/core/geometry/support/webMercatorUtils';
 // contexts
 import { useFetchedDataDispatch } from 'contexts/FetchedData';
-import { FullscreenContext } from 'contexts/Fullscreen';
+import { useFullscreenContext } from 'contexts/Fullscreen';
 import { useMapHighlightContext } from 'contexts/MapHighlight';
 import { useLocationSearchContext } from 'contexts/locationSearch';
 import { useServicesContext } from 'contexts/LookupFiles';
@@ -21,9 +22,52 @@ import {
 } from 'utils/mapFunctions';
 // utilities
 import { useDynamicPopup } from 'utils/hooks';
+import { parseAttributes } from 'utils/utils';
+// types
+import type Geometry from '@arcgis/core/geometry/Geometry';
+import Polygon from '@arcgis/core/geometry/Polygon';
+import type Graphic from '@arcgis/core/Graphic';
+import type Layer from '@arcgis/core/layers/Layer';
+import type MapView from '@arcgis/core/views/MapView';
+import type { MonitoringFeatureUpdate, MonitoringFeatureUpdates } from 'types';
+
+// --- types ---
+interface ClickEvent {
+  button: number;
+  buttons: 0 | 1 | 2;
+  mapPoint: Point;
+  native: PointerEvent;
+  stopPropagation: Function;
+  type: 'click';
+  timestamp: number;
+  x: number;
+  y: number;
+}
+
+interface PointerMoveEvent {
+  button: number;
+  buttons: number;
+  eventId: number;
+  native: PointerEvent;
+  pointerId: number;
+  pointerType: 'mouse' | 'touch';
+  stopPropagation: Function;
+  timestamp: number;
+  type: 'pointer-move';
+  x: number;
+  y: number;
+}
+
+interface SubLayer extends Layer {
+  parent: Layer;
+}
 
 // --- helpers ---
-async function getClusterExtent(cluster, mapView, layer) {
+async function getClusterExtent(
+  cluster: Graphic,
+  mapView: MapView,
+  layer: FeatureLayer,
+) {
   const layerView = await mapView.whenLayerView(layer);
   const query = layerView.createQuery();
   query.aggregateIds = [cluster.getObjectId()];
@@ -32,34 +76,33 @@ async function getClusterExtent(cluster, mapView, layer) {
   return extent;
 }
 
-function parseAttributes(structuredAttributes, attributes) {
-  const parsed = {};
-  for (const property of structuredAttributes) {
-    try {
-      parsed[property] = JSON.parse(attributes[property]);
-    } catch {
-      parsed[property] = attributes[property];
-    }
-  }
-  return { ...attributes, ...parsed };
+function isPolygon(geometry: Geometry): geometry is Polygon {
+  return (geometry as Polygon).type === 'polygon';
 }
 
-function updateAttributes(graphic, updates) {
+function updateAttributes(
+  graphic: Graphic,
+  updates: MonitoringFeatureUpdates,
+): Graphic | null {
   const graphicId = graphic?.attributes?.uniqueId;
-  if (updates.current?.[graphicId]) {
-    const stationUpdates = updates.current[graphicId];
+  if (updates?.[graphicId]) {
+    const stationUpdates = updates?.[graphicId];
     Object.keys(stationUpdates).forEach((attribute) => {
-      graphic.setAttribute(attribute, stationUpdates[attribute]);
+      graphic.setAttribute(
+        attribute,
+        stationUpdates[attribute as keyof MonitoringFeatureUpdate],
+      );
     });
     return graphic;
   }
+  return null;
 }
 
 // --- components ---
 type Props = {
   // map and view props auto passed from parent Map component by react-arcgis
-  map: any,
-  view: any,
+  map: any;
+  view: any;
 };
 
 function MapMouseEvents({ view }: Props) {
@@ -79,7 +122,7 @@ function MapMouseEvents({ view }: Props) {
     protectedAreasLayer,
   } = useLocationSearchContext();
 
-  const { fullscreenActive } = useContext(FullscreenContext);
+  const { fullscreenActive } = useFullscreenContext();
 
   const getDynamicPopup = useDynamicPopup();
 
@@ -89,14 +132,14 @@ function MapMouseEvents({ view }: Props) {
       const point = new Point({
         x: event.mapPoint.longitude,
         y: event.mapPoint.latitude,
-        spatialReference: SpatialReference.WQGS84,
+        spatialReference: SpatialReference.WGS84,
       });
-      const location = webMercatorUtils.geographicToWebMercator(point);
+      const location = webMercatorUtils.geographicToWebMercator(point) as Point;
 
       // perform a hittest on the click location
       view
         .hitTest(event)
-        .then((res) => {
+        .then((res: __esri.HitTestResult) => {
           // get and update the selected graphic
           const graphic = getGraphicFromResponse(res);
 
@@ -110,6 +153,7 @@ function MapMouseEvents({ view }: Props) {
             }
 
             if (
+              monitoringLocationsLayer &&
               graphic.layer.id === 'monitoringLocationsLayer' &&
               graphic.isAggregate
             ) {
@@ -117,6 +161,9 @@ function MapMouseEvents({ view }: Props) {
               getClusterExtent(graphic, view, monitoringLocationsLayer).then(
                 (extent) => {
                   if (graphic.attributes.cluster_count <= 20) {
+                    // Initial value is null, but DefinitelyTyped FeatureLayer type
+                    // doesn't allow to be set as null after construction
+                    // @ts-ignore
                     monitoringLocationsLayer.featureReduction = null;
                   }
                   view.goTo(extent);
@@ -126,7 +173,7 @@ function MapMouseEvents({ view }: Props) {
               setSelectedGraphic(graphic);
             }
           } else {
-            setSelectedGraphic('');
+            setSelectedGraphic(null);
           }
 
           // get the currently selected huc boundaries, if applicable
@@ -137,7 +184,8 @@ function MapMouseEvents({ view }: Props) {
             !graphic &&
             (!hucBoundaries ||
               hucBoundaries.features.length === 0 ||
-              !hucBoundaries.features[0].geometry.contains(location))
+              (isPolygon(hucBoundaries.features[0].geometry) &&
+                !hucBoundaries.features[0].geometry.contains(location)))
           ) {
             //get the huc boundaries of where the user clicked
             const query = new Query({
@@ -183,7 +231,7 @@ function MapMouseEvents({ view }: Props) {
                 // if the protectedAreasLayer is not visible just open the popup
                 // like normal, otherwise query the protectedAreasLayer to see
                 // if the user clicked on a protected area
-                if (!protectedAreasLayer.visible) {
+                if (!protectedAreasLayer?.visible) {
                   openChangeLocationPopup();
                 } else {
                   // check if protected areas layer was clicked on
@@ -210,7 +258,7 @@ function MapMouseEvents({ view }: Props) {
               .catch((err) => console.error(err));
           }
         })
-        .catch((err) => console.error(err));
+        .catch((err: string) => console.error(err));
     },
     [
       fetchedDataDispatch,
@@ -233,10 +281,10 @@ function MapMouseEvents({ view }: Props) {
     // by the hitTest async events occurring out of order. The global scoped variables
     // are needed because the esri hit test event won't be able to read react state
     // variables.
-    var lastFeature = null;
+    var lastFeature: Graphic | null = null;
     var lastEventId = -1;
 
-    const handleMapMouseOver = (event, view) => {
+    const handleMapMouseOver = (event: PointerMoveEvent, view: MapView) => {
       view
         .hitTest(event)
         .then((res) => {
@@ -269,15 +317,15 @@ function MapMouseEvents({ view }: Props) {
     };
 
     // setup the mouse click and mouse over events
-    view.on('click', (event) => {
+    view.on('click', (event: ClickEvent) => {
       handleMapClick(event, view);
     });
 
-    view.on('pointer-move', (event) => {
+    view.on('pointer-move', (event: PointerMoveEvent) => {
       handleMapMouseOver(event, view);
     });
 
-    view.popup.watch('selectedFeature', (graphic) => {
+    view.popup.watch('selectedFeature', (graphic: Graphic) => {
       // set the view highlight options to 0 fill opacity if upstream watershed is selected
       if (graphic?.layer?.id === 'upstreamWatershed') {
         view.highlightOptions.fillOpacity = 0;
@@ -287,7 +335,7 @@ function MapMouseEvents({ view }: Props) {
     });
 
     // auto expands the popup when it is first opened
-    view.popup.watch('visible', (_graphic) => {
+    view.popup.watch('visible', (_graphic: Graphic) => {
       if (view.popup.visible) view.popup.collapsed = false;
     });
 
@@ -303,7 +351,7 @@ function MapMouseEvents({ view }: Props) {
 
   // reference to a dictionary of date-filtered updates
   // applicable to graphics visible on the map
-  const updates = useRef(null);
+  const updates = useRef<null | MonitoringFeatureUpdates>(null);
   useEffect(() => {
     if (view?.popup.visible) view.popup.close();
     updates.current = monitoringFeatureUpdates;
@@ -312,7 +360,7 @@ function MapMouseEvents({ view }: Props) {
   const updateSingleFeature = useCallback(
     (graphic) => {
       view.popup.clear();
-      updateAttributes(graphic, updates);
+      updateAttributes(graphic, updates.current);
       const structuredProps = ['stationTotalsByGroup', 'timeframe'];
       graphic.attributes = parseAttributes(structuredProps, graphic.attributes);
       view.popup.open({
@@ -329,7 +377,7 @@ function MapMouseEvents({ view }: Props) {
   );
 
   const updateGraphics = useCallback(
-    (graphics) => {
+    (graphics: Graphic[]) => {
       if (!updates?.current) return;
       graphics.forEach((graphic) => {
         if (
@@ -339,7 +387,7 @@ function MapMouseEvents({ view }: Props) {
           if (graphics.length === 1) {
             updateSingleFeature(graphic);
           } else {
-            updateAttributes(graphic, updates);
+            updateAttributes(graphic, updates.current);
           }
         }
       });
@@ -349,7 +397,8 @@ function MapMouseEvents({ view }: Props) {
 
   // watches for popups, and updates them if
   // they represent monitoring location features
-  const [popupWatchHandler, setPopupWatchHandler] = useState(null);
+  const [popupWatchHandler, setPopupWatchHandler] =
+    useState<__esri.WatchHandle | null>(null);
   useEffect(() => {
     return function cleanup() {
       popupWatchHandler?.remove();
@@ -358,8 +407,8 @@ function MapMouseEvents({ view }: Props) {
 
   useEffect(() => {
     if (services.status === 'fetching') return;
-    const handler = view.popup.watch('features', (graphics) => {
-      updateGraphics(graphics, updates);
+    const handler = view.popup.watch('features', (graphics: Graphic[]) => {
+      updateGraphics(graphics);
     });
     setPopupWatchHandler(handler);
     return function cleanup() {
@@ -368,7 +417,7 @@ function MapMouseEvents({ view }: Props) {
   }, [services.status, updateGraphics, view]);
 
   // recalculates stored total location count on change of location
-  const [locationCount, setLocationCount] = useState(null);
+  const [locationCount, setLocationCount] = useState<number | null>(null);
   useEffect(() => {
     if (
       monitoringLocations.status !== 'success' ||
@@ -387,12 +436,14 @@ function MapMouseEvents({ view }: Props) {
     if (!locationCount || locationCount <= 20) return;
     if (!monitoringLocationsLayer || monitoringLocationsLayer.featureReduction)
       return;
+    // @ts-ignore
     monitoringLocationsLayer.featureReduction = monitoringClusterSettings;
   }, [fullscreenActive, locationCount, monitoringLocationsLayer]);
 
   // sets a watcher on the zoom level, and restores
   // cluster settings if the user zooms out
-  const [zoomWatchHandler, setZoomWatchHandler] = useState(null);
+  const [zoomWatchHandler, setZoomWatchHandler] =
+    useState<__esri.WatchHandle | null>(null);
   useEffect(() => {
     return function cleanup() {
       zoomWatchHandler?.remove();
@@ -402,13 +453,14 @@ function MapMouseEvents({ view }: Props) {
   useEffect(() => {
     if (!locationCount || locationCount <= 20) return;
     if (!view || !monitoringLocationsLayer) return;
-    const handler = view.watch('zoom', (newZoom, oldZoom) => {
+    const handler = view.watch('zoom', (newZoom: number, oldZoom: number) => {
       if (
         !monitoringLocationsLayer ||
         monitoringLocationsLayer.featureReduction
       )
         return;
       if (newZoom < oldZoom) {
+        // @ts-ignore
         monitoringLocationsLayer.featureReduction = monitoringClusterSettings;
       }
     });
@@ -419,13 +471,14 @@ function MapMouseEvents({ view }: Props) {
   }, [locationCount, monitoringLocationsLayer, view]);
 
   function getGraphicFromResponse(
-    res: Object,
+    res: __esri.HitTestResult,
     additionalLayers: Array<string> = [],
   ) {
     if (!res.results || res.results.length === 0) return null;
 
     const match = res.results.filter((result) => {
-      const { attributes: attr, layer } = result.graphic;
+      const { attributes: attr } = result.graphic;
+      const layer = result.graphic.layer as SubLayer;
       // ignore huc 12 boundaries, map-marker, highlight and provider graphics
       const excludedLayers = [
         'stateBoundariesLayer',
@@ -437,7 +490,7 @@ function MapMouseEvents({ view }: Props) {
         'providers',
         ...additionalLayers,
       ];
-      if (!result.graphic.layer?.id) return null;
+      if (!layer?.id) return null;
       if (attr.name && excludedLayers.indexOf(attr.name) !== -1) return null;
       if (excludedLayers.indexOf(layer.id) !== -1) return null;
       if (excludedLayers.indexOf(layer.parent.id) !== -1) return null;

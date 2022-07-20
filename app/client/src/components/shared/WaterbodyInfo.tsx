@@ -15,6 +15,7 @@ import {
   convertDomainCode,
   formatNumber,
   getSelectedCommunityTab,
+  parseAttributes,
   titleCaseWithExceptions,
 } from 'utils/utils';
 // data
@@ -33,6 +34,7 @@ import type Graphic from '@arcgis/core/Graphic';
 import type Layer from '@arcgis/core/layers/Layer';
 import type { ReactNode } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
+import type { ClickedHucState } from 'types';
 
 /*
  * Helpers
@@ -943,10 +945,6 @@ function WaterbodyInfo({
   return content;
 }
 
-type ClickedHucState =
-  | { status: 'fetching' | 'no-data' | 'none' | 'failure'; data: null }
-  | { status: 'success'; data: { huc12: string; watershed: string } };
-
 type MapPopupProps = {
   type: string;
   feature: Feature;
@@ -1114,28 +1112,6 @@ interface MonitoringLocationAttributes {
   uniqueId: string;
 }
 
-function parseAttributes(
-  structuredAttributes: string[],
-  attributes: MonitoringLocationAttributes,
-): MonitoringLocationAttributes {
-  const parsed: {
-    [
-      property: string
-    ]: MonitoringLocationAttributes[keyof MonitoringLocationAttributes];
-  } = {};
-  for (const property of structuredAttributes) {
-    if (property in attributes) {
-      const value = attributes[property as keyof MonitoringLocationAttributes];
-      if (typeof value === 'string') {
-        parsed[property] = JSON.parse(value);
-      } else {
-        parsed[property] = value;
-      }
-    }
-  }
-  return { ...attributes, ...parsed };
-}
-
 interface MappedGroups {
   [groupLabel: string]: {
     characteristicGroups: string[];
@@ -1218,7 +1194,7 @@ function MonitoringLocationsContent({
 
   const structuredProps = ['stationTotalsByGroup', 'timeframe'];
 
-  const parsed = parseAttributes(structuredProps, attributes);
+  const parsed = parseAttributes<MonitoringLocationAttributes>(structuredProps, attributes);
   const {
     locationName,
     locationType,

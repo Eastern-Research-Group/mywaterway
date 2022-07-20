@@ -894,7 +894,8 @@ function MonitoringTab({ monitoringDisplayed, setMonitoringDisplayed }) {
                 <LoadingSpinner />
               ) : (
                 <DateSlider
-                  bounds={[minYear, maxYear]}
+                  max={maxYear}
+                  min={minYear}
                   disabled={!Boolean(Object.keys(annualData).length)}
                   onChange={(newRange) => setYearsRange(newRange)}
                 />

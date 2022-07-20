@@ -2,15 +2,16 @@ import { createContext, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import Graphic from '@arcgis/core/Graphic';
 
-type Props = { children: ReactNode };
 type State = {
   highlightedGraphic: Graphic | null;
   selectedGraphic: Graphic | null;
-  setHighlightedGraphic: (graphic: Graphic) => void;
-  setSelectedGraphic: (graphic: Graphic) => void;
+  setHighlightedGraphic: (graphic: Graphic | null) => void;
+  setSelectedGraphic: (graphic: Graphic | null) => void;
 };
 
 const MapHighlightContext = createContext<State | undefined>(undefined);
+
+type Props = { children: ReactNode };
 
 export function MapHighlightProvider({ children }: Props) {
   const [highlightedGraphic, setHighlightedGraphic] = useState<Graphic | null>(

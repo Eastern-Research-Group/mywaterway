@@ -31,7 +31,7 @@ import MapLegend from 'components/shared/MapLegend';
 // contexts
 import { AddDataWidgetContext } from 'contexts/AddDataWidget';
 import { useLocationSearchContext } from 'contexts/locationSearch';
-import { FullscreenContext } from 'contexts/Fullscreen';
+import { useFullscreenContext } from 'contexts/Fullscreen';
 import { useServicesContext } from 'contexts/LookupFiles';
 // utilities
 import { fetchCheck } from 'utils/fetchUtils';
@@ -278,7 +278,7 @@ function MapWidgets({
   const {
     getFullscreenActive,
     setFullscreenActive, //
-  } = useContext(FullscreenContext);
+  } = useFullscreenContext();
 
   const [mapEventHandlersSet, setMapEventHandlersSet] = useState(false);
 
@@ -308,7 +308,7 @@ function MapWidgets({
           const point = new Point({
             x: view.popup.location.longitude,
             y: view.popup.location.latitude,
-            spatialReference: SpatialReference.WQGS84,
+            spatialReference: SpatialReference.WGS84,
           });
           const location = webMercatorUtils.geographicToWebMercator(point);
 

@@ -28,7 +28,7 @@ import {
   useMapHighlightContext,
   MapHighlightProvider,
 } from 'contexts/MapHighlight';
-import { FullscreenContext } from 'contexts/Fullscreen';
+import { useFullscreenContext } from 'contexts/Fullscreen';
 import {
   useReportStatusMappingContext,
   useServicesContext,
@@ -237,7 +237,7 @@ function AdvancedSearch() {
     setStateAndOrganization,
   } = useContext(StateTribalTabsContext);
 
-  const { fullscreenActive } = useContext(FullscreenContext);
+  const { fullscreenActive } = useFullscreenContext();
 
   const {
     mapView,
