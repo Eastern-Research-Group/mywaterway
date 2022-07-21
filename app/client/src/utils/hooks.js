@@ -1,6 +1,6 @@
 // @flow
 
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
@@ -320,7 +320,7 @@ function useWaterbodyFeatures() {
       linesLayer === 'error' ||
       areasLayer === 'error' ||
       pointsLayer === 'error' ||
-      orphanFeatures.status === 'error'
+      orphanFeatures.status === 'failure'
     ) {
       if (!features || features.length !== 0) setFeatures([]);
       return;
@@ -340,11 +340,8 @@ function useWaterbodyFeatures() {
     if (pointsData.features && pointsData.features.length > 0) {
       featuresArray = featuresArray.concat(pointsData.features);
     }
-    if (
-      orphanFeatures.status === 'success' &&
-      orphanFeatures.features.length > 0
-    ) {
-      featuresArray = featuresArray.concat(orphanFeatures.features);
+    if (orphanFeatures.status === 'success' && orphanFeatures.data.length > 0) {
+      featuresArray = featuresArray.concat(orphanFeatures.data);
     }
     setFeatures(featuresArray);
   }, [

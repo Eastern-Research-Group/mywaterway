@@ -17,6 +17,7 @@ import { FetchedDataProvider } from 'contexts/FetchedData';
 // errors
 import { defaultErrorBoundaryMessage } from 'config/errorMessages';
 // styles
+// required once project-wide
 import type {} from 'styled-components/cssprop';
 
 smoothscroll.polyfill();

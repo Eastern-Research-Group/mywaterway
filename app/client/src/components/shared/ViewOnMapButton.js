@@ -1,6 +1,6 @@
 // @flow
 
-import React, { useContext } from 'react';
+import React from 'react';
 import { css } from 'styled-components/macro';
 // contexts
 import { useLocationSearchContext } from 'contexts/locationSearch';

@@ -24,11 +24,6 @@ import {
 import { useDynamicPopup } from 'utils/hooks';
 import { parseAttributes } from 'utils/utils';
 // types
-import type Geometry from '@arcgis/core/geometry/Geometry';
-import Polygon from '@arcgis/core/geometry/Polygon';
-import type Graphic from '@arcgis/core/Graphic';
-import type Layer from '@arcgis/core/layers/Layer';
-import type MapView from '@arcgis/core/views/MapView';
 import type { MonitoringFeatureUpdate, MonitoringFeatureUpdates } from 'types';
 
 // --- types ---
@@ -58,14 +53,14 @@ interface PointerMoveEvent {
   y: number;
 }
 
-interface SubLayer extends Layer {
-  parent: Layer;
+interface SubLayer extends __esri.Layer {
+  parent: __esri.Layer;
 }
 
 // --- helpers ---
 async function getClusterExtent(
-  cluster: Graphic,
-  mapView: MapView,
+  cluster: __esri.Graphic,
+  mapView: __esri.MapView,
   layer: FeatureLayer,
 ) {
   const layerView = await mapView.whenLayerView(layer);
@@ -76,14 +71,14 @@ async function getClusterExtent(
   return extent;
 }
 
-function isPolygon(geometry: Geometry): geometry is Polygon {
-  return (geometry as Polygon).type === 'polygon';
+function isPolygon(geometry: __esri.Geometry): geometry is __esri.Polygon {
+  return (geometry as __esri.Polygon).type === 'polygon';
 }
 
 function updateAttributes(
-  graphic: Graphic,
+  graphic: __esri.Graphic,
   updates: MonitoringFeatureUpdates,
-): Graphic | null {
+): __esri.Graphic | null {
   const graphicId = graphic?.attributes?.uniqueId;
   if (updates?.[graphicId]) {
     const stationUpdates = updates?.[graphicId];
@@ -281,10 +276,13 @@ function MapMouseEvents({ view }: Props) {
     // by the hitTest async events occurring out of order. The global scoped variables
     // are needed because the esri hit test event won't be able to read react state
     // variables.
-    var lastFeature: Graphic | null = null;
+    var lastFeature: __esri.Graphic | null = null;
     var lastEventId = -1;
 
-    const handleMapMouseOver = (event: PointerMoveEvent, view: MapView) => {
+    const handleMapMouseOver = (
+      event: PointerMoveEvent,
+      view: __esri.MapView,
+    ) => {
       view
         .hitTest(event)
         .then((res) => {
@@ -325,7 +323,7 @@ function MapMouseEvents({ view }: Props) {
       handleMapMouseOver(event, view);
     });
 
-    view.popup.watch('selectedFeature', (graphic: Graphic) => {
+    view.popup.watch('selectedFeature', (graphic: __esri.Graphic) => {
       // set the view highlight options to 0 fill opacity if upstream watershed is selected
       if (graphic?.layer?.id === 'upstreamWatershed') {
         view.highlightOptions.fillOpacity = 0;
@@ -335,7 +333,7 @@ function MapMouseEvents({ view }: Props) {
     });
 
     // auto expands the popup when it is first opened
-    view.popup.watch('visible', (_graphic: Graphic) => {
+    view.popup.watch('visible', (_graphic: __esri.Graphic) => {
       if (view.popup.visible) view.popup.collapsed = false;
     });
 
@@ -377,7 +375,7 @@ function MapMouseEvents({ view }: Props) {
   );
 
   const updateGraphics = useCallback(
-    (graphics: Graphic[]) => {
+    (graphics: __esri.Graphic[]) => {
       if (!updates?.current) return;
       graphics.forEach((graphic) => {
         if (
@@ -407,9 +405,12 @@ function MapMouseEvents({ view }: Props) {
 
   useEffect(() => {
     if (services.status === 'fetching') return;
-    const handler = view.popup.watch('features', (graphics: Graphic[]) => {
-      updateGraphics(graphics);
-    });
+    const handler = view.popup.watch(
+      'features',
+      (graphics: __esri.Graphic[]) => {
+        updateGraphics(graphics);
+      },
+    );
     setPopupWatchHandler(handler);
     return function cleanup() {
       setPopupWatchHandler(null);

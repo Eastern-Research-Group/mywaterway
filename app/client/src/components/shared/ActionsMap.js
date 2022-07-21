@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { css } from 'styled-components/macro';
 import { useNavigate } from 'react-router-dom';
 import Graphic from '@arcgis/core/Graphic';

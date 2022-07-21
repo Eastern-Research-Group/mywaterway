@@ -1,12 +1,6 @@
 // @flow
 
-import React, {
-  Fragment,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 import { css } from 'styled-components/macro';
 import { useNavigate } from 'react-router-dom';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';

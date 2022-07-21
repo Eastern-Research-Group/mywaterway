@@ -18,10 +18,7 @@ import { webServiceErrorMessage } from 'config/errorMessages';
 // styles
 import { reactSelectStyles } from 'styles/index.js';
 // types
-import type { WidgetLayer } from 'contexts/AddDataWidget';
-import type GroupLayer from '@arcgis/core/layers/GroupLayer';
-import type Sublayer from '@arcgis/core/layers/support/Sublayer';
-import type TileLayer from '@arcgis/core/layers/TileLayer';
+import type { WidgetLayer } from 'types';
 
 const searchFlexBoxStyles = css`
   display: flex;
@@ -782,12 +779,12 @@ function ResultCard({ result }: ResultCardProps) {
       portalItem: new PortalItem({
         id: result.id,
       }),
-    }).then((layer: Layer | TileLayer | GroupLayer) => {
+    }).then((layer: Layer | __esri.TileLayer | __esri.GroupLayer) => {
       // setup the watch event to see when the layer finishes loading
       function isTileLayer(
-        layer: Layer | TileLayer | GroupLayer,
-      ): layer is TileLayer {
-        return (layer as TileLayer).type === 'tile';
+        layer: Layer | __esri.TileLayer | __esri.GroupLayer,
+      ): layer is __esri.TileLayer {
+        return (layer as __esri.TileLayer).type === 'tile';
       }
       const newWatcher = watchUtils.watch(
         layer,
@@ -814,7 +811,7 @@ function ResultCard({ result }: ResultCardProps) {
                 });
               }
               if ('sublayers' in layer) {
-                layer.sublayers.forEach((tempLayer: Sublayer) => {
+                layer.sublayers.forEach((tempLayer: __esri.Sublayer) => {
                   tempLayer.visible = true;
                 });
               }

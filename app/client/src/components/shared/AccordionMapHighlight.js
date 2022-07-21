@@ -1,6 +1,6 @@
 // @flow
 
-import React, { useContext, useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { Node } from 'react';
 // components
 import {

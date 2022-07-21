@@ -30,8 +30,6 @@ import {
   modifiedTableStyles,
 } from 'styles/index.js';
 // types
-import type Graphic from '@arcgis/core/Graphic';
-import type Layer from '@arcgis/core/layers/Layer';
 import type { ReactNode } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import type { ClickedHucState } from 'types';
@@ -296,8 +294,8 @@ type AttainsProjectsState =
   | { status: 'failure'; data: [] }
   | { status: 'success'; data: AttainsProjectsDatum[] };
 
-interface Feature extends Graphic {
-  layer: Layer & {
+interface Feature extends __esri.Graphic {
+  layer: __esri.Layer & {
     renderer?: {
       classBreakInfos?: Array<{
         minValue: number;
@@ -1194,7 +1192,10 @@ function MonitoringLocationsContent({
 
   const structuredProps = ['stationTotalsByGroup', 'timeframe'];
 
-  const parsed = parseAttributes<MonitoringLocationAttributes>(structuredProps, attributes);
+  const parsed = parseAttributes<MonitoringLocationAttributes>(
+    structuredProps,
+    attributes,
+  );
   const {
     locationName,
     locationType,

@@ -11,3 +11,7 @@ export interface MonitoringFeatureUpdate {
 export type MonitoringFeatureUpdates = {
   [locationId: string]: MonitoringFeatureUpdate;
 } | null;
+
+export interface WidgetLayer extends __esri.Layer {
+  portalItem?: __esri.PortalItem;
+}

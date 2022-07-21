@@ -1,6 +1,6 @@
 // @flow
 
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Node } from 'react';
 import { css } from 'styled-components/macro';
 import EsriMap from '@arcgis/core/Map';

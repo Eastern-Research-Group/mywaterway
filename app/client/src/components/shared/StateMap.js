@@ -1,12 +1,6 @@
 // @flow
 
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { Node } from 'react';
 import { css } from 'styled-components/macro';
 import StickyBox from 'react-sticky-box';

@@ -275,10 +275,7 @@ function MapWidgets({
   const getDynamicPopup = useDynamicPopup();
   const { getTemplate } = getDynamicPopup();
 
-  const {
-    getFullscreenActive,
-    setFullscreenActive, //
-  } = useFullscreenContext();
+  const { fullscreenActive, setFullscreenActive } = useFullscreenContext();
 
   const [mapEventHandlersSet, setMapEventHandlersSet] = useState(false);
 
@@ -888,7 +885,7 @@ function MapWidgets({
     render(
       <ExpandCollapse
         scrollToComponent={scrollToComponent}
-        fullscreenActive={getFullscreenActive}
+        fullscreenActive={fullscreenActive}
         setFullscreenActive={setFullscreenActive}
         mapViewSetter={setMapView}
       />,
@@ -896,7 +893,7 @@ function MapWidgets({
     );
     setFullScreenWidgetCreated(true);
   }, [
-    getFullscreenActive,
+    fullscreenActive,
     setFullscreenActive,
     scrollToComponent,
     view,
@@ -1523,7 +1520,7 @@ function ExpandCollapse({
   return (
     <div
       title={
-        fullscreenActive()
+        fullscreenActive
           ? 'Exit Fullscreen Map View'
           : 'Enter Fullscreen Map View'
       }
@@ -1532,19 +1529,19 @@ function ExpandCollapse({
       onMouseOut={() => setHover(false)}
       onClick={(ev) => {
         // Toggle scroll bars
-        document.documentElement.style.overflow = fullscreenActive()
+        document.documentElement.style.overflow = fullscreenActive
           ? 'auto'
           : 'hidden';
 
         // Toggle fullscreen mode
-        setFullscreenActive(!fullscreenActive());
+        setFullscreenActive(!fullscreenActive);
 
         mapViewSetter(null);
       }}
     >
       <span
         className={
-          fullscreenActive()
+          fullscreenActive
             ? 'esri-icon esri-icon-zoom-in-fixed'
             : 'esri-icon esri-icon-zoom-out-fixed'
         }

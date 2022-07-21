@@ -1,12 +1,6 @@
 // @flow
 
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Node } from 'react';
 import { render } from 'react-dom';
 import { css } from 'styled-components/macro';
@@ -225,7 +219,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     setErrorMessage,
     setWsioHealthIndexData,
     setWildScenicRiversData,
-    setProtectedAreasData,
+    setProtectedAreas,
     getAllFeatures,
     waterbodyCountMismatch,
     setWaterbodyCountMismatch,
@@ -466,14 +460,14 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
       Promise.all(requests)
         .then((responses) => {
           if (!responses) {
-            setOrphanFeatures({ features: [], status: 'error' });
+            setOrphanFeatures({ data: [], status: 'failure' });
             return;
           }
 
           let orphans = [];
           responses.forEach((response) => {
             if (!response || !response.items || response.items.length === 0) {
-              setOrphanFeatures({ features: [], status: 'error' });
+              setOrphanFeatures({ data: [], status: 'failure' });
               return;
             }
 
@@ -486,13 +480,13 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
           });
 
           setOrphanFeatures({
-            features: orphans,
+            data: orphans,
             status: 'success',
           });
         })
         .catch((err) => {
           console.error(err);
-          setOrphanFeatures({ features: [], status: 'error' });
+          setOrphanFeatures({ data: [], status: 'failure' });
         });
     },
     [createDetailedOrphanFeatures, organizations, services, setOrphanFeatures],
@@ -544,7 +538,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
           exFatal: false,
         });
 
-        setOrphanFeatures({ features: [], status: 'fetching' });
+        setOrphanFeatures({ data: [], status: 'fetching' });
 
         // fetch the ATTAINS Domains service Parameter Names so we can populate the Waterbody Parameters later on
         fetchCheck(
@@ -552,7 +546,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
         )
           .then((res) => {
             if (!res || res.length === 0) {
-              setOrphanFeatures({ features: [], status: 'error' });
+              setOrphanFeatures({ data: [], status: 'failure' });
               return;
             }
 
@@ -569,19 +563,19 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
                   !resUnits.items ||
                   resUnits.items.length === 0
                 ) {
-                  setOrphanFeatures({ features: [], status: 'error' });
+                  setOrphanFeatures({ data: [], status: 'failure' });
                   return;
                 }
                 handleOrphanedFeatures(resUnits, attainsDomainsData, orphanIDs);
               })
               .catch((err) => {
                 console.error(err);
-                setOrphanFeatures({ features: [], status: 'error' });
+                setOrphanFeatures({ data: [], status: 'failure' });
               });
           })
           .catch((err) => {
             console.error(err);
-            setOrphanFeatures({ features: [], status: 'error' });
+            setOrphanFeatures({ data: [], status: 'failure' });
           });
       } else {
         setWaterbodyCountMismatch(false);
@@ -1040,7 +1034,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     linesLayer === 'error' ||
     areasLayer === 'error' ||
     pointsLayer === 'error' ||
-    orphanFeatures.status === 'error';
+    orphanFeatures.status === 'failure';
 
   // Builds the waterbody layer once data has been fetched for all sub layers
   useEffect(() => {
@@ -1500,9 +1494,8 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
         !boundaries.features ||
         boundaries.features.length === 0
       ) {
-        setProtectedAreasData({
-          data: [],
-          fields: [],
+        setProtectedAreas({
+          data: {},
           status: 'success',
         });
         return;
@@ -1510,9 +1503,8 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
 
       function onError(error) {
         console.error(error);
-        setProtectedAreasData({
-          data: [],
-          fields: [],
+        setProtectedAreas({
+          data: {},
           status: 'failure',
         });
       }
@@ -1526,9 +1518,8 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
             outFields: ['*'],
           });
 
-          setProtectedAreasData({
-            data: [],
-            fields: [],
+          setProtectedAreas({
+            data: {},
             status: 'fetching',
           });
 
@@ -1545,9 +1536,8 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
               });
 
               setDynamicPopupFields(layerInfo.fields);
-              setProtectedAreasData({
-                data: res.features,
-                fields: layerInfo.fields,
+              setProtectedAreas({
+                data: { features: res.features, fields: layerInfo.fields },
                 status: 'success',
               });
             })
@@ -1555,7 +1545,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
         })
         .catch(onError);
     },
-    [services, setProtectedAreasData, setDynamicPopupFields],
+    [services, setProtectedAreas, setDynamicPopupFields],
   );
 
   const handleMapServices = useCallback(
@@ -1853,9 +1843,8 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
           });
 
           setFIPS({
-            stateCode: '',
-            countyCode: '',
             status: 'fetching',
+            data: {},
           });
 
           new QueryTask({ url: `${services.data.counties}/query` })
@@ -1871,14 +1860,12 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
                 const countyCode =
                   countiesRes.features[0].attributes.FIPS.substring(2, 5);
                 setFIPS({
-                  stateCode: stateCode,
-                  countyCode: countyCode,
+                  data: { stateCode: stateCode, countyCode: countyCode },
                   status: 'success',
                 });
               } else {
                 setFIPS({
-                  stateCode: '',
-                  countyCode: '',
+                  data: {},
                   status: 'failure',
                 });
               }
@@ -1894,8 +1881,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
                 status: 'failure',
               });
               setFIPS({
-                stateCode: '',
-                countyCode: '',
+                data: {},
                 status: 'failure',
               });
             });
@@ -2087,11 +2073,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
       });
     } else {
       // if FIPS codes do not exist we cannot query the drinking water service
-      if (
-        FIPS.status === 'failure' ||
-        FIPS.stateCode === '' ||
-        FIPS.countyCode === ''
-      ) {
+      if (FIPS.status !== 'success') {
         setDrinkingWater({
           data: [],
           status: 'failure',
@@ -2102,8 +2084,8 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
       const drinkingWaterUrl =
         `${services.data.dwmaps.GetPWSWMHUC12FIPS}` +
         `${hucResponse.features[0].attributes.huc12}/` +
-        `${FIPS.stateCode}/` +
-        `${FIPS.countyCode}`;
+        `${FIPS.data.stateCode}/` +
+        `${FIPS.data.countyCode}`;
 
       fetchCheck(drinkingWaterUrl)
         .then((drinkingWaterRes) => {

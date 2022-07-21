@@ -1,6 +1,6 @@
 // @flow
 
-import React, { useContext } from 'react';
+import React from 'react';
 import { css } from 'styled-components/macro';
 // components
 import TabErrorBoundary from 'components/shared/ErrorBoundary.TabErrorBoundary';

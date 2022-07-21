@@ -197,7 +197,7 @@ function Protect() {
     wildScenicRiversLayer,
     wildScenicRiversData,
     protectedAreasLayer,
-    protectedAreasData,
+    protectedAreas,
     protectedAreasHighlightLayer,
     waterbodyLayer,
     cipSummary,
@@ -297,7 +297,7 @@ function Protect() {
             ? visibleLayers['wsioHealthIndexLayer']
             : healthScoresDisplayed;
       }
-      if (protectedAreasData.status !== 'failure') {
+      if (protectedAreas.status !== 'failure') {
         newVisibleLayers['protectedAreasLayer'] =
           !protectedAreasLayer || useCurrentValue
             ? visibleLayers['protectedAreasLayer']
@@ -331,7 +331,7 @@ function Protect() {
       wsioHealthIndexData,
       protectedAreasDisplayed,
       protectedAreasLayer,
-      protectedAreasData,
+      protectedAreas,
       wildScenicRiversDisplayed,
       wildScenicRiversLayer,
       wildScenicRiversData,
@@ -347,7 +347,7 @@ function Protect() {
     updateVisibleLayers({ useCurrentValue: true });
   }, [
     wsioHealthIndexData,
-    protectedAreasData,
+    protectedAreas,
     wildScenicRiversData,
     visibleLayers,
     updateVisibleLayers,
@@ -940,7 +940,7 @@ function Protect() {
                 <AccordionItem
                   highlightContent={false}
                   onChange={(isOpen) => {
-                    if (!isOpen || protectedAreasData.status === 'failure') {
+                    if (!isOpen || protectedAreas.status === 'failure') {
                       return;
                     }
 
@@ -959,10 +959,10 @@ function Protect() {
                         <Switch
                           checked={
                             protectedAreasDisplayed &&
-                            protectedAreasData.status === 'success'
+                            protectedAreas.status === 'success'
                           }
                           onChange={onProtectedAreasToggle}
-                          disabled={protectedAreasData.status === 'failure'}
+                          disabled={protectedAreas.status === 'failure'}
                           ariaLabel="Protected Areas"
                         />
                       </div>
@@ -1001,18 +1001,16 @@ function Protect() {
                       </>
                     )}
 
-                    {protectedAreasData.status === 'failure' && (
+                    {protectedAreas.status === 'failure' && (
                       <div css={modifiedErrorBoxStyles}>
                         <p>{protectedAreasDatabaseError}</p>
                       </div>
                     )}
 
-                    {protectedAreasData.status === 'fetching' && (
-                      <LoadingSpinner />
-                    )}
+                    {protectedAreas.status === 'fetching' && <LoadingSpinner />}
 
-                    {protectedAreasData.status === 'success' &&
-                      protectedAreasData.data.length === 0 && (
+                    {protectedAreas.status === 'success' &&
+                      protectedAreas.data.features.length === 0 && (
                         <div css={modifiedInfoBoxStyles}>
                           <p>
                             No Protected Areas Database data available for the{' '}
@@ -1021,29 +1019,29 @@ function Protect() {
                         </div>
                       )}
 
-                    {protectedAreasData.status === 'success' &&
-                      protectedAreasData.data.length > 0 && (
+                    {protectedAreas.status === 'success' &&
+                      protectedAreas.data.features.length > 0 && (
                         <AccordionList
                           title={
                             <>
                               There{' '}
-                              {protectedAreasData.data.length === 1
+                              {protectedAreas.data.features.length === 1
                                 ? 'is'
                                 : 'are'}{' '}
                               <strong>
-                                {protectedAreasData.data.length.toLocaleString()}
+                                {protectedAreas.data.features.length.toLocaleString()}
                               </strong>{' '}
                               protected{' '}
-                              {protectedAreasData.data.length === 1
+                              {protectedAreas.data.features.length === 1
                                 ? 'area'
                                 : 'areas'}{' '}
                               in the <em>{watershed}</em> watershed.
                             </>
                           }
                         >
-                          {protectedAreasData.data.map((item) => {
+                          {protectedAreas.data.features.map((item) => {
                             const attributes = item.attributes;
-                            const fields = protectedAreasData.fields;
+                            const fields = protectedAreas.data.fields;
                             return (
                               <AccordionItem
                                 key={`protected-area-${attributes.OBJECTID}`}

@@ -74,7 +74,6 @@ function GlossaryProvider({ children }: Props) {
       const fetchTerms = (retryCount: number = 0) => {
         proxyFetch(services.data.glossaryURL)
           .then((res) => {
-            console.log(res);
             let data = res
               .filter(
                 (item: typeof res[number]) =>

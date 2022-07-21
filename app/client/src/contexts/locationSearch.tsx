@@ -2,21 +2,10 @@ import Extent from '@arcgis/core/geometry/Extent';
 import { Component, createContext, useContext } from 'react';
 // types
 import type { ReactNode } from 'react';
-import type Basemap from '@arcgis/core/Basemap';
-import type Graphic from '@arcgis/core/Graphic';
-import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
-import type GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
-import type GroupLayer from '@arcgis/core/layers/GroupLayer';
-import type Layer from '@arcgis/core/layers/Layer';
-import type MapImageLayer from '@arcgis/core/layers/MapImageLayer';
-import type FeatureSet from '@arcgis/core/rest/support/FeatureSet';
-import type Viewpoint from '@arcgis/core/Viewpoint';
-import type MapView from '@arcgis/core/views/MapView';
-import type Home from '@arcgis/core/widgets/Home';
 import type { MonitoringFeatureUpdates } from 'types';
 
 /*
-## types
+## Types
 */
 interface AnnualStationData {
   uniqueId: string;
@@ -27,7 +16,7 @@ interface AnnualStationData {
   stationTotalsByLabel: { [label: string]: number };
 }
 
-interface DrinkingWaterData {
+interface DrinkingWaterDatum {
   pwsid: string;
   pws_name: string;
   primacy_agency_code: string;
@@ -49,21 +38,26 @@ interface DrinkingWaterData {
   tribal_name: string | null;
 }
 
-type FeaturesDataState =
-  | { status: 'fetching'; data: [] }
-  | { status: 'failure'; data: [] }
-  | { status: 'success'; data: Graphic[] };
+interface FetchEmptyState {
+  status: 'idle' | 'fetching' | 'failure';
+  data: {} | [] | null;
+}
 
-type FetchDataState<Type> =
-  | { status: 'idle' | 'fetching' | 'failure'; data: {} }
-  | { status: 'success'; data: Type };
+interface FetchSuccessState<Type> {
+  status: 'success';
+  data: Type;
+}
 
-type FishingInfoState =
-  | { status: 'fetching'; data: [] }
-  | { status: 'failure'; data: [] }
-  | { status: 'success'; data: Array<{ url: string; stateCode: string }> };
+type FetchState<Type> = FetchEmptyState | FetchSuccessState<Type>;
 
-interface GrtsData {
+interface FipsData {
+  countyCode: string;
+  stateCode: string;
+}
+
+type FishingInfoData = Array<{ url: string; stateCode: string }>;
+
+interface GrtsDatum {
   state: string;
   prj_seq: number;
   prj_title: string;
@@ -81,17 +75,14 @@ interface GrtsData {
   ws_protect_ind: string;
 }
 
-type GrtsDataState = {
-  status: Status;
-  data: {
-    items: GrtsData[];
-    first?: { $ref: string };
-    next?: { $ref: string };
-    previous?: { $ref: string };
-  };
-};
+interface GrtsData {
+  items: GrtsDatum[];
+  first?: { $ref: string };
+  next?: { $ref: string };
+  previous?: { $ref: string };
+}
 
-type Huc12SummaryData = {
+interface Huc12SummaryData {
   count: number;
   items: {
     assessedCatchmentAreaPercent: number;
@@ -155,18 +146,18 @@ type Huc12SummaryData = {
     totalCatchmentAreaSqMi: number;
     totalHucAreaSqMi: number;
   }[];
-};
+}
 
-type MonitoringLocationGroups = {
+interface MonitoringLocationGroups {
   [label: string]: {
     label: string;
     characteristicGroups?: Array<string>;
     stations: StationData[];
     toggled: boolean;
   };
-} | null;
+}
 
-type MonitoringLocationsData = {
+interface MonitoringLocationsData {
   features: {
     geometry: {
       coordinates: [number, number];
@@ -193,7 +184,7 @@ type MonitoringLocationsData = {
     type: 'Feature';
   }[];
   type: 'FeatureCollection';
-};
+}
 
 type PermittedDischargersData = {
   Results: {
@@ -231,85 +222,82 @@ type PermittedDischargersData = {
   };
 };
 
-type ProtectedAreasDataState =
-  | { status: 'fetching'; data: []; fields: [] }
-  | { status: 'failure'; data: []; fields: [] }
-  | { status: 'success'; data: Graphic[]; fields: any[] };
+interface ProtectedAreasData {
+  features: __esri.Graphic[];
+  fields: any[];
+}
 
 type State = {
-  actionsLayer: GraphicsLayer | null;
+  actionsLayer: __esri.GraphicsLayer | null;
   address: string;
-  allWaterbodiesLayer: GroupLayer | null;
+  allWaterbodiesLayer: __esri.GroupLayer | null;
   allWaterbodiesWidgetDisabled: boolean;
-  areasData: { features: Graphic[] } | null;
-  areasLayer: FeatureLayer | null;
+  areasData: { features: __esri.Graphic[] } | null;
+  areasLayer: __esri.FeatureLayer | null;
   assessmentUnitId: string;
   assessmentUnitIds: string[];
   atHucBoundaries: boolean;
-  attainsPlans: FetchDataState<Object>;
-  basemap: Basemap | string;
-  boundariesLayer: GraphicsLayer | null;
-  cipSummary: { status: Status; data: Huc12SummaryData | {} };
-  countyBoundaries: FeatureSet | null;
-  currentExtent: Viewpoint | null;
-  dischargersLayer: GraphicsLayer | null;
-  drinkingWater: { status: Status; data: DrinkingWaterData[] };
+  attainsPlans: FetchState<Object>;
+  basemap: __esri.Basemap | string;
+  boundariesLayer: __esri.GraphicsLayer | null;
+  cipSummary: FetchState<Huc12SummaryData>;
+  countyBoundaries: __esri.FeatureSet | null;
+  currentExtent: __esri.Viewpoint | null;
+  dischargersLayer: __esri.GraphicsLayer | null;
+  drinkingWater: FetchState<DrinkingWaterDatum[]>;
   drinkingWaterTabIndex: number;
   errorMessage: string;
-  FIPS: { status: Status; stateCode: string; countyCode: string };
-  fishingInfo: FishingInfoState;
-  grts: GrtsDataState;
+  FIPS: FetchState<FipsData>;
+  fishingInfo: FetchState<FishingInfoData>;
+  grts: FetchState<GrtsData>;
   highlightOptions: { color: string; fillOpacity: number };
-  homeWidget: Home | null;
+  homeWidget: __esri.Home | null;
   huc12: string;
-  hucBoundaries: FeatureSet | null;
+  hucBoundaries: __esri.FeatureSet | null;
   initialExtent: Extent;
-  issuesLayer: GraphicsLayer | null;
+  issuesLayer: __esri.GraphicsLayer | null;
   lastSearchText: string;
-  layers: Layer[];
-  linesData: { features: Graphic[] } | null;
-  linesLayer: FeatureLayer | null;
-  mapView: MapView | null;
-  monitoringLocations: FetchDataState<MonitoringLocationsData>;
-  monitoringLocationsLayer: FeatureLayer | null;
+  layers: __esri.Layer[];
+  linesData: { features: __esri.Graphic[] } | null;
+  linesLayer: __esri.FeatureLayer | null;
+  mapView: __esri.MapView | null;
+  monitoringLocations: FetchState<MonitoringLocationsData>;
+  monitoringLocationsLayer: __esri.FeatureLayer | null;
   nonprofits: Object;
-  nonprofitsLayer: GraphicsLayer | null;
-  orphanFeatures: {
-    status: 'fetching' | 'error' | 'success';
-    features: Graphic[];
-  };
-  permittedDischargers: FetchDataState<PermittedDischargersData>;
-  pointsData: { features: Graphic[] } | null;
-  pointsLayer: FeatureLayer | null;
-  protectedAreasData: ProtectedAreasDataState;
-  protectedAreasHighlightLayer: GraphicsLayer | null;
-  protectedAreasLayer: MapImageLayer | null;
-  providersLayer: GraphicsLayer | null;
-  searchIconLayer: GraphicsLayer | null;
+  nonprofitsLayer: __esri.GraphicsLayer | null;
+  orphanFeatures: FetchState<__esri.Graphic[]>;
+  permittedDischargers: FetchState<PermittedDischargersData>;
+  pointsData: { features: __esri.Graphic[] } | null;
+  pointsLayer: __esri.FeatureLayer | null;
+  protectedAreas: FetchState<ProtectedAreasData>;
+  protectedAreasHighlightLayer: __esri.GraphicsLayer | null;
+  protectedAreasLayer: __esri.MapImageLayer | null;
+  providersLayer: __esri.GraphicsLayer | null;
+  searchIconLayer: __esri.GraphicsLayer | null;
   searchText: string;
   selWaterbodyLayer: Object | null;
   showAllPolluted: boolean;
-  statesData: StatesDataState;
+  statesData: FetchState<StateDatum[]>;
   summaryLayerMaxRecordCount: number | null;
-  upstreamExtent: Viewpoint | null;
-  upstreamLayer: (GraphicsLayer & { error?: boolean }) | null;
+  upstreamExtent: __esri.Viewpoint | null;
+  upstreamLayer: (__esri.GraphicsLayer & { error?: boolean }) | null;
   upstreamLayerVisible: boolean;
   upstreamWidget: ReactNode | null;
   upstreamWidgetDisabled: boolean;
-  usgsStreamgagesLayer: FeatureLayer | null;
+  usgsStreamgagesLayer: __esri.FeatureLayer | null;
   visibleLayers: { [layer: string]: boolean };
   watershed: string;
   waterbodyCountMismatch: boolean | null;
-  waterbodyData: { features: Graphic[] } | null;
-  waterbodyLayer: GroupLayer | null;
+  waterbodyData: { features: __esri.Graphic[] } | null;
+  waterbodyLayer: __esri.GroupLayer | null;
   watershedsLayerMaxRecordCount: number | null;
-  wildScenicRiversData: FeaturesDataState;
-  wildScenicRiversLayer: FeatureLayer | null;
-  wsioHealthIndexData: WsioHealthIndexDataState;
-  wsioHealthIndexLayer: FeatureLayer | null;
+  wildScenicRiversData: FetchState<__esri.Graphic[]>;
+  wildScenicRiversLayer: __esri.FeatureLayer | null;
+  wsioHealthIndexData: FetchState<WsioHealthIndexData>;
+  wsioHealthIndexLayer: __esri.FeatureLayer | null;
 
   // monitoring panel
-  monitoringGroups: MonitoringLocationGroups;
+  monitoringGroups: MonitoringLocationGroups | null;
   monitoringFeatureUpdates: MonitoringFeatureUpdates;
 
   // identified issues panel
@@ -318,137 +306,125 @@ type State = {
   pollutionParameters: { [parameter: string]: boolean } | null;
 
   // getters
-  getAllFeatures: () => Graphic[] | null;
-  getAllWaterbodiesLayer: () => GroupLayer | null;
+  getAllFeatures: () => __esri.Graphic[] | null;
+  getAllWaterbodiesLayer: () => __esri.GroupLayer | null;
   getAllWaterbodiesWidgetDisabled: () => boolean;
-  getCurrentExtent: () => Viewpoint | null;
+  getCurrentExtent: () => __esri.Viewpoint | null;
   getHuc12: () => string;
-  getHucBoundaries: () => FeatureSet | null;
-  getMapView: () => MapView | null;
-  getUpstreamExtent: () => Viewpoint | null;
-  getUpstreamLayer: () => GraphicsLayer | null;
+  getHucBoundaries: () => __esri.FeatureSet | null;
+  getMapView: () => __esri.MapView | null;
+  getUpstreamExtent: () => __esri.Viewpoint | null;
+  getUpstreamLayer: () => __esri.GraphicsLayer | null;
   getUpstreamWidgetDisabled: () => boolean;
   getWatershed: () => string;
 
   // setters
   resetData: () => void;
   resetMap: (useDefaultZoom: boolean) => void;
-  setActionsLayer: (actionsLayer: GraphicsLayer) => void;
+  setActionsLayer: (actionsLayer: __esri.GraphicsLayer) => void;
   setAddress: (address: string) => void;
-  setAllWaterbodiesLayer: (allWaterbodiesLayer: GroupLayer) => void;
+  setAllWaterbodiesLayer: (allWaterbodiesLayer: __esri.GroupLayer) => void;
   setAllWaterbodiesWidgetDisabled: (
     allWaterbodiesWidgetDisabled: boolean,
   ) => void;
-  setAreasData: (areasData: { features: Graphic[] }) => void;
-  setAreasLayer: (areasLayer: FeatureLayer) => void;
+  setAreasData: (areasData: { features: __esri.Graphic[] }) => void;
+  setAreasLayer: (areasLayer: __esri.FeatureLayer) => void;
   setAssessmentUnitId: (assessmentUnitId: string) => void;
   setAssessmentUnitIds: (assessmentUnitIds: string[]) => void;
   setAtHucBoundaries: (atHucBoundaries: boolean) => void;
-  setAttainsPlans: (attainsPlans: FetchDataState<Object>) => void;
-  setBasemap: (basemap: Basemap | string) => void;
-  setBoundariesLayer: (boundariesLayer: GraphicsLayer) => void;
-  setCipSummary: (cipSummary: {
-    status: Status;
-    data: Huc12SummaryData | {};
-  }) => void;
-  setCountyBoundaries: (countyBoundaries: FeatureSet) => void;
-  setCurrentExtent: (currentExtent: Viewpoint) => void;
-  setDischargersLayer: (dischargersLayer: GraphicsLayer) => void;
-  setDrinkingWater: (drinkingWater: {
-    status: Status;
-    data: DrinkingWaterData[];
-  }) => void;
+  setAttainsPlans: (attainsPlans: FetchState<Object>) => void;
+  setBasemap: (basemap: __esri.Basemap | string) => void;
+  setBoundariesLayer: (boundariesLayer: __esri.GraphicsLayer) => void;
+  setCipSummary: (cipSummary: FetchState<Huc12SummaryData>) => void;
+  setCountyBoundaries: (countyBoundaries: __esri.FeatureSet) => void;
+  setCurrentExtent: (currentExtent: __esri.Viewpoint) => void;
+  setDischargersLayer: (dischargersLayer: __esri.GraphicsLayer) => void;
+  setDrinkingWater: (drinkingWater: FetchState<DrinkingWaterDatum[]>) => void;
   setDrinkingWaterTabIndex: (drinkingWaterTabIndex: number) => void;
   setErrorMessage: (errorMessage: string) => void;
-  setFIPS: (FIPS: {
-    status: Status;
-    stateCode: string;
-    countyCode: string;
-  }) => void;
-  setFishingInfo: (fishingInfo: FishingInfoState) => void;
-  setGrts: (grts: GrtsDataState) => void;
-  setHomeWidget: (homeWidget: Home) => void;
+  setFIPS: (FIPS: FetchState<FipsData>) => void;
+  setFishingInfo: (fishingInfo: FetchState<FishingInfoData>) => void;
+  setGrts: (grts: FetchState<GrtsData>) => void;
+  setHomeWidget: (homeWidget: __esri.Home) => void;
   setHuc12: (huc12: string) => void;
-  setHucBoundaries: (hucBoundaries: FeatureSet) => void;
-  setIssuesLayer: (issuesLayer: GraphicsLayer) => void;
+  setHucBoundaries: (hucBoundaries: __esri.FeatureSet) => void;
+  setIssuesLayer: (issuesLayer: __esri.GraphicsLayer) => void;
   setLastSearchText: (lastSearchText: string) => void;
-  setLayers: (layers: Layer[]) => void;
-  setLinesData: (linesData: { features: Graphic[] }) => void;
-  setLinesLayer: (linesLayer: FeatureLayer) => void;
-  setMapView: (mapView: MapView | null) => void;
+  setLayers: (layers: __esri.Layer[]) => void;
+  setLinesData: (linesData: { features: __esri.Graphic[] }) => void;
+  setLinesLayer: (linesLayer: __esri.FeatureLayer) => void;
+  setMapView: (mapView: __esri.MapView | null) => void;
   setMonitoringFeatureUpdates: (
     monitoringFeatureUpdates: MonitoringFeatureUpdates,
   ) => void;
-  setMonitoringGroups: (monitoringGroups: MonitoringLocationGroups) => void;
-  setMonitoringLocations: (
-    monitoringLocations: FetchDataState<MonitoringLocationsData>,
+  setMonitoringGroups: (
+    monitoringGroups: MonitoringLocationGroups | null,
   ) => void;
-  setMonitoringLocationsLayer: (monitoringLocationsLayer: FeatureLayer) => void;
+  setMonitoringLocations: (
+    monitoringLocations: FetchState<MonitoringLocationsData>,
+  ) => void;
+  setMonitoringLocationsLayer: (
+    monitoringLocationsLayer: __esri.FeatureLayer,
+  ) => void;
   setNoDataAvailable: () => void;
   setNonprofits: (nonprofits: Object) => void;
-  setNonprofitsLayer: (nonprofitsLayer: GraphicsLayer) => void;
-  setOrphanFeatures: (orphanFeatures: {
-    status: 'fetching' | 'error' | 'success';
-    features: Graphic[];
-  }) => void;
+  setNonprofitsLayer: (nonprofitsLayer: __esri.GraphicsLayer) => void;
+  setOrphanFeatures: (orphanFeatures: FetchState<__esri.Graphic[]>) => void;
   setPermittedDischargers: (
-    permittedDischargers: FetchDataState<PermittedDischargersData>,
+    permittedDischargers: FetchState<PermittedDischargersData>,
   ) => void;
-  setPointsData: (pointsData: { features: Graphic[] }) => void;
-  setPointsLayer: (pointsLayer: FeatureLayer) => void;
+  setPointsData: (pointsData: { features: __esri.Graphic[] }) => void;
+  setPointsLayer: (pointsLayer: __esri.FeatureLayer) => void;
   setPollutionParameters: (pollutionParameters: {
     [parameter: string]: boolean;
   }) => void;
-  setProtectedAreasData: (protectedAreasData: ProtectedAreasDataState) => void;
+  setProtectedAreas: (protectedAreas: FetchState<ProtectedAreasData>) => void;
   setProtectedAreasHighlightLayer: (
-    protectedAreasHighlightLayer: GraphicsLayer,
+    protectedAreasHighlightLayer: __esri.GraphicsLayer,
   ) => void;
-  setProtectedAreasLayer: (protectedAreasLayer: MapImageLayer) => void;
-  setProvidersLayer: (providersLayer: GraphicsLayer) => void;
-  setSearchIconLayer: (searchIconLayer: GraphicsLayer) => void;
+  setProtectedAreasLayer: (protectedAreasLayer: __esri.MapImageLayer) => void;
+  setProvidersLayer: (providersLayer: __esri.GraphicsLayer) => void;
+  setSearchIconLayer: (searchIconLayer: __esri.GraphicsLayer) => void;
   setSearchText: (searchText: string) => void;
   setSelWaterbodyLayer: (selWaterbodyLayer: Object) => void;
   setShowAllPolluted: (showAllPolluted: boolean) => void;
-  setStatesData: (statesData: StatesDataState) => void;
+  setStatesData: (statesData: FetchState<StateDatum[]>) => void;
   setSummaryLayerMaxRecordCount: (summaryLayerMaxRecordCount: number) => void;
-  setUpstreamExtent: (upstreamExtent: Viewpoint) => void;
+  setUpstreamExtent: (upstreamExtent: __esri.Viewpoint) => void;
   setUpstreamLayer: (
-    upstreamLayer: GraphicsLayer & { error?: boolean },
+    upstreamLayer: __esri.GraphicsLayer & { error?: boolean },
   ) => void;
   setUpstreamLayerVisible: (upstreamLayerVisible: boolean) => void;
   setUpstreamWidget: (upstreamWidget: ReactNode) => void;
   setUpstreamWidgetDisabled: (upstreamWidgetDisabled: boolean) => void;
-  setUsgsStreamgagesLayer: (usgsStreamgagesLayer: FeatureLayer) => void;
+  setUsgsStreamgagesLayer: (usgsStreamgagesLayer: __esri.FeatureLayer) => void;
   setVisibleLayers: (visibleLayers: { [layer: string]: boolean }) => void;
   setWaterbodyCountMismatch: (waterbodyCountMismatch: boolean) => void;
-  setWaterbodyData: (waterbodyData: { features: Graphic[] }) => void;
-  setWaterbodyLayer: (waterbodyLayer: GroupLayer) => void;
+  setWaterbodyData: (waterbodyData: { features: __esri.Graphic[] }) => void;
+  setWaterbodyLayer: (waterbodyLayer: __esri.GroupLayer) => void;
   setWatershed: (watershed: string) => void;
   setWatershedsLayerMaxRecordCount: (
     watershedsLayerMaxRecordCount: number,
   ) => void;
-  setWildScenicRiversData: (wildScenicRiversData: FeaturesDataState) => void;
-  setWildScenicRiversLayer: (wildScenicRiversLayer: FeatureLayer) => void;
-  setWsioHealthIndexData: (
-    wsioHealthIndexData: WsioHealthIndexDataState,
+  setWildScenicRiversData: (
+    wildScenicRiversData: FetchState<__esri.Graphic[]>,
   ) => void;
-  setWsioHealthIndexLayer: (wsioHealthIndexLayer: FeatureLayer) => void;
+  setWildScenicRiversLayer: (
+    wildScenicRiversLayer: __esri.FeatureLayer,
+  ) => void;
+  setWsioHealthIndexData: (
+    wsioHealthIndexData: FetchState<WsioHealthIndexData>,
+  ) => void;
+  setWsioHealthIndexLayer: (wsioHealthIndexLayer: __esri.FeatureLayer) => void;
 };
 
-interface StateData {
+interface StateDatum {
   domain: 'State';
   name: string;
   code: string;
   context: 'SYSTEM';
   id: string;
 }
-
-type StatesDataState =
-  | { status: 'fetching'; data: [] }
-  | { status: 'failure'; data: [] }
-  | { status: 'success'; data: StateData[] };
-
-type Status = 'fetching' | 'success' | 'failure';
 
 interface StationData {
   monitoringType: 'Past Water Conditions';
@@ -470,16 +446,10 @@ interface StationData {
   uniqueId: string;
 }
 
-type WsioHealthIndexDataState =
-  | { status: 'fetching'; data: [] }
-  | { status: 'failure'; data: [] }
-  | {
-      status: 'success';
-      data: Array<{ states: string; phwaHealthNdxSt: number }>;
-    };
+type WsioHealthIndexData = Array<{ states: string; phwaHealthNdxSt: number }>;
 
 /*
-## components
+## Components
 */
 const LocationSearchContext = createContext<State | undefined>(undefined);
 
@@ -505,7 +475,7 @@ export class LocationSearchProvider extends Component<Props, State> {
     currentExtent: null,
     dischargersLayer: null,
     drinkingWater: { status: 'fetching', data: [] },
-    FIPS: { status: 'fetching', stateCode: '', countyCode: '' },
+    FIPS: { status: 'fetching', data: {} },
     fishingInfo: { status: 'fetching', data: [] },
     grts: { status: 'fetching', data: { items: [] } },
     homeWidget: null,
@@ -528,10 +498,10 @@ export class LocationSearchProvider extends Component<Props, State> {
     monitoringLocationsLayer: null,
     nonprofits: { status: 'fetching', data: [] },
     nonprofitsLayer: null,
-    orphanFeatures: { status: 'fetching', features: [] },
+    orphanFeatures: { status: 'fetching', data: [] },
     permittedDischargers: { status: 'fetching', data: {} },
     pointsData: null,
-    protectedAreasData: { status: 'fetching', data: [], fields: [] },
+    protectedAreas: { status: 'fetching', data: {} },
     protectedAreasHighlightLayer: null,
     protectedAreasLayer: null,
     providersLayer: null,
@@ -581,12 +551,12 @@ export class LocationSearchProvider extends Component<Props, State> {
       this.setState({ lastSearchText });
     },
     setMonitoringLocations: (
-      monitoringLocations: FetchDataState<MonitoringLocationsData>,
+      monitoringLocations: FetchState<MonitoringLocationsData>,
     ) => {
       this.setState({ monitoringLocations });
     },
     setPermittedDischargers: (
-      permittedDischargers: FetchDataState<PermittedDischargersData>,
+      permittedDischargers: FetchState<PermittedDischargersData>,
     ) => {
       this.setState({ permittedDischargers });
     },
@@ -635,8 +605,8 @@ export class LocationSearchProvider extends Component<Props, State> {
     setWildScenicRiversData: (wildScenicRiversData) => {
       this.setState({ wildScenicRiversData });
     },
-    setProtectedAreasData: (protectedAreasData) => {
-      this.setState({ protectedAreasData });
+    setProtectedAreas: (protectedAreas) => {
+      this.setState({ protectedAreas });
     },
     setAddress: (address) => {
       this.setState({ address });
@@ -788,10 +758,7 @@ export class LocationSearchProvider extends Component<Props, State> {
     setDrinkingWater: (drinkingWater) => {
       this.setState({ drinkingWater });
     },
-    setCipSummary: (cipSummary: {
-      status: Status;
-      data: Huc12SummaryData | {};
-    }) => {
+    setCipSummary: (cipSummary: FetchState<Huc12SummaryData>) => {
       this.setState({ cipSummary });
     },
     setMonitoringGroups: (monitoringGroups) => {
@@ -827,7 +794,7 @@ export class LocationSearchProvider extends Component<Props, State> {
       if (!linesData && !areasData && !pointsData) return null;
 
       // combine available data
-      let features: Graphic[] = [];
+      let features: __esri.Graphic[] = [];
       if (linesData) features = features.concat(linesData.features);
       if (areasData) features = features.concat(areasData.features);
       if (pointsData) features = features.concat(pointsData.features);
@@ -974,7 +941,7 @@ export class LocationSearchProvider extends Component<Props, State> {
         pointsData: null,
         linesData: null,
         areasData: null,
-        orphanFeatures: { status: 'fetching', features: [] },
+        orphanFeatures: { status: 'fetching', data: [] },
         waterbodyCountMismatch: null,
         countyBoundaries: null,
         atHucBoundaries: false,
@@ -984,7 +951,7 @@ export class LocationSearchProvider extends Component<Props, State> {
         monitoringLocations: { status: 'fetching', data: {} },
         permittedDischargers: { status: 'fetching', data: {} },
         nonprofits: { status: 'fetching', data: [] },
-        grts: { status: 'fetching', data: { items: [] } },
+        grts: { status: 'fetching', data: {} },
         attainsPlans: { status: 'fetching', data: {} },
         cipSummary: { status: 'fetching', data: {} },
         drinkingWater: { status: 'fetching', data: [] },
@@ -1007,16 +974,16 @@ export class LocationSearchProvider extends Component<Props, State> {
         pointsData: { features: [] },
         linesData: { features: [] },
         areasData: { features: [] },
-        orphanFeatures: { status: 'fetching', features: [] },
+        orphanFeatures: { status: 'idle', data: [] },
         waterbodyCountMismatch: null,
         countyBoundaries: null,
         monitoringLocations: { status: 'idle', data: {} },
         permittedDischargers: { status: 'idle', data: {} },
-        nonprofits: { status: 'success', data: [] },
-        grts: { status: 'success', data: { items: [] } },
-        attainsPlans: { status: 'success', data: {} },
-        cipSummary: { status: 'success', data: {} },
-        drinkingWater: { status: 'success', data: [] },
+        nonprofits: { status: 'idle', data: [] },
+        grts: { status: 'idle', data: {} },
+        attainsPlans: { status: 'idle', data: {} },
+        cipSummary: { status: 'idle', data: {} },
+        drinkingWater: { status: 'idle', data: [] },
         visibleLayers: {},
       });
 

@@ -1,6 +1,6 @@
 // @flow
 
-import React, { Fragment, useContext } from 'react';
+import React, { Fragment } from 'react';
 // components
 import { GlossaryTerm } from 'components/shared/GlossaryPanel';
 import Overview from 'components/pages/Community.Tabs.Overview';

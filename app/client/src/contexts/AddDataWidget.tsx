@@ -1,17 +1,11 @@
 import { createContext, useState } from 'react';
 // types
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
-import type Layer from '@arcgis/core/layers/Layer';
-import type PortalItem from '@arcgis/core/portal/PortalItem';
-import type PortalQueryResult from '@arcgis/core/portal/PortalQueryResult';
+import type { WidgetLayer } from 'types';
 
 type SearchResultsState =
   | { status: 'idle' | 'fetching' | 'failure'; data: null }
-  | { status: 'success'; data: PortalQueryResult | null };
-
-export interface WidgetLayer extends Layer {
-  portalItem?: PortalItem;
-}
+  | { status: 'success'; data: __esri.PortalQueryResult | null };
 
 type AddDataWidget = {
   addDataWidgetVisible: boolean;
