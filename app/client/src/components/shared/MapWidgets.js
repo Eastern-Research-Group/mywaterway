@@ -409,7 +409,11 @@ function MapWidgets({
   // put the home widget back on the ui after the window is resized
   useEffect(() => {
     if (homeWidget) {
-      const newHomeWidget = new Home({ view, viewpoint: homeWidget.viewpoint });
+      const newHomeWidget = new Home({
+        id: 'homeWidget',
+        view,
+        viewpoint: homeWidget.viewpoint,
+      });
       view.ui.add(newHomeWidget, { position: 'top-left', index: 1 });
       view.ui.move('zoom', 'top-left');
       setHomeWidget(newHomeWidget);
@@ -445,8 +449,12 @@ function MapWidgets({
   useEffect(() => {
     if (!view || homeWidget) return;
 
+    // remove the old widget if it exists
+    const oldHomeWidget = view.ui.find('homeWidget');
+    if (oldHomeWidget) view.ui.remove(oldHomeWidget);
+
     // create the home widget
-    const newHomeWidget = new Home({ view });
+    const newHomeWidget = new Home({ id: 'homeWidget', view });
     view.ui.add(newHomeWidget, { position: 'top-left', index: 1 });
     view.ui.move('zoom', 'top-left');
     // pass the home widget up to the consumer of this component,
