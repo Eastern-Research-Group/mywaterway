@@ -107,7 +107,7 @@ function WaterbodyListVirtualized({ waterbodies, fieldName = '' }: Props) {
           { value: 'assessmentunitname', label: 'Waterbody Name' },
           { value: 'assessmentunitidentifier', label: 'Assessment Unit Id' },
         ]}
-        onSortChange={(sortBy: SortOption) => setSortBy(sortBy.value)}
+        onSortChange={(newSortBy: SortOption) => setSortBy(newSortBy.value)}
         onExpandCollapse={(allExpanded: boolean) => {
           if (allExpanded) {
             setExpandedRows([...Array(waterbodies.length).keys()]);

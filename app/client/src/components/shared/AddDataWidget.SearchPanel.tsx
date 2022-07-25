@@ -189,6 +189,13 @@ type SortBy =
   | { value: 'num-views'; label: 'Views'; defaultSort: 'desc' }
   | { value: 'modified'; label: 'Date'; defaultSort: 'desc' };
 
+// --- helpers ---
+function isTileLayer(
+  layer: Layer | __esri.TileLayer | __esri.GroupLayer,
+): layer is __esri.TileLayer {
+  return (layer as __esri.TileLayer).type === 'tile';
+}
+
 // --- components (SearchPanel) ---
 function SearchPanel() {
   const { pageNumber, setPageNumber, searchResults, setSearchResults } =
@@ -781,11 +788,6 @@ function ResultCard({ result }: ResultCardProps) {
       }),
     }).then((layer: Layer | __esri.TileLayer | __esri.GroupLayer) => {
       // setup the watch event to see when the layer finishes loading
-      function isTileLayer(
-        layer: Layer | __esri.TileLayer | __esri.GroupLayer,
-      ): layer is __esri.TileLayer {
-        return (layer as __esri.TileLayer).type === 'tile';
-      }
       const newWatcher = watchUtils.watch(
         layer,
         'loadStatus',

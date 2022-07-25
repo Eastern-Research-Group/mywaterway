@@ -425,8 +425,8 @@ function WaterbodyInfo({
     const useBasedCondition = getWaterbodyCondition(attributes, field);
 
     // create applicable fields to check against when displaying the table
-    const waterbodyConditions = useFields.map((field) => {
-      return getWaterbodyCondition(attributes, field.value).label;
+    const waterbodyConditions = useFields.map((useField) => {
+      return getWaterbodyCondition(attributes, useField.value).label;
     });
 
     const applicableFields =
@@ -476,16 +476,16 @@ function WaterbodyInfo({
                   </tr>
                 </thead>
                 <tbody>
-                  {useFields.map((field, index) => {
+                  {useFields.map((useField, index) => {
                     const value = getWaterbodyCondition(
                       attributes,
-                      field.value,
+                      useField.value,
                     ).label;
 
                     if (value === 'Not Applicable') return null;
                     return (
                       <tr key={index}>
-                        <td>{field.label}</td>
+                        <td>{useField.label}</td>
                         <td>{value}</td>
                       </tr>
                     );
@@ -861,7 +861,7 @@ function WaterbodyInfo({
                       <tr>
                         <th>Plan (ID)</th>
                         <th>Impairments</th>
-                        <th style={{'width': '25%'}}>Type</th>
+                        <th style={{ width: '25%' }}>Type</th>
                         <th>Date</th>
                       </tr>
                     </thead>
@@ -1240,7 +1240,7 @@ function MonitoringLocationsContent({
   }, [stationTotalsByGroup]);
 
   const buildFilter = useCallback(
-    (selectedNames, monitoringLocationData, timeframe = null) => {
+    (selectedNames, monitoringLocationData) => {
       let filter = '';
 
       if (selectAll === 2) {
@@ -1261,12 +1261,12 @@ function MonitoringLocationsContent({
 
       setCharGroupFilters(filter);
     },
-    [setCharGroupFilters, selectAll],
+    [setCharGroupFilters, selectAll, timeframe],
   );
 
   useEffect(() => {
-    buildFilter(selected, groups, timeframe);
-  }, [buildFilter, groups, selected, timeframe]);
+    buildFilter(selected, groups);
+  }, [buildFilter, groups, selected]);
 
   useEffect(() => {
     setTotalMeasurements(stationTotalMeasurements);

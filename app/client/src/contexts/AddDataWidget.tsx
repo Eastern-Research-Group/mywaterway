@@ -20,13 +20,13 @@ type AddDataWidget = {
 
 export const AddDataWidgetContext = createContext<AddDataWidget>({
   addDataWidgetVisible: false,
-  setAddDataWidgetVisible: () => {},
+  setAddDataWidgetVisible: () => undefined,
   pageNumber: 1,
-  setPageNumber: () => {},
+  setPageNumber: () => undefined,
   searchResults: { status: 'idle', data: null },
-  setSearchResults: () => {},
+  setSearchResults: () => undefined,
   widgetLayers: [],
-  setWidgetLayers: () => {},
+  setWidgetLayers: () => undefined,
 });
 
 type Props = {
