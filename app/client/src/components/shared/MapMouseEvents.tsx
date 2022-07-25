@@ -121,7 +121,7 @@ function MapMouseEvents({ view }: Props) {
   const getDynamicPopup = useDynamicPopup();
 
   const handleMapClick = useCallback(
-    (event, view) => {
+    (event, mapView) => {
       // get the point location of the user's click
       const point = new Point({
         x: event.mapPoint.longitude,
@@ -131,7 +131,7 @@ function MapMouseEvents({ view }: Props) {
       const location = webMercatorUtils.geographicToWebMercator(point) as Point;
 
       // perform a hittest on the click location
-      view
+      mapView
         .hitTest(event)
         .then((res: __esri.HitTestResult) => {
           // get and update the selected graphic
@@ -141,9 +141,9 @@ function MapMouseEvents({ view }: Props) {
             // if upstream watershed is clicked:
             // set the view highlight options to 0 fill opacity
             if (graphic.layer.id === 'upstreamWatershed') {
-              view.highlightOptions.fillOpacity = 0;
+              mapView.highlightOptions.fillOpacity = 0;
             } else {
-              view.highlightOptions.fillOpacity = 1;
+              mapView.highlightOptions.fillOpacity = 1;
             }
 
             if (
@@ -152,7 +152,7 @@ function MapMouseEvents({ view }: Props) {
               graphic.isAggregate
             ) {
               // zoom in towards the cluster
-              getClusterExtent(graphic, view, monitoringLocationsLayer).then(
+              getClusterExtent(graphic, mapView, monitoringLocationsLayer).then(
                 (extent) => {
                   if (graphic.attributes.cluster_count <= 20) {
                     // Initial value is null, but DefinitelyTyped FeatureLayer type
@@ -160,7 +160,7 @@ function MapMouseEvents({ view }: Props) {
                     // @ts-ignore
                     monitoringLocationsLayer.featureReduction = null;
                   }
-                  view.goTo(extent);
+                  mapView.goTo(extent);
                 },
               );
             } else {
@@ -196,8 +196,8 @@ function MapMouseEvents({ view }: Props) {
                 // Opens the change location popup
                 function openChangeLocationPopup() {
                   const { attributes } = boundaries.features[0];
-                  view.popup.close();
-                  view.popup.open({
+                  mapView.popup.close();
+                  mapView.popup.open({
                     title: 'Change to this location?',
                     content: getPopupContent({
                       navigate,
@@ -209,7 +209,7 @@ function MapMouseEvents({ view }: Props) {
                         attributes: {
                           changelocationpopup: 'changelocationpopup',
                         },
-                        view: view,
+                        view: mapView,
                       },
                       getClickedHuc: Promise.resolve({
                         status: 'success',
@@ -280,9 +280,9 @@ function MapMouseEvents({ view }: Props) {
 
     const handleMapMouseOver = (
       event: PointerMoveEvent,
-      view: __esri.MapView,
+      mapView: __esri.MapView,
     ) => {
-      view
+      mapView
         .hitTest(event)
         .then((res) => {
           // only use the latest event id to perform the highligh
@@ -297,10 +297,10 @@ function MapMouseEvents({ view }: Props) {
           // set the view's highlight fill opacity back to 1
           if (
             feature?.layer?.id !== 'upstreamWatershed' &&
-            view.highlightOptions.fillOpacity !== 1 &&
-            !view.popup.visible // if popup is not visible then the upstream layer isn't currently selected
+            mapView.highlightOptions.fillOpacity !== 1 &&
+            !mapView.popup.visible // if popup is not visible then the upstream layer isn't currently selected
           ) {
-            view.highlightOptions.fillOpacity = 1;
+            mapView.highlightOptions.fillOpacity = 1;
           }
 
           // ensure the graphic actually changed prior to setting the context variable

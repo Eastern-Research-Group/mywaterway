@@ -1,4 +1,11 @@
-import { Fragment, useContext, useEffect, useRef, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import styled from 'styled-components';
 import { css } from 'styled-components/macro';
 import Select from 'react-select';
@@ -190,6 +197,12 @@ type SortBy =
   | { value: 'modified'; label: 'Date'; defaultSort: 'desc' };
 
 // --- helpers ---
+function isGroupLayer(
+  layer: Layer | __esri.TileLayer | __esri.GroupLayer,
+): layer is __esri.GroupLayer {
+  return (layer as __esri.GroupLayer).type === 'group';
+}
+
 function isTileLayer(
   layer: Layer | __esri.TileLayer | __esri.GroupLayer,
 ): layer is __esri.TileLayer {
@@ -777,62 +790,60 @@ function ResultCard({ result }: ResultCardProps) {
   /**
    * Adds non-tots layers as reference portal layers.
    */
-  function addRefLayer() {
+  const addRefLayer = useCallback(async () => {
     if (!mapView?.map) return;
 
     setStatus('loading');
 
-    Layer.fromPortalItem({
-      portalItem: new PortalItem({
-        id: result.id,
-      }),
-    }).then((layer: Layer | __esri.TileLayer | __esri.GroupLayer) => {
-      // setup the watch event to see when the layer finishes loading
-      const newWatcher = watchUtils.watch(
-        layer,
-        'loadStatus',
-        (loadStatus: string) => {
-          // set the status based on the load status
-          if (loadStatus === 'loaded') {
-            setStatus('');
+    const layer: Layer | __esri.TileLayer | __esri.GroupLayer =
+      await Layer.fromPortalItem({
+        portalItem: new PortalItem({
+          id: result.id,
+        }),
+      });
+    // setup the watch event to see when the layer finishes loading
+    const newWatcher = watchUtils.watch(
+      layer,
+      'loadStatus',
+      (loadStatus: string) => {
+        // set the status based on the load status
+        if (loadStatus === 'loaded') {
+          setStatus('');
 
-            // set the min/max scale for tile layers
-            if (isTileLayer(layer)) {
-              const tileLayer = layer;
-              tileLayer.minScale = 0;
-              tileLayer.maxScale = 0;
-            }
-
-            if (mapView) {
-              layer.visible = true;
-
-              // make all child layers visible, if applicable
-              if ('layers' in layer && layer.layers) {
-                layer.layers.forEach((tempLayer: Layer) => {
-                  tempLayer.visible = true;
-                });
-              }
-              if ('sublayers' in layer && layer.sublayers) {
-                layer.sublayers.forEach((tempLayer: __esri.Sublayer) => {
-                  tempLayer.visible = true;
-                });
-              }
-            }
-          } else if (loadStatus === 'failed') {
-            setStatus('error');
+          // set the min/max scale for tile layers
+          if (isTileLayer(layer)) {
+            const tileLayer = layer;
+            tileLayer.minScale = 0;
+            tileLayer.maxScale = 0;
           }
-        },
-      );
 
-      setWatcher(newWatcher);
+          layer.visible = true;
 
-      // add the layer to the map
-      setWidgetLayers((currentWidgetLayers: WidgetLayer[]) => [
-        ...currentWidgetLayers,
-        layer,
-      ]);
-    });
-  }
+          // make all child layers visible, if applicable
+          if (isGroupLayer(layer)) {
+            layer.layers.forEach((tempLayer: Layer) => {
+              tempLayer.visible = true;
+            });
+          }
+          if ('sublayers' in layer) {
+            layer.sublayers.forEach((tempLayer: __esri.Sublayer) => {
+              tempLayer.visible = true;
+            });
+          }
+        } else if (loadStatus === 'failed') {
+          setStatus('error');
+        }
+      },
+    );
+
+    setWatcher(newWatcher);
+
+    // add the layer to the map
+    setWidgetLayers((currentWidgetLayers: WidgetLayer[]) => [
+      ...currentWidgetLayers,
+      layer,
+    ]);
+  }, [mapView, result.id, setWidgetLayers]);
 
   /**
    * Removes the reference portal layers.
