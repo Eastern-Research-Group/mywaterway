@@ -1032,6 +1032,7 @@ function WaterbodyReport() {
                 layout="fullscreen"
                 unitIds={unitIds}
                 onLoad={setMapLayer}
+                includePhoto
               />
             </div>
           );
@@ -1088,6 +1089,7 @@ function WaterbodyReport() {
                               layout="narrow"
                               unitIds={unitIds}
                               onLoad={setMapLayer}
+                              includePhoto
                             />
                           </div>
                         )}
@@ -1107,6 +1109,7 @@ function WaterbodyReport() {
                           layout="wide"
                           unitIds={unitIds}
                           onLoad={setMapLayer}
+                          includePhoto
                         />
                       </div>
                     </StickyBox>
