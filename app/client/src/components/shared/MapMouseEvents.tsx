@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
 import Point from '@arcgis/core/geometry/Point';
-import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import Query from '@arcgis/core/rest/support/Query';
 import QueryTask from '@arcgis/core/tasks/QueryTask';
 import SpatialReference from '@arcgis/core/geometry/SpatialReference';
@@ -61,7 +60,7 @@ interface SubLayer extends __esri.Layer {
 async function getClusterExtent(
   cluster: __esri.Graphic,
   mapView: __esri.MapView,
-  layer: FeatureLayer,
+  layer: __esri.FeatureLayer,
 ) {
   const layerView = await mapView.whenLayerView(layer);
   const query = layerView.createQuery();

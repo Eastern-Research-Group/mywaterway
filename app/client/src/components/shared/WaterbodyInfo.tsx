@@ -35,8 +35,8 @@ import type { NavigateFunction } from 'react-router-dom';
 import type { ClickedHucState } from 'types';
 
 /*
- * Helpers
- */
+## Helpers
+*/
 function bool(value: string) {
   // Return 'Yes' for truthy values and non-zero strings
   return value && parseInt(value, 10) ? 'Yes' : 'No';
@@ -81,8 +81,8 @@ function labelValue(
 }
 
 /*
- * Styles
- */
+## Styles
+*/
 const dateRangeStyles = css`
   font-size: 0.8em;
   margin-left: 1em;
@@ -248,8 +248,8 @@ const tableFooterStyles = css`
 `;
 
 /*
- * Types
- */
+## Types
+*/
 interface ActionData {
   actionIdentifier: string;
   actionName: string;
@@ -336,6 +336,9 @@ type WaterbodyInfoProps = {
   fields?: __esri.Field[] | null;
 };
 
+/*
+## Components
+*/
 function WaterbodyInfo({
   type,
   feature,
@@ -857,7 +860,7 @@ function WaterbodyInfo({
                       <tr>
                         <th>Plan (ID)</th>
                         <th>Impairments</th>
-                        <th>Type</th>
+                        <th style={{'width': '25%'}}>Type</th>
                         <th>Date</th>
                       </tr>
                     </thead>

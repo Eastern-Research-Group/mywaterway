@@ -1,4 +1,3 @@
-import Graphic from '@arcgis/core/Graphic';
 import { useState, useEffect } from 'react';
 import { css } from 'styled-components/macro';
 // components
@@ -49,7 +48,7 @@ interface SortOption {
 }
 
 type Props = {
-  waterbodies: Graphic[];
+  waterbodies: __esri.Graphic[];
   type: string;
   fieldName: string;
 };

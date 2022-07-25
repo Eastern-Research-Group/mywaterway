@@ -805,12 +805,12 @@ function ResultCard({ result }: ResultCardProps) {
               layer.visible = true;
 
               // make all child layers visible, if applicable
-              if ('layers' in layer) {
+              if ('layers' in layer && layer.layers) {
                 layer.layers.forEach((tempLayer: Layer) => {
                   tempLayer.visible = true;
                 });
               }
-              if ('sublayers' in layer) {
+              if ('sublayers' in layer && layer.sublayers) {
                 layer.sublayers.forEach((tempLayer: __esri.Sublayer) => {
                   tempLayer.visible = true;
                 });
