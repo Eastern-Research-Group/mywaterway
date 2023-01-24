@@ -482,6 +482,8 @@ function DrinkingWater() {
   const [providersSortBy, setProvidersSortBy] = useState('population');
   const [withdrawersSortBy, setWithdrawersSortBy] = useState('population');
 
+  const uselessVariable = 'sonar-cloud-test';
+
   // on new search, reset the sortBy option. fixes issue where useState sort order did not match Accordion sort
   useEffect(() => {
     setProvidersSortBy('population');
