@@ -1269,6 +1269,16 @@ function getMaxCellConcentration(counts: number[]) {
   return null;
 }
 
+function getPreviousDay(current: Date, count: number) {
+  const prevDayDate = new Date(current.getTime() - count * oneDay);
+  return new Date(
+    prevDayDate.getTime() +
+      (prevDayDate.getTimezoneOffset() - current.getTimezoneOffset()) *
+        60 *
+        1000,
+  );
+}
+
 function getTotalNonLandPixels(
   data: NonNullable<CellConcentrationData[string]>,
 ) {
@@ -1464,7 +1474,7 @@ function CyanContent({ feature, mapView, services }: CyanContentProps) {
   useEffect(() => {
     if (services?.status !== 'success') return;
 
-    const startDate = new Date(today.getTime() - 7 * oneDay);
+    const startDate = getPreviousDay(today, 7);
 
     const dataUrl = `${services.data.cyan.cellConcentration}/?OBJECTID=${
       attributes.oid ?? attributes.OBJECTID
@@ -1481,7 +1491,14 @@ function CyanContent({ feature, mapView, services }: CyanContentProps) {
       .then((res: { data: { [date: string]: number[] } }) => {
         const newData: CellConcentrationData = {};
         let currentDate = startDate.getTime();
-        while (currentDate <= today.getTime() - oneDay) {
+        while (
+          currentDate <=
+          today.getTime() -
+            oneDay +
+            (startDate.getTimezoneOffset() - today.getTimezoneOffset()) *
+              60 *
+              1000
+        ) {
           newData[currentDate] = null;
           currentDate += oneDay;
         }
@@ -1489,7 +1506,7 @@ function CyanContent({ feature, mapView, services }: CyanContentProps) {
           if (values.length !== 256) return;
           const epochDate = cyanDateToEpoch(date);
           // Indices 0, 254, & 255 represent indetectable pixels
-          if (epochDate !== null) {
+          if (epochDate !== null && newData.hasOwnProperty(epochDate)) {
             const measurements = values.slice(1, 254);
             newData[epochDate] = {
               belowDetection: values[0],
