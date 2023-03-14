@@ -6,7 +6,7 @@ import React from 'react';
 export const echoError =
   'The permitted discharger information is temporarily unavailable, please try again later.';
 
-// qed.epa.gov
+// cyan.epa.gov
 export const cyanError =
   'CyAN data is temporarily unavailable, please try again later.';
 
@@ -257,6 +257,13 @@ export const defaultErrorBoundaryMessage = (
   <p>
     Something went wrong. Return to the <a href="/">homepage</a>.
   </p>
+);
+
+export const dataContentError = (
+  <>
+    Information about data used in <em>How's My Waterway</em> is temporarily
+    unavailable, please try again later.
+  </>
 );
 
 // message displayed when the Esri map fails to load due to incompatible browsers and devices

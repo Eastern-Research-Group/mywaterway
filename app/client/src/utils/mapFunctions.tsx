@@ -2,18 +2,14 @@ import { render } from 'react-dom';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { css } from 'styled-components/macro';
 import Color from '@arcgis/core/Color';
-import Point from '@arcgis/core/geometry/Point';
 import Graphic from '@arcgis/core/Graphic';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 // components
-import { monitoringClusterSettings } from 'components/shared/LocationMap';
 import { MapPopup } from 'components/shared/WaterbodyInfo';
 import WaterbodyIcon from 'components/shared/WaterbodyIcon';
-// styles
-import { colors } from 'styles/index.js';
 // utilities
 import { getSelectedCommunityTab } from 'utils/utils';
 // types
@@ -21,12 +17,8 @@ import type { NavigateFunction } from 'react-router-dom';
 import type {
   ChangeLocationAttributes,
   ClickedHucState,
-  Facility,
   Feature,
-  FetchState,
   ExtendedLayer,
-  MonitoringLocationAttributes,
-  MonitoringLocationsData,
   ParentLayer,
   PopupAttributes,
   ScaledLayer,
@@ -44,7 +36,8 @@ const waterbodyStatuses = {
   notApplicable: { condition: 'hidden', label: 'Not Applicable' },
 } as const;
 
-type WaterbodyStatus = typeof waterbodyStatuses[keyof typeof waterbodyStatuses];
+type WaterbodyStatus =
+  (typeof waterbodyStatuses)[keyof typeof waterbodyStatuses];
 
 const waterbodyOverallStatuses = {
   ...waterbodyStatuses,
@@ -52,7 +45,7 @@ const waterbodyOverallStatuses = {
 } as const;
 
 type WaterbodyOverallStatus =
-  typeof waterbodyOverallStatuses[keyof typeof waterbodyOverallStatuses];
+  (typeof waterbodyOverallStatuses)[keyof typeof waterbodyOverallStatuses];
 
 // Gets the type of symbol using the shape's attributes.
 export function getTypeFromAttributes(graphic: __esri.Graphic) {
@@ -392,9 +385,9 @@ export function isClassBreaksRenderer(
 }
 
 export function isFeatureLayer(
-  layer: __esri.Layer,
+  layer: __esri.Layer | null,
 ): layer is __esri.FeatureLayer {
-  return (layer as __esri.FeatureLayer).type === 'feature';
+  return layer !== null && (layer as __esri.FeatureLayer).type === 'feature';
 }
 
 export function isGraphicsLayer(
@@ -404,7 +397,7 @@ export function isGraphicsLayer(
 }
 
 export function isGroupLayer(layer: __esri.Layer): layer is __esri.GroupLayer {
-  return (layer as __esri.GroupLayer).type === 'group';
+  return layer.type === 'group';
 }
 
 type HighlightLayerView = __esri.FeatureLayerView | __esri.GraphicsLayerView;
@@ -441,7 +434,7 @@ export function isPoint(geometry: __esri.Geometry): geometry is __esri.Point {
 export function isPolygon(
   geometry: __esri.Geometry,
 ): geometry is __esri.Polygon {
-  return (geometry as __esri.Polygon).type === 'polygon';
+  return geometry.type === 'polygon';
 }
 
 export function isPolyline(
@@ -494,52 +487,6 @@ export function plotIssues(
         },
         popupTemplate: {
           title: getPopupTitle(waterbody.attributes),
-          content: (feature: Feature) =>
-            getPopupContent({
-              feature: feature.graphic,
-              navigate,
-            }),
-        },
-      }),
-    );
-  });
-}
-
-// plot facilities on map
-export function plotFacilities({
-  facilities,
-  layer,
-  navigate,
-}: {
-  facilities: Facility[];
-  layer: any;
-  navigate: NavigateFunction;
-}) {
-  if (!facilities || !layer) return;
-
-  // clear the layer
-  layer.graphics.removeAll();
-
-  // put graphics on the layer
-  facilities.forEach((facility) => {
-    layer.graphics.add(
-      new Graphic({
-        geometry: new Point({
-          longitude: parseFloat(facility['FacLong']),
-          latitude: parseFloat(facility['FacLat']),
-        }),
-        symbol: new SimpleMarkerSymbol({
-          color: colors.orange,
-          style: 'diamond',
-          size: 15,
-          outline: {
-            // width units differ between FeatureLayers and GraphicsLayers
-            width: 0.65,
-          },
-        }),
-        attributes: facility,
-        popupTemplate: {
-          title: getPopupTitle(facility),
           content: (feature: Feature) =>
             getPopupContent({
               feature: feature.graphic,
@@ -1072,19 +1019,7 @@ export function isInScale(
   return inScale;
 }
 
-const editLayer = async (
-  layer: __esri.FeatureLayer,
-  graphics: __esri.Graphic[],
-) => {
-  const featureSet = await layer.queryFeatures();
-  const edits = {
-    deleteFeatures: featureSet.features,
-    addFeatures: graphics,
-  };
-  return layer.applyEdits(edits);
-};
-
-function stringifyAttributes(
+export function stringifyAttributes(
   structuredAttributes: string[],
   attributes: { [property: string]: any },
 ) {
@@ -1097,91 +1032,4 @@ function stringifyAttributes(
     }
   }
   return { ...attributes, ...stringified };
-}
-
-export function buildStations(
-  locations: FetchState<MonitoringLocationsData>,
-  layer: __esri.Layer,
-) {
-  if (!layer) return;
-  if (locations.status !== 'success' || !locations.data.features?.length) {
-    return;
-  }
-
-  // sort descending order so that smaller graphics show up on top
-  const stationsSorted = [...locations.data.features];
-  stationsSorted.sort((a, b) => {
-    return (
-      parseInt(b.properties.resultCount) - parseInt(a.properties.resultCount)
-    );
-  });
-
-  // attributes common to both the layer and the context object
-  return stationsSorted.map((station) => {
-    return {
-      monitoringType: 'Past Water Conditions' as const,
-      siteId: station.properties.MonitoringLocationIdentifier,
-      orgId: station.properties.OrganizationIdentifier,
-      orgName: station.properties.OrganizationFormalName,
-      locationLongitude: station.geometry.coordinates[0],
-      locationLatitude: station.geometry.coordinates[1],
-      locationName: station.properties.MonitoringLocationName,
-      locationType: station.properties.MonitoringLocationTypeName,
-      // TODO: explore if the built up locationUrl below is ever different from
-      // `station.properties.siteUrl`. from a quick test, they seem the same
-      locationUrl:
-        `/monitoring-report/` +
-        `${station.properties.ProviderName}/` +
-        `${encodeURIComponent(station.properties.OrganizationIdentifier)}/` +
-        `${encodeURIComponent(
-          station.properties.MonitoringLocationIdentifier,
-        )}/`,
-      // monitoring station specific properties:
-      stationDataByYear: null,
-      stationProviderName: station.properties.ProviderName,
-      stationTotalSamples: parseInt(station.properties.activityCount),
-      stationTotalMeasurements: parseInt(station.properties.resultCount),
-      // counts for each lower-tier characteristic group
-      stationTotalsByGroup: station.properties.characteristicGroupResultCount,
-      stationTotalsByLabel: null,
-      timeframe: null,
-      // create a unique id, so we can check if the monitoring station has
-      // already been added to the display (since a monitoring station id
-      // isn't universally unique)
-      uniqueId:
-        `${station.properties.MonitoringLocationIdentifier}-` +
-        `${station.properties.ProviderName}-` +
-        `${station.properties.OrganizationIdentifier}`,
-    };
-  });
-}
-
-/*
- * Helpers for passing data to the map layers
- */
-export function updateMonitoringLocationsLayer(
-  stations: MonitoringLocationAttributes[],
-  layer: __esri.FeatureLayer,
-) {
-  const structuredProps = ['stationTotalsByGroup', 'timeframe'];
-  const graphics = stations.map((station) => {
-    const attributes = stringifyAttributes(structuredProps, station);
-    return new Graphic({
-      geometry: new Point({
-        longitude: attributes.locationLongitude,
-        latitude: attributes.locationLatitude,
-      }),
-      attributes: {
-        ...attributes,
-      },
-    });
-  });
-  editLayer(layer, graphics);
-
-  if (layer.id !== 'surroundingMonitoringLocationsLayer') {
-    // turn off clustering if there are 20 or less stations
-    // @ts-ignore
-    layer.featureReduction =
-      graphics.length > 20 ? monitoringClusterSettings : null;
-  }
 }

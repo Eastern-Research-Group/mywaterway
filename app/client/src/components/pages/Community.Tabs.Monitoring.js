@@ -3,7 +3,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from '@reach/tabs';
 import { css } from 'styled-components/macro';
-import { useNavigate } from 'react-router-dom';
 // components
 import {
   AccordionList,
@@ -34,11 +33,16 @@ import VirtualizedList from 'components/shared/VirtualizedList';
 import WaterbodyInfo from 'components/shared/WaterbodyInfo';
 // contexts
 import { useFetchedDataState } from 'contexts/FetchedData';
+import { useLayersState } from 'contexts/Layers';
 import { LocationSearchContext } from 'contexts/locationSearch';
 import { useServicesContext } from 'contexts/LookupFiles';
 // utilities
-import { plotFacilities } from 'utils/mapFunctions';
-import { useStreamgageFeatures, useWaterbodyOnMap } from 'utils/hooks';
+import {
+  getEnclosedLayer,
+  useStreamgages,
+  useMonitoringGroups,
+  useWaterbodyOnMap,
+} from 'utils/hooks';
 // data
 import { characteristicGroupMappings } from 'config/characteristicGroupMappings';
 // errors
@@ -206,7 +210,7 @@ function usePeriodOfRecordData(filter, param) {
   // Clear the data on change of location
   const resetWorkerData = useCallback(() => {
     setWorkerData(initialWorkerData);
-  }, [setWorkerData]);
+  }, []);
 
   // Craft the URL
   useEffect(() => {
@@ -221,7 +225,7 @@ function usePeriodOfRecordData(filter, param) {
       recordUrl += param === 'huc12' ? `&huc=${filter}` : `&siteid=${filter}`;
       setUrl(recordUrl);
     }
-  }, [filter, param, services.data, services.status]);
+  }, [filter, param, services]);
 
   // Create the worker and assign it a job,
   // then listen for a response
@@ -252,32 +256,31 @@ function usePeriodOfRecordData(filter, param) {
 // Dynamically filter the displayed locations
 function filterStation(station, timeframe) {
   if (!timeframe) return station;
-  const stationRecords = station.stationDataByYear;
+  const stationRecords = station.dataByYear;
   const result = {
     ...station,
-    stationTotalMeasurements: 0,
-    stationTotalsByGroup: {},
-    stationTotalsByLabel: {},
+    totalMeasurements: 0,
+    totalsByGroup: {},
+    totalsByLabel: {},
     timeframe: [...timeframe],
   };
   characteristicGroupMappings.forEach((mapping) => {
-    result.stationTotalsByLabel[mapping.label] = 0;
+    result.totalsByLabel[mapping.label] = 0;
   });
   for (const year in stationRecords) {
     if (parseInt(year) < timeframe[0]) continue;
     if (parseInt(year) > timeframe[1]) return result;
-    result.stationTotalMeasurements +=
-      stationRecords[year].stationTotalMeasurements;
-    const resultGroups = result.stationTotalsByGroup;
-    Object.entries(stationRecords[year].stationTotalsByGroup).forEach(
+    result.totalMeasurements += stationRecords[year].totalMeasurements;
+    const resultGroups = result.totalsByGroup;
+    Object.entries(stationRecords[year].totalsByGroup).forEach(
       ([group, count]) => {
         resultGroups[group] = !resultGroups[group]
           ? count
           : resultGroups[group] + count;
       },
     );
-    Object.entries(stationRecords[year].stationTotalsByLabel).forEach(
-      ([key, value]) => (result.stationTotalsByLabel[key] += value),
+    Object.entries(stationRecords[year].totalsByLabel).forEach(
+      ([key, value]) => (result.totalsByLabel[key] += value),
     );
   }
 
@@ -296,7 +299,7 @@ function filterLocations(groups, timeframe) {
     groups['All'].stations.forEach((station) => {
       const curStation = filterStation(station, timeframe);
       const hasToggledData = toggledGroups.some((group) => {
-        return curStation.stationTotalsByLabel[group] > 0;
+        return curStation.totalsByLabel[group] > 0;
       });
       if (hasToggledData) toggledLocations.push(curStation);
       allLocations.push(curStation);
@@ -307,21 +310,17 @@ function filterLocations(groups, timeframe) {
 }
 
 function Monitoring() {
-  const navigate = useNavigate();
-  const { usgsStreamgages } = useFetchedDataState();
-
   const {
     cipSummary,
     cyanWaterbodies,
-    monitoringLocations,
-    dischargersLayer,
-    permittedDischargers,
-    monitoringLocationsLayer,
     mapView,
     visibleLayers,
     setVisibleLayers,
-    usgsStreamgagesLayer,
   } = useContext(LocationSearchContext);
+
+  const { monitoringLocationsLayer, usgsStreamgagesLayer } = useLayersState();
+  const { monitoringLocations, permittedDischargers, usgsStreamgages } =
+    useFetchedDataState();
 
   const [currentWaterConditionsDisplayed, setCurrentWaterConditionsDisplayed] =
     useState(true);
@@ -332,21 +331,6 @@ function Monitoring() {
     useState(true);
 
   const [monitoringDisplayed, setMonitoringDisplayed] = useState(false);
-
-  // draw the permitted dischargers on the map
-  useEffect(() => {
-    // wait until permitted dischargers data is set in context
-    if (
-      permittedDischargers.data['Results'] &&
-      permittedDischargers.data['Results']['Facilities']
-    ) {
-      plotFacilities({
-        facilities: permittedDischargers.data['Results']['Facilities'],
-        layer: dischargersLayer,
-        navigate,
-      });
-    }
-  }, [permittedDischargers.data, dischargersLayer, navigate]);
 
   // Syncs the toggles with the visible layers on the map. Mainly
   // used for when the user toggles layers in full screen mode and then
@@ -432,14 +416,7 @@ function Monitoring() {
   // update visible layers based on webservice statuses.
   useEffect(() => {
     updateVisibleLayers({ useCurrentValue: true });
-  }, [
-    cipSummary,
-    monitoringLocations,
-    permittedDischargers,
-    updateVisibleLayers,
-    usgsStreamgages,
-    visibleLayers,
-  ]);
+  }, [updateVisibleLayers]);
 
   const handleCurrentWaterConditionsToggle = useCallback(
     (checked) => {
@@ -483,23 +460,18 @@ function Monitoring() {
   );
 
   const totalCurrentWaterConditions =
-    (usgsStreamgages.data.value?.length ?? 0) +
-    (cyanWaterbodies.data?.length ?? 0);
+    (usgsStreamgages.data?.length ?? 0) + (cyanWaterbodies.data?.length ?? 0);
 
   return (
     <div css={containerStyles}>
       <div css={keyMetricsStyles}>
         <div css={keyMetricStyles}>
-          {usgsStreamgages.status === 'idle' ||
-          usgsStreamgages.status === 'pending' ? (
+          {usgsStreamgages.status === 'pending' ? (
             <LoadingSpinner />
           ) : (
             <>
               <span css={keyMetricNumberStyles}>
-                {usgsStreamgages.status === 'success' ||
-                cyanWaterbodies.status === 'success'
-                  ? totalCurrentWaterConditions
-                  : 'N/A'}
+                {totalCurrentWaterConditions || 'N/A'}
               </span>
               <p css={keyMetricLabelStyles}>Current Water Conditions</p>
               <div css={switchContainerStyles}>
@@ -517,24 +489,24 @@ function Monitoring() {
           )}
         </div>
         <div css={keyMetricStyles}>
-          {monitoringLocations.status === 'fetching' ? (
+          {monitoringLocations.status === 'pending' ? (
             <LoadingSpinner />
           ) : (
             <>
               <span css={keyMetricNumberStyles}>
                 {monitoringLocations.status === 'failure'
                   ? 'N/A'
-                  : `${monitoringLocations.data.features.length}`}
+                  : `${monitoringLocations.data?.length ?? 0}`}
               </span>
               <p css={keyMetricLabelStyles}>Past Water Conditions</p>
               <div css={switchContainerStyles}>
                 <Switch
                   checked={
-                    Boolean(monitoringLocations.data.features?.length) &&
+                    Boolean(monitoringLocations.data?.length) &&
                     monitoringDisplayed
                   }
                   onChange={handlePastWaterConditionsToggle}
-                  disabled={!Boolean(monitoringLocations.data.features?.length)}
+                  disabled={!Boolean(monitoringLocations.data?.length)}
                   ariaLabel="Past Water Conditions"
                 />
               </div>
@@ -677,9 +649,6 @@ function CurrentConditionsTab({
     setCurrentWaterConditionsDisplayed,
   ]);
 
-  const { usgsStreamgages, usgsPrecipitation, usgsDailyAverages } =
-    useFetchedDataState();
-
   // draw the waterbody on the map
   useWaterbodyOnMap();
 
@@ -689,18 +658,14 @@ function CurrentConditionsTab({
     LocationSearchContext,
   );
 
-  const normalizedUsgsStreamgages = useStreamgageFeatures(
-    usgsStreamgages,
-    usgsPrecipitation,
-    usgsDailyAverages,
-  );
+  const { streamgages, streamgagesStatus } = useStreamgages();
 
   const [sortedBy, setSortedBy] = useState('locationName');
 
   const sortedLocations = [
-    ...normalizedUsgsStreamgages,
+    ...streamgages,
     ...(cyanWaterbodies.status === 'success' ? cyanWaterbodies.data : []),
-  ].sort(({ attributes: a }, { attributes: b }) => {
+  ].sort((a, b) => {
     if (sortedBy in a && sortedBy in b) {
       return a[sortedBy].localeCompare(b[sortedBy]);
     } else if (sortedBy in a) return -1;
@@ -718,7 +683,7 @@ function CurrentConditionsTab({
       displayedTypes.push('CyAN');
     }
 
-    return displayedTypes.includes(item.attributes.monitoringType);
+    return displayedTypes.includes(item.monitoringType);
   });
 
   const handleUsgsSensorsToggle = useCallback(
@@ -745,12 +710,11 @@ function CurrentConditionsTab({
 
   const handleSortChange = useCallback(({ value }) => setSortedBy(value), []);
 
-  if (usgsStreamgages.status === 'idle' || usgsStreamgages.status === 'pending')
-    return <LoadingSpinner />;
+  if (streamgagesStatus === 'pending') return <LoadingSpinner />;
 
   return (
     <>
-      {usgsStreamgages.status === 'failure' && (
+      {streamgagesStatus === 'failure' && (
         <div css={modifiedErrorBoxStyles}>
           <p>{streamgagesError}</p>
         </div>
@@ -776,18 +740,15 @@ function CurrentConditionsTab({
             <td>
               <div css={toggleStyles}>
                 <Switch
-                  checked={
-                    normalizedUsgsStreamgages.length > 0 &&
-                    usgsStreamgagesDisplayed
-                  }
+                  checked={streamgages.length > 0 && usgsStreamgagesDisplayed}
                   onChange={handleUsgsSensorsToggle}
-                  disabled={normalizedUsgsStreamgages.length === 0}
+                  disabled={streamgages.length === 0}
                   ariaLabel="USGS Sensors"
                 />
                 <span>USGS Sensors</span>
               </div>
             </td>
-            <td>{normalizedUsgsStreamgages.length}</td>
+            <td>{streamgages.length}</td>
           </tr>
           <tr>
             <td>
@@ -835,66 +796,77 @@ function CurrentConditionsTab({
         ]}
       >
         {filteredLocations.map((item) => {
-          switch (item.attributes.monitoringType) {
-            case 'USGS Sensors':
+          switch (item.monitoringType) {
+            case 'USGS Sensors': {
+              const feature = {
+                geometry: {
+                  type: 'point',
+                  longitude: item.locationLongitude,
+                  latitude: item.locationLatitude,
+                },
+                attributes: item,
+              };
+
               return (
                 <AccordionItem
                   icon={squareIcon({ color: '#fffe00' })}
-                  key={item.attributes.siteId}
-                  title={
-                    <strong>{item.attributes.locationName || 'Unknown'}</strong>
-                  }
+                  key={item.uniqueId}
+                  title={<strong>{item.locationName || 'Unknown'}</strong>}
                   subTitle={
                     <>
                       <em>Organization Name:</em>&nbsp;&nbsp;
-                      {item.attributes.orgName}
+                      {item.orgName}
                       <br />
                       <em>Water Type:</em>&nbsp;&nbsp;
-                      {item.attributes.locationType}
+                      {item.locationType}
                     </>
                   }
-                  feature={item}
-                  idKey="siteId"
+                  feature={feature}
+                  idKey="uniqueId"
                 >
                   <div css={accordionContentStyles}>
                     <WaterbodyInfo
                       type="USGS Sensors"
-                      feature={item}
+                      feature={feature}
                       services={services}
                     />
 
-                    <ViewOnMapButton feature={item} />
+                    <ViewOnMapButton feature={feature} />
                   </div>
                 </AccordionItem>
               );
-            case 'CyAN':
+            }
+            case 'CyAN': {
+              const feature = {
+                geometry: item.geometry,
+                attributes: item,
+              };
               return (
                 <AccordionItem
                   icon={waterwayIcon({ color: '#6c95ce' })}
-                  key={item.attributes.FID}
-                  title={
-                    <strong>{item.attributes.GNIS_NAME || 'Unknown'}</strong>
-                  }
+                  key={item.FID}
+                  title={<strong>{item.GNIS_NAME || 'Unknown'}</strong>}
                   subTitle={
                     <>
                       <em>Organization Name:</em>&nbsp;&nbsp;
-                      {item.attributes.orgName}
+                      {item.orgName}
                     </>
                   }
-                  feature={item}
+                  feature={feature}
                   idKey="FID"
                 >
                   <div css={accordionContentStyles}>
                     <WaterbodyInfo
-                      feature={item}
+                      feature={feature}
                       mapView={mapView}
                       services={services}
                       type="CyAN"
                     />
-                    <ViewOnMapButton feature={item} fieldName="FID" />
+                    <ViewOnMapButton feature={feature} fieldName="FID" />
                   </div>
                 </AccordionItem>
               );
+            }
             default:
               throw new Error('Unhandled monitoring type');
           }
@@ -904,26 +876,28 @@ function CurrentConditionsTab({
   );
 }
 
-function PastConditionsTab({ monitoringDisplayed, setMonitoringDisplayed }) {
+function PastConditionsTab({ setMonitoringDisplayed }) {
   const services = useServicesContext();
 
   const {
     huc12,
     monitoringGroups,
-    monitoringLocations,
-    monitoringLocationsLayer,
     setMonitoringFeatureUpdates,
     setMonitoringGroups,
     watershed,
   } = useContext(LocationSearchContext);
+
+  const { monitoringLocationsLayer } = useLayersState();
+  const { monitoringLocations } = useFetchedDataState();
+  useMonitoringGroups();
 
   const updateFeatures = useCallback(
     (locations) => {
       const stationUpdates = {};
       locations.forEach((location) => {
         stationUpdates[location.uniqueId] = {
-          stationTotalMeasurements: location.stationTotalMeasurements,
-          stationTotalsByGroup: JSON.stringify(location.stationTotalsByGroup),
+          totalMeasurements: location.totalMeasurements,
+          totalsByGroup: JSON.stringify(location.totalsByGroup),
           timeframe: JSON.stringify(location.timeframe),
         };
       });
@@ -991,21 +965,24 @@ function PastConditionsTab({ monitoringDisplayed, setMonitoringDisplayed }) {
   // The data returned by the worker
   const [{ minYear, maxYear, annualData }, resetWorkerData] =
     usePeriodOfRecordData(huc12, 'huc12');
+
   // The currently selected date range
   const [yearsRange, setYearsRange] = useState(null);
+
+  // Reset data if the user switches locations
   useEffect(() => {
-    if (monitoringGroups) return;
-    // Reset data if the user switches locations
-    monitoringLocationsLayer.definitionExpression = '';
-    resetWorkerData();
-    setYearsRange(null);
-    setAllToggled(true);
-  }, [
-    monitoringGroups,
-    monitoringLocationsLayer,
-    resetWorkerData,
-    setMonitoringDisplayed,
-  ]);
+    if (!huc12) return;
+
+    return function cleanup() {
+      resetWorkerData();
+      setYearsRange(null);
+      setAllToggled(true);
+      if (!monitoringLocationsLayer) return;
+
+      const layer = getEnclosedLayer(monitoringLocationsLayer);
+      if (layer) layer.definitionExpression = '';
+    };
+  }, [huc12, monitoringLocationsLayer, resetWorkerData]);
 
   const [charGroupFilters, setCharGroupFilters] = useState('');
   // create the filter string for download links based on active toggles
@@ -1044,6 +1021,9 @@ function PastConditionsTab({ monitoringDisplayed, setMonitoringDisplayed }) {
   useEffect(() => {
     if (!monitoringLocationsLayer || !monitoringGroups) return;
 
+    const layer = getEnclosedLayer(monitoringLocationsLayer);
+    if (!layer) return;
+
     const { toggledLocations, allLocations } = filterLocations(
       monitoringGroups,
       yearsRange,
@@ -1062,51 +1042,34 @@ function PastConditionsTab({ monitoringDisplayed, setMonitoringDisplayed }) {
 
     // update the filters on the layer
     if (toggledLocations.length === monitoringGroups?.['All'].stations.length) {
-      monitoringLocationsLayer.definitionExpression = '';
+      layer.definitionExpression = '';
     } else if (locationIds.length === 0) {
-      monitoringLocationsLayer.definitionExpression = '1=0';
+      layer.definitionExpression = '1=0';
     } else {
-      monitoringLocationsLayer.definitionExpression = `uniqueId IN ('${locationIds.join(
-        "','",
-      )}')`;
+      layer.definitionExpression = `uniqueId IN ('${locationIds.join("','")}')`;
     }
 
     setCurrentLocations(allLocations);
     setDisplayedLocations(toggledLocations);
-    monitoringLocationsLayer.visible = monitoringDisplayed;
-  }, [
-    monitoringDisplayed,
-    monitoringGroups,
-    monitoringLocationsLayer,
-    updateFeatures,
-    yearsRange,
-  ]);
+  }, [monitoringGroups, monitoringLocationsLayer, updateFeatures, yearsRange]);
 
-  // Add the stations historical data to the `stationDataByYear` property,
+  // Add the stations historical data to the `dataByYear` property,
   // then initializes the date slider
   const addAnnualData = useCallback(async () => {
-    if (!monitoringLocationsLayer || !monitoringGroups) return;
+    if (!monitoringGroups) return;
 
     const updatedMonitoringGroups = { ...monitoringGroups };
     for (const label in updatedMonitoringGroups) {
       for (const station of updatedMonitoringGroups[label].stations) {
         const id = station.uniqueId;
         if (id in annualData) {
-          station.stationDataByYear = annualData[id];
+          station.dataByYear = annualData[id];
         }
       }
     }
     setMonitoringGroups(updatedMonitoringGroups);
     setYearsRange([minYear, maxYear]);
-  }, [
-    maxYear,
-    minYear,
-    monitoringGroups,
-    monitoringLocationsLayer,
-    annualData,
-    setMonitoringGroups,
-    setYearsRange,
-  ]);
+  }, [maxYear, minYear, monitoringGroups, annualData, setMonitoringGroups]);
 
   const [totalDisplayedLocations, setTotalDisplayedLocations] = useState(0);
   const [totalDisplayedMeasurements, setTotalDisplayedMeasurements] =
@@ -1119,26 +1082,26 @@ function PastConditionsTab({ monitoringDisplayed, setMonitoringDisplayed }) {
 
   // Updates total counts after displayed locations are filtered
   useEffect(() => {
-    if (monitoringGroups) {
-      let newTotalLocations = 0;
-      let newTotalMeasurements = 0;
+    if (!monitoringGroups) return;
 
-      // update the watershed total measurements and samples counts
-      displayedLocations.forEach((station) => {
-        newTotalLocations++;
-        Object.keys(monitoringGroups)
-          .filter((group) => group !== 'All')
-          .forEach((group) => {
-            if (monitoringGroups[group].toggled) {
-              newTotalMeasurements += station.stationTotalsByLabel[group];
-            }
-          });
-      });
+    let newTotalLocations = 0;
+    let newTotalMeasurements = 0;
 
-      setTotalDisplayedLocations(newTotalLocations);
-      setTotalDisplayedMeasurements(newTotalMeasurements);
-      buildFilter(monitoringGroups);
-    }
+    // update the watershed total measurements and samples counts
+    displayedLocations.forEach((station) => {
+      newTotalLocations++;
+      Object.keys(monitoringGroups)
+        .filter((group) => group !== 'All')
+        .forEach((group) => {
+          if (monitoringGroups[group].toggled) {
+            newTotalMeasurements += station.totalsByLabel[group];
+          }
+        });
+    });
+
+    setTotalDisplayedLocations(newTotalLocations);
+    setTotalDisplayedMeasurements(newTotalMeasurements);
+    buildFilter(monitoringGroups);
   }, [buildFilter, displayedLocations, monitoringGroups]);
 
   const downloadUrl =
@@ -1156,8 +1119,8 @@ function PastConditionsTab({ monitoringDisplayed, setMonitoringDisplayed }) {
   const sortedMonitoringLocations = useMemo(() => {
     return displayedLocations
       ? displayedLocations.sort((a, b) => {
-          if (sortBy === 'stationTotalMeasurements') {
-            return b.stationTotalMeasurements - a.stationTotalMeasurements;
+          if (sortBy === 'totalMeasurements') {
+            return b.totalMeasurements - a.totalMeasurements;
           }
 
           if (sortBy === 'siteId') {
@@ -1239,7 +1202,7 @@ function PastConditionsTab({ monitoringDisplayed, setMonitoringDisplayed }) {
               {item.locationType}
               <br />
               <em>Monitoring Measurements:</em>&nbsp;&nbsp;
-              {item.stationTotalMeasurements}
+              {item.totalMeasurements}
             </>
           }
           feature={feature}
@@ -1266,7 +1229,7 @@ function PastConditionsTab({ monitoringDisplayed, setMonitoringDisplayed }) {
     ],
   );
 
-  if (monitoringLocations.status === 'fetching') return <LoadingSpinner />;
+  if (monitoringLocations.status === 'pending') return <LoadingSpinner />;
 
   if (monitoringLocations.status === 'failure') {
     return (
@@ -1335,9 +1298,8 @@ function PastConditionsTab({ monitoringDisplayed, setMonitoringDisplayed }) {
                     let measurementCount = 0;
                     let locationCount = 0;
                     currentLocations.forEach((station) => {
-                      if (station.stationTotalsByLabel[group.label] > 0) {
-                        measurementCount +=
-                          station.stationTotalsByLabel[group.label];
+                      if (station.totalsByLabel[group.label] > 0) {
+                        measurementCount += station.totalsByLabel[group.label];
                         locationCount++;
                       }
                     });
@@ -1486,7 +1448,7 @@ function PastConditionsTab({ monitoringDisplayed, setMonitoringDisplayed }) {
                 },
                 {
                   label: 'Monitoring Measurements',
-                  value: 'stationTotalMeasurements',
+                  value: 'totalMeasurements',
                 },
               ]}
             >

@@ -13,6 +13,7 @@ import MapVisibilityButton from 'components/shared/MapVisibilityButton';
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
 import { useFetchedDataDispatch } from 'contexts/FetchedData';
+import { LayersProvider } from 'contexts/Layers';
 import { LocationSearchContext } from 'contexts/locationSearch';
 import {
   CommunityTabsContext,
@@ -122,12 +123,12 @@ function Community() {
   }, []);
 
   // reset searchText and data when navigating away from '/community'
-  const { resetData, setSearchText, setLastSearchText, errorMessage } =
+  const { setSearchText, setLastSearchText, errorMessage, resetData } =
     useContext(LocationSearchContext);
 
   useEffect(() => {
     return function cleanup() {
-      fetchedDataDispatch({ type: 'RESET_FETCHED_DATA' });
+      fetchedDataDispatch({ type: 'reset' });
       resetData();
       setSearchText('');
       setLastSearchText('');
@@ -148,7 +149,7 @@ function Community() {
   // reset data when navigating back to /community
   useEffect(() => {
     if (window.location.pathname === '/community') {
-      fetchedDataDispatch({ type: 'RESET_FETCHED_DATA' });
+      fetchedDataDispatch({ type: 'reset' });
       resetData();
       setSearchText('');
       setLastSearchText('');
@@ -269,13 +270,15 @@ function Community() {
 export default function CommunityContainer() {
   return (
     <EsriMapProvider>
-      <CommunityTabsProvider>
-        <MapHighlightProvider>
-          <FullscreenProvider>
-            <Community />
-          </FullscreenProvider>
-        </MapHighlightProvider>
-      </CommunityTabsProvider>
+      <LayersProvider>
+        <CommunityTabsProvider>
+          <MapHighlightProvider>
+            <FullscreenProvider>
+              <Community />
+            </FullscreenProvider>
+          </MapHighlightProvider>
+        </CommunityTabsProvider>
+      </LayersProvider>
     </EsriMapProvider>
   );
 }

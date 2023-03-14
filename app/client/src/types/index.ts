@@ -10,11 +10,11 @@ export interface AllotmentAttributes {
 
 export interface AnnualStationData {
   uniqueId: string;
-  stationTotalMeasurements: number;
-  stationTotalSamples: number;
-  stationTotalsByCharacteristic: { [characteristic: string]: number };
-  stationTotalsByGroup: { [group: string]: number };
-  stationTotalsByLabel: { [label: string]: number };
+  totalMeasurements: number;
+  totalSamples: number;
+  totalsByCharacteristic: { [characteristic: string]: number };
+  totalsByGroup: { [group: string]: number };
+  totalsByLabel: { [label: string]: number };
 }
 
 export interface ChangeLocationAttributes {
@@ -49,21 +49,17 @@ export interface CyanAttributes {
 }
 
 export interface Facility {
+  CWPFormalEaCnt: string | null;
+  CWPInspectionCount: string | null;
   CWPName: string;
-  CWPNAICSCodes: string | null;
-  E90Exceeds1yr?: string;
+  CWPPermitStatusDesc: string;
+  CWPSNCStatus: string | null;
+  CWPStatus: string;
   FacLat: string;
   FacLong: string;
-  CWPPermitStatusDesc: string;
-  CWPStatus: string;
-  CWPSNCStatus: string | null;
-  CWPQtrsWithNC: string;
-  CWPViolStatus: string;
-  CWPInspectionCount: string | null;
-  CWPFormalEaCnt: string | null;
-  Over80CountUs: string;
   RegistryID: string;
   SourceID: string;
+  uniqueId: string;
 }
 
 export interface Feature {
@@ -75,7 +71,7 @@ interface FetchEmptyState {
   data: {} | [] | null;
 }
 
-interface FetchSuccessState<Type> {
+export interface FetchSuccessState<Type> {
   status: 'success';
   data: Type;
 }
@@ -91,8 +87,8 @@ export interface ExtendedLayer extends __esri.Layer {
 }
 
 export interface MonitoringFeatureUpdate {
-  stationTotalMeasurements: number;
-  stationTotalsByGroup: { [group: string]: number };
+  totalMeasurements: number;
+  totalsByGroup: { [group: string]: number };
   timeframe: [number, number];
 }
 
@@ -101,6 +97,7 @@ export type MonitoringFeatureUpdates = {
 } | null;
 
 export interface MonitoringLocationAttributes {
+  county: string;
   monitoringType: 'Past Water Conditions';
   siteId: string;
   orgId: string;
@@ -110,12 +107,13 @@ export interface MonitoringLocationAttributes {
   locationName: string;
   locationType: string;
   locationUrl: string;
-  stationDataByYear: { [year: string | number]: AnnualStationData } | null;
-  stationProviderName: string;
-  stationTotalSamples: number;
-  stationTotalMeasurements: number;
-  stationTotalsByGroup: { [groups: string]: number };
-  stationTotalsByLabel: { [label: string]: number } | null;
+  state: string;
+  dataByYear: { [year: string | number]: AnnualStationData } | null;
+  providerName: string;
+  totalSamples: number;
+  totalMeasurements: number;
+  totalsByGroup: { [groups: string]: number };
+  totalsByLabel: { [label: string]: number } | null;
   timeframe: [number, number] | null;
   uniqueId: string;
 }
@@ -130,7 +128,7 @@ export interface MonitoringLocationGroups {
 }
 
 export interface MonitoringLocationsData {
-  features: {
+  features: Array<{
     geometry: {
       coordinates: [number, number];
       type: 'Point';
@@ -154,7 +152,7 @@ export interface MonitoringLocationsData {
       siteUrl: string;
     };
     type: 'Feature';
-  }[];
+  }>;
   type: 'FeatureCollection';
 }
 
@@ -164,6 +162,34 @@ export interface NonProfitAttributes {
 }
 
 export type ParentLayer = __esri.GroupLayer | SuperLayer;
+
+export type PermittedDischargersData = {
+  Results:
+    | {
+        BadSystemIDs: null;
+        BioCVRows: string;
+        BioV3Rows: string;
+        CVRows: string;
+        FEARows: string;
+        Facilities: Facility[];
+        INSPRows: string;
+        IndianCountryRows: string;
+        InfFEARows: string;
+        Message: string;
+        PageNo: string;
+        QueryID: string;
+        QueryRows: string;
+        SVRows: string;
+        TotalPenalties: string;
+        V3Rows: string;
+        Version: string;
+      }
+    | {
+        Error: {
+          ErrorMessage: string;
+        };
+      };
+};
 
 export type PopupAttributes =
   | ActionAttributes
@@ -195,7 +221,7 @@ export interface ScaledLayer extends __esri.Layer {
   maxScale?: number;
 }
 
-interface ServicesData {
+export interface ServicesData {
   attains: { serviceUrl: string };
   cyan: {
     application: string;
@@ -205,7 +231,13 @@ interface ServicesData {
     properties: string;
     waterbodies: string;
   };
+  echoNPDES: {
+    getFacilities: string;
+    metadata: string;
+  };
   upstreamWatershed: string;
+  usgsDailyValues: string;
+  usgsSensorThingsAPI: string;
   usgsWaterAlert: string;
   waterQualityPortal: {
     resultSearch: string;
@@ -265,6 +297,7 @@ export interface UsgsStreamgageAttributes {
     primary: StreamgageMeasurement[];
     secondary: StreamgageMeasurement[];
   };
+  uniqueId: string;
 }
 
 export interface UsgsDailyAveragesData {

@@ -27,10 +27,12 @@ import { GlossaryTerm } from 'components/shared/GlossaryPanel';
 import { tabs } from 'config/communityConfig';
 // contexts
 import { useFetchedDataState } from 'contexts/FetchedData';
+import { useLayersState } from 'contexts/Layers';
 import { LocationSearchContext } from 'contexts/locationSearch';
 import { CommunityTabsContext } from 'contexts/CommunityTabs';
 import { useMapHighlightState } from 'contexts/MapHighlight';
 import { useServicesContext } from 'contexts/LookupFiles';
+import { useSurroundingsDispatch } from 'contexts/Surroundings';
 // utilities
 import { getUrlFromMarkup, getTitleFromMarkup } from 'components/shared/Regex';
 import { useWaterbodyOnMap } from 'utils/hooks';
@@ -204,8 +206,6 @@ function Protect() {
     watershed,
     highlightOptions,
     huc12,
-    monitoringLocations,
-    monitoringLocationsLayer,
     statesData,
     visibleLayers,
     setVisibleLayers,
@@ -216,18 +216,23 @@ function Protect() {
     protectedAreasLayer,
     protectedAreasData,
     protectedAreasHighlightLayer,
-    usgsStreamgagesLayer,
     waterbodyLayer,
     cipSummary,
-    allWaterbodiesLayer,
-    surroundingMonitoringLocationsLayer,
   } = useContext(LocationSearchContext);
 
-  const { usgsStreamgages } = useFetchedDataState();
+  const {
+    monitoringLocationsLayer,
+    usgsStreamgagesLayer,
+    waterbodyLayer: allWaterbodiesLayer,
+  } = useLayersState();
+
+  const { monitoringLocations, usgsStreamgages } = useFetchedDataState();
 
   const { infoToggleChecked } = useContext(CommunityTabsContext);
 
   const [normalizedGrtsProjects, setNormalizedGrtsProjects] = useState([]);
+
+  const surroundingsDispatch = useSurroundingsDispatch();
 
   // normalize grts projects data with attains plans data
   useEffect(() => {
@@ -431,23 +436,28 @@ function Protect() {
   function onWsioToggle(newValue) {
     if (newValue) {
       setInitialAllWaterbodiesVisibility(allWaterbodiesLayer.visible);
-      setInitialSurroundingMonitoringVisibility(
-        surroundingMonitoringLocationsLayer.visible,
-      );
       setInitialMonitoringLocationsVisibility(monitoringLocationsLayer.visible);
       setInitialUsgsStreamgagesVisibility(usgsStreamgagesLayer.visible);
 
-      if (allWaterbodiesLayer) allWaterbodiesLayer.visible = false;
-      if (surroundingMonitoringLocationsLayer)
-        surroundingMonitoringLocationsLayer.visible = false;
+      if (allWaterbodiesLayer) {
+        allWaterbodiesLayer.visible = false;
+        surroundingsDispatch({
+          type: 'visible',
+          id: 'waterbodyLayer',
+          payload: false,
+        });
+      }
       if (monitoringLocationsLayer) monitoringLocationsLayer.visible = false;
       if (usgsStreamgagesLayer) usgsStreamgagesLayer.visible = false;
     } else {
-      if (allWaterbodiesLayer)
+      if (allWaterbodiesLayer) {
         allWaterbodiesLayer.visible = initialAllWaterbodiesVisibility;
-      if (surroundingMonitoringLocationsLayer)
-        surroundingMonitoringLocationsLayer.visible =
-          initialSurroundingMonitoringVisibility;
+        surroundingsDispatch({
+          type: 'visible',
+          id: 'waterbodyLayer',
+          payload: initialAllWaterbodiesVisibility,
+        });
+      }
       if (monitoringLocationsLayer)
         monitoringLocationsLayer.visible = initialMonitoringLocationsVisibility;
       if (usgsStreamgagesLayer)
@@ -518,18 +528,6 @@ function Protect() {
     setInitialAllWaterbodiesVisibility(allWaterbodiesLayer.visible);
   }, [allWaterbodiesLayer]);
 
-  const [
-    initialSurroundingMonitoringVisibility,
-    setInitialSurroundingMonitoringVisibility,
-  ] = useState(false);
-  useEffect(() => {
-    if (!surroundingMonitoringLocationsLayer) return;
-
-    setInitialSurroundingMonitoringVisibility(
-      surroundingMonitoringLocationsLayer.visible,
-    );
-  }, [surroundingMonitoringLocationsLayer]);
-
   const initialVisibility = tabs.find((tab) => tab.title === 'Protect')?.layers;
 
   const [
@@ -578,19 +576,21 @@ function Protect() {
       if (!componentWillUnmount?.current) return;
 
       allWaterbodiesLayer.visible = initialAllWaterbodiesVisibility;
-      surroundingMonitoringLocationsLayer.visible =
-        initialSurroundingMonitoringVisibility;
+      surroundingsDispatch({
+        type: 'visible',
+        id: 'waterbodyLayer',
+        payload: initialAllWaterbodiesVisibility,
+      });
       monitoringLocationsLayer.visible = initialMonitoringLocationsVisibility;
       usgsStreamgagesLayer.visible = initialUsgsStreamgagesVisibility;
     };
   }, [
     allWaterbodiesLayer,
     initialAllWaterbodiesVisibility,
-    initialSurroundingMonitoringVisibility,
     initialMonitoringLocationsVisibility,
     initialUsgsStreamgagesVisibility,
     monitoringLocationsLayer,
-    surroundingMonitoringLocationsLayer,
+    surroundingsDispatch,
     usgsStreamgagesLayer,
   ]);
 

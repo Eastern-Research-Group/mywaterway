@@ -1,16 +1,9 @@
 // @flow
 
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from '@reach/tabs';
 import { css } from 'styled-components/macro';
 import { useNavigate } from 'react-router-dom';
-import Graphic from '@arcgis/core/Graphic';
 // components
 import { tabsStyles } from 'components/shared/ContentTabs';
 import {
@@ -35,10 +28,12 @@ import {
 // contexts
 import { CommunityTabsContext } from 'contexts/CommunityTabs';
 import { useFetchedDataState } from 'contexts/FetchedData';
+import { useLayersState } from 'contexts/Layers';
 import { LocationSearchContext } from 'contexts/locationSearch';
 // utilities
 import { formatNumber } from 'utils/utils';
-import { plotFacilities, plotIssues } from 'utils/mapFunctions';
+import { plotIssues } from 'utils/mapFunctions';
+import { useDischargers } from 'utils/hooks';
 // errors
 import { echoError, huc12SummaryError } from 'config/errorMessages';
 // styles
@@ -84,9 +79,6 @@ function IdentifiedIssues() {
   const { infoToggleChecked } = useContext(CommunityTabsContext);
 
   const {
-    permittedDischargers,
-    dischargersLayer,
-    monitoringLocations,
     issuesLayer,
     waterbodyLayer,
     showAllPolluted,
@@ -96,17 +88,19 @@ function IdentifiedIssues() {
     getAllFeatures,
     setVisibleLayers,
     setShowAllPolluted,
+    setViolatingDischargersOnly,
     cipSummary,
     watershed,
   } = useContext(LocationSearchContext);
 
-  const { usgsStreamgages } = useFetchedDataState();
+  const { dischargersLayer } = useLayersState();
 
-  const [permittedDischargersData, setPermittedDischargersData] = useState({});
+  const { monitoringLocations, usgsStreamgages } = useFetchedDataState();
+
+  const { dischargers: violatingDischargers, dischargersStatus } =
+    useDischargers();
 
   const [parameterToggleObject, setParameterToggleObject] = useState({});
-
-  const [violatingFacilities, setStateViolatingFacilities] = useState([]);
 
   const [showAllParameters, setShowAllParameters] = useState(false);
 
@@ -114,36 +108,22 @@ function IdentifiedIssues() {
 
   const [showDischargersLayer, setShowDischargersLayer] = useState(false);
 
-  const setViolatingFacilities = useCallback(
-    (data: Object) => {
-      if (!data || !data['Results'] || !data['Results']['Facilities']) return;
-      const violatingFacilities = data['Results']['Facilities'].filter(
-        (fac) => {
-          return (
-            fac['CWPSNCStatus'] &&
-            fac['CWPSNCStatus'].toLowerCase().indexOf('effluent') !== -1
-          );
-        },
-      );
+  // Only show violating facilities on this tab
+  useEffect(() => {
+    setViolatingDischargersOnly(true);
+    return function cleanup() {
+      setViolatingDischargersOnly(false);
+    };
+  }, [setViolatingDischargersOnly]);
 
-      // if the permitter discharger data has changed from a new search
-      if (permittedDischargersData !== permittedDischargers.data) {
-        setPermittedDischargersData(permittedDischargers.data);
-        setStateViolatingFacilities(violatingFacilities);
-      }
-    },
-    [permittedDischargers, permittedDischargersData],
-  );
+  // Hide the waterbody layer from the list view on this tab
+  useEffect(() => {
+    if (waterbodyLayer) waterbodyLayer.listMode = 'hide';
 
-  const checkDischargersToDisplay = useCallback(() => {
-    if (!dischargersLayer || !showDischargersLayer) return;
-
-    plotFacilities({
-      facilities: violatingFacilities,
-      layer: dischargersLayer,
-      navigate,
-    });
-  }, [dischargersLayer, showDischargersLayer, violatingFacilities, navigate]);
+    return function cleanup() {
+      if (waterbodyLayer) waterbodyLayer.listMode = 'hide-children';
+    };
+  }, [waterbodyLayer]);
 
   // translate scientific parameter names
   const getMappedParameter = (parameterFields: Object, parameter: string) => {
@@ -234,17 +214,6 @@ function IdentifiedIssues() {
       mounted.current = true;
     } else {
       checkWaterbodiesToDisplay();
-      checkDischargersToDisplay();
-
-      if (
-        permittedDischargersData !== permittedDischargers.data &&
-        dischargersLayer &&
-        issuesLayer
-      ) {
-        setViolatingFacilities(permittedDischargers.data);
-        checkDischargersToDisplay();
-        dischargersLayer.graphics.removeAll();
-      }
 
       if (
         showIssuesLayer !== visibleLayers['issuesLayer'] ||
@@ -256,15 +225,11 @@ function IdentifiedIssues() {
     }
   }, [
     checkWaterbodiesToDisplay,
-    checkDischargersToDisplay,
-    permittedDischargersData,
-    permittedDischargers.data,
     dischargersLayer,
     issuesLayer,
     showIssuesLayer,
     visibleLayers,
     showDischargersLayer,
-    setViolatingFacilities,
   ]);
 
   // check the data quality and log a non-fatal exception to Google Analytics
@@ -325,12 +290,14 @@ function IdentifiedIssues() {
       const newVisibleLayers = {};
 
       if (cipSummary.status !== 'failure') {
+        newVisibleLayers['waterbodyLayer'] = visibleLayers['waterbodyLayer'];
+
         newVisibleLayers['issuesLayer'] =
           !issuesLayer || useCurrentValue
             ? visibleLayers['issuesLayer']
             : showIssuesLayer;
       }
-      if (permittedDischargers.status !== 'failure') {
+      if (dischargersStatus !== 'failure') {
         newVisibleLayers['dischargersLayer'] =
           !dischargersLayer || useCurrentValue
             ? visibleLayers['dischargersLayer']
@@ -358,7 +325,7 @@ function IdentifiedIssues() {
     },
     [
       cipSummary,
-      permittedDischargers,
+      dischargersStatus,
       monitoringLocations,
       usgsStreamgages,
       visibleLayers,
@@ -373,7 +340,7 @@ function IdentifiedIssues() {
   // Updates visible layers based on webservice statuses.
   useEffect(() => {
     updateVisibleLayers({ useCurrentValue: true });
-  }, [cipSummary, permittedDischargers, visibleLayers, updateVisibleLayers]);
+  }, [updateVisibleLayers]);
 
   const checkIfAllSwitchesToggled = (
     cipSummaryData: Object,
@@ -475,7 +442,6 @@ function IdentifiedIssues() {
     // if switch under number of Dischargers in violation is switched
     else if (checkedSwitch === 'Toggle Dischargers Layer') {
       setShowDischargersLayer(!showDischargersLayer);
-      checkDischargersToDisplay();
 
       updateVisibleLayers({
         key: 'dischargersLayer',
@@ -539,8 +505,7 @@ function IdentifiedIssues() {
   }
 
   // true if 0 facilities in violation are found
-  const zeroDischargers =
-    violatingFacilities && !Boolean(violatingFacilities.length);
+  const zeroDischargers = !violatingDischargers.length;
 
   let toggleDischargersChecked;
 
@@ -596,14 +561,14 @@ function IdentifiedIssues() {
         </div>
 
         <div css={keyMetricStyles}>
-          {permittedDischargers.status === 'fetching' ? (
+          {dischargersStatus === 'pending' ? (
             <LoadingSpinner />
           ) : (
             <>
               <span css={keyMetricNumberStyles}>
-                {permittedDischargers.status === 'failure'
+                {dischargersStatus === 'failure'
                   ? 'N/A'
-                  : violatingFacilities.length.toLocaleString()}
+                  : violatingDischargers.length.toLocaleString()}
               </span>
               <p css={keyMetricLabelStyles}>
                 Dischargers with Significant Violations
@@ -729,7 +694,7 @@ function IdentifiedIssues() {
                                       <div css={toggleStyles}>
                                         <Switch
                                           checked={showAllParameters}
-                                          onChange={(ev) => {
+                                          onChange={(_ev) => {
                                             toggleSwitch('Toggle All');
                                           }}
                                           ariaLabel="Toggle all impairment categories"
@@ -774,7 +739,7 @@ function IdentifiedIssues() {
                                                     mappedParameter.label
                                                   ]
                                                 }
-                                                onChange={(ev) => {
+                                                onChange={(_ev) => {
                                                   toggleSwitch(
                                                     mappedParameter.label,
                                                   );
@@ -807,17 +772,17 @@ function IdentifiedIssues() {
             </TabPanel>
 
             <TabPanel>
-              {permittedDischargers.status === 'fetching' && <LoadingSpinner />}
+              {dischargersStatus === 'pending' && <LoadingSpinner />}
 
-              {permittedDischargers.status === 'failure' && (
+              {dischargersStatus === 'failure' && (
                 <div css={errorBoxStyles}>
                   <p>{echoError}</p>
                 </div>
               )}
 
-              {permittedDischargers.status === 'success' && (
+              {dischargersStatus === 'success' && (
                 <>
-                  {violatingFacilities.length === 0 && (
+                  {!violatingDischargers.length && (
                     <p css={centeredTextStyles}>
                       There are no dischargers with significant{' '}
                       <GlossaryTerm term="Effluent">effluent</GlossaryTerm>{' '}
@@ -825,16 +790,16 @@ function IdentifiedIssues() {
                     </p>
                   )}
 
-                  {violatingFacilities.length > 0 && (
+                  {violatingDischargers.length && (
                     <AccordionList
                       title={
                         <>
                           There{' '}
-                          {violatingFacilities.length === 1 ? 'is' : 'are'}{' '}
+                          {violatingDischargers.length === 1 ? 'is' : 'are'}{' '}
                           <strong>
-                            {violatingFacilities.length.toLocaleString()}
+                            {violatingDischargers.length.toLocaleString()}
                           </strong>{' '}
-                          {violatingFacilities.length === 1
+                          {violatingDischargers.length === 1
                             ? 'discharger'
                             : 'dischargers'}{' '}
                           with significant{' '}
@@ -843,23 +808,25 @@ function IdentifiedIssues() {
                         </>
                       }
                     >
-                      {violatingFacilities.map((item, index) => {
-                        const feature = new Graphic({
+                      {violatingDischargers.map((discharger) => {
+                        const { uniqueId: id, CWPName: name } = discharger;
+
+                        const feature = {
                           geometry: {
                             type: 'point',
-                            longitude: item.FacLong,
-                            latitude: item.FacLat,
+                            longitude: discharger.FacLong,
+                            latitude: discharger.FacLat,
                           },
-                          attributes: item,
-                        });
+                          attributes: discharger,
+                        };
 
                         return (
                           <AccordionItem
-                            key={index}
-                            title={<strong>{item.CWPName || 'Unknown'}</strong>}
-                            subTitle={<>NPDES ID: {item.SourceID}</>}
+                            key={id}
+                            title={<strong>{name || 'Unknown'}</strong>}
+                            subTitle={<>NPDES ID: {id}</>}
                             feature={feature}
-                            idKey="CWPName"
+                            idKey="uniqueId"
                           >
                             <div css={accordionContentStyles}>
                               <WaterbodyInfo
