@@ -19,6 +19,7 @@ import Search from '@arcgis/core/widgets/Search';
 import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 // components
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
+import AdvancedSearchModal from 'components/shared/AdvancedSearchModal';
 // contexts
 import { LocationSearchContext } from 'contexts/locationSearch';
 import { useServicesContext } from 'contexts/LookupFiles';
@@ -1061,6 +1062,8 @@ function LocationSearch({ route, label }: Props) {
           </>
         )}
       </form>
+
+      <AdvancedSearchModal />
     </>
   );
 }
