@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
+
 import { css } from '@emotion/react';
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import Select from 'react-select';
 import { Virtuoso } from 'react-virtuoso';
 import { v4 as uuid } from 'uuid';
@@ -30,7 +31,7 @@ enum LocationType {
 
 const locationTypes = [
   { value: LocationType.MonitoringLocation, label: 'Monitoring Location' },
-  { value: LocationType.AssessmentUnit, label: 'Waterbody' },
+  { value: LocationType.AssessmentUnit, label: 'Assessment Unit' },
 ];
 
 function getColumns(type: LocationType) {
@@ -48,9 +49,17 @@ function getColumns(type: LocationType) {
 const buttonStyles = css`
   margin-bottom: 0;
   font-size: 0.9375em;
+  width: fit-content;
+
   &.active {
     background-color: #0071bc !important;
   }
+`;
+
+const containerStyles = css`
+  display: flex;
+  justify-content: center;
+  width: 100%;
 `;
 
 const footerStyles = css`
@@ -138,6 +147,7 @@ const resultListStyles = css`
 const resultRowStyles = (numCols: number) => css`
   ${tableButtonStyles}
   ${gridStyles(numCols)}
+  width: 100%;
 `;
 
 const tableButtonStyles = css`
@@ -145,6 +155,7 @@ const tableButtonStyles = css`
   background-color: transparent;
   border: none;
   color: inherit;
+  font-weight: normal;
   margin: 0;
   outline: inherit;
   padding: 0;
@@ -162,6 +173,12 @@ const tableButtonStyles = css`
 
 const resultsContainerStyles = css`
   margin-top: 1rem;
+`;
+
+const triggerStyles = css`
+  ${linkButtonStyles}
+
+  margin-top: 0.5rem;
 `;
 
 /*
@@ -182,6 +199,24 @@ export function AdvancedSearchModal({ onSubmit }: AdvancedSearchModalProps) {
     type: LocationType;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Clear error message when any interaction occurs.
+  const [prevLocationType, setPrevLocationType] = useState<
+    (typeof locationTypes)[number] | null
+  >(locationType);
+  const [prevMonitoringLocationId, setPrevMonitoringLocationId] =
+    useState(monitoringLocationId);
+  const [prevSearch, setPrevSearch] = useState(search);
+  if (
+    prevLocationType !== locationType ||
+    prevMonitoringLocationId !== monitoringLocationId ||
+    prevSearch !== search
+  ) {
+    setPrevLocationType(locationType);
+    setPrevMonitoringLocationId(monitoringLocationId);
+    setPrevSearch(search);
+    setError(null);
+  }
 
   const onSearch = (ev: FormEvent) => {
     ev.preventDefault();
@@ -238,7 +273,7 @@ export function AdvancedSearchModal({ onSubmit }: AdvancedSearchModalProps) {
       maxWidth="75vw"
       onClose={reset}
       triggerElm={
-        <button css={linkButtonStyles} type="button">
+        <button css={triggerStyles} type="button">
           Advanced Search
         </button>
       }
@@ -285,14 +320,16 @@ export function AdvancedSearchModal({ onSubmit }: AdvancedSearchModalProps) {
               </>
             )}
           </div>
-          <button
-            css={buttonStyles}
-            disabled={locationType === null}
-            type="submit"
-          >
-            <i className="fas fa-search" aria-hidden="true" />
-            &nbsp;&nbsp;Search
-          </button>
+          <div css={containerStyles}>
+            <button
+              css={buttonStyles}
+              disabled={locationType === null}
+              type="submit"
+            >
+              <i className="fas fa-search" aria-hidden="true" />
+              &nbsp;&nbsp;Search
+            </button>
+          </div>
         </form>
         {error && <p css={messageBoxStyles(errorBoxStyles)}>{error}</p>}
         {search && (
@@ -359,21 +396,23 @@ function SearchResults({
     load(currentPage + 1);
   };
 
-  useEffect(() => {
+  const firstResultsLoaded = useRef(false);
+  if (!firstResultsLoaded.current) {
+    firstResultsLoaded.current = true;
     load(0);
-  }, []);
+  }
 
   const columns = getColumns(type);
 
   return (
     <div css={resultsContainerStyles}>
       <h3 css={labelStyles}>Results:</h3>
+      <div css={gridHeaderStyles(columns.length)}>
+        {columns.map((column) => (
+          <div key={column}>{column}</div>
+        ))}
+      </div>
       <div css={resultListStyles}>
-        <div css={gridHeaderStyles(columns.length)}>
-          {columns.map((column) => (
-            <div key={column}>{column}</div>
-          ))}
-        </div>
         <Virtuoso
           components={{ Footer }}
           context={{
