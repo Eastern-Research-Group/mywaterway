@@ -24,7 +24,7 @@ const messageBoxStyles = (baseStyles: SerializedStyles) => {
 
 type StatusContentProps = {
   children: ReactNode;
-  empty?: string;
+  empty?: string | ReactNode;
   idle?: string | null;
   failure?: string;
   status: FetchStatus;
@@ -42,7 +42,11 @@ export function StatusContent({
     case 'pending':
       return <LoadingSpinner />;
     case 'empty':
-      return <p css={messageBoxStyles(infoBoxStyles)}>{empty}</p>;
+      return typeof empty === 'string' ? (
+        <p css={messageBoxStyles(infoBoxStyles)}>{empty}</p>
+      ) : (
+        empty
+      );
     case 'failure':
       return <p css={messageBoxStyles(errorBoxStyles)}>{failure}</p>;
     case 'success':

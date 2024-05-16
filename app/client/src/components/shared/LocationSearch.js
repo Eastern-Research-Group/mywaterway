@@ -1063,7 +1063,7 @@ function LocationSearch({ route, label }: Props) {
         )}
       </form>
 
-      <AdvancedSearchModal />
+      <AdvancedSearchModal onSubmit={formSubmit} />
     </>
   );
 }

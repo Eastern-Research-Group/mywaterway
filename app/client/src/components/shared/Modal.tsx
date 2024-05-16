@@ -171,7 +171,12 @@ export default function Modal({
       <Dialog.Trigger asChild>{triggerElm}</Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay css={overlayStyles}>
-          <Dialog.Content css={contentStyles(maxWidth)} aria-label={label}>
+          <Dialog.Content
+            css={contentStyles(maxWidth)}
+            aria-label={label}
+            onEscapeKeyDown={close}
+            onInteractOutside={close}
+          >
             <Dialog.Title className="sr-only">{label}</Dialog.Title>
             <Dialog.Description className="sr-only">{label}</Dialog.Description>
             <button

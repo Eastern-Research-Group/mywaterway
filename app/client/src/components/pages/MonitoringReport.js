@@ -38,6 +38,7 @@ import {
   splitLayoutColumnsStyles,
   splitLayoutColumnStyles,
 } from 'components/shared/SplitLayout';
+import StatusContent from 'components/shared/StatusContent';
 // config
 import { monitoringDownloadError, monitoringError } from 'config/errorMessages';
 // contexts
@@ -1237,15 +1238,8 @@ function CharacteristicChartSection({
         </span>
       </h3>
       <StatusContent
-        empty={
-          <p css={messageBoxStyles(infoBoxStyles)}>
-            No data available for this monitoring location.
-          </p>
-        }
-        failure={
-          <p css={messageBoxStyles(errorBoxStyles)}>{monitoringError}</p>
-        }
-        pending={<LoadingSpinner />}
+        empty="No data available for this monitoring location."
+        failure={monitoringError}
         status={charcsStatus}
       >
         {infoText && <p css={messageBoxStyles(infoBoxStyles)}>{infoText}</p>}
@@ -1475,17 +1469,8 @@ function CharacteristicsTableSection({
       </h3>
       <div css={charcsTableStyles}>
         <StatusContent
-          empty={
-            <p css={messageBoxStyles(infoBoxStyles)}>
-              No records found for this location.
-            </p>
-          }
-          failure={
-            <div css={messageBoxStyles(errorBoxStyles)}>
-              <p>{monitoringError}</p>
-            </div>
-          }
-          pending={<LoadingSpinner />}
+          empty="No records found for this location."
+          failure={monitoringError}
           status={charcsStatus}
         >
           <div css={modifiedInfoBoxStyles}>
@@ -1939,15 +1924,8 @@ function DownloadSection({ charcs, charcsStatus, site, siteStatus }) {
         <HelpTooltip label="Adjust the slider handles to filter download results by the selected year range, and use the checkboxes to filter the results by individual characteristics and characteristic groups" />
       </h3>
       <StatusContent
-        empty={
-          <p css={messageBoxStyles(infoBoxStyles)}>
-            No data available for this monitoring location.
-          </p>
-        }
-        failure={
-          <p css={messageBoxStyles(errorBoxStyles)}>{monitoringError}</p>
-        }
-        pending={<LoadingSpinner />}
+        empty="No data available for this monitoring location."
+        failure={monitoringError}
         status={charcsStatus}
       >
         {Object.keys(charcs).length > 0 && (
@@ -2398,11 +2376,11 @@ function MonitoringReportContent() {
   return (
     <StatusContent
       empty={noSiteView}
-      failure={<p css={messageBoxStyles(errorBoxStyles)}>{monitoringError}</p>}
-      pending={<LoadingSpinner />}
-      success={content}
+      failure={monitoringError}
       status={siteStatus}
-    />
+    >
+      {content}
+    </StatusContent>
   );
 }
 
@@ -2536,27 +2514,4 @@ function SiteMapContainer({ ...props }) {
       <SiteMap {...props} />
     </MapErrorBoundary>
   );
-}
-
-function StatusContent({
-  children,
-  empty,
-  idle = null,
-  failure,
-  pending,
-  status,
-  success = null,
-}) {
-  switch (status) {
-    case 'pending':
-      return pending;
-    case 'empty':
-      return empty;
-    case 'failure':
-      return failure;
-    case 'success':
-      return success ?? children;
-    default:
-      return idle;
-  }
 }
