@@ -16,6 +16,7 @@ import { AccordionList, AccordionItem } from 'components/shared/Accordion';
 import MapVisibilityButton from 'components/shared/MapVisibilityButton';
 import { GlossaryTerm } from 'components/shared/GlossaryPanel';
 import DynamicExitDisclaimer from 'components/shared/DynamicExitDisclaimer';
+import WaterbodyDownload from 'components/shared/WaterbodyDownload';
 // styled components
 import { errorBoxStyles, infoBoxStyles } from 'components/shared/MessageBoxes';
 import {
@@ -1072,6 +1073,27 @@ function WaterbodyReport() {
           <p>{waterbodyLocation.text}</p>
         )}
       </div>
+
+      {configFiles.status === 'success' && (
+        <div css={modifiedBoxSectionStyles}>
+          <hr />
+          {reportingCycleFetch.status === 'fetching' ? (
+            <LoadingSpinner />
+          ) : (
+            <WaterbodyDownload
+              configFiles={configFiles.data}
+              fileBaseName={`Waterbody-${auId}`}
+              filters={{
+                assessmentUnitId: auId!,
+                ...(reportingCycleFetch.status === 'success' && {
+                  reportingCycle: reportingCycleFetch.year,
+                }),
+              }}
+              profile={'assessments'}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 
