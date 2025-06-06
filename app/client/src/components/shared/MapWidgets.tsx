@@ -1,6 +1,9 @@
 /** @jsxImportSource @emotion/react */
 
+import "@arcgis/map-components/components/arcgis-expand";
 import '@arcgis/map-components/components/arcgis-home';
+import "@arcgis/map-components/components/arcgis-legend";
+import "@arcgis/map-components/components/arcgis-placement";
 import '@arcgis/map-components/components/arcgis-scale-bar';
 import '@arcgis/map-components/components/arcgis-zoom';
 import Polygon from '@arcgis/core/geometry/Polygon';
@@ -9,7 +12,6 @@ import Expand from '@arcgis/core/widgets/Expand';
 import Graphic from '@arcgis/core/Graphic';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import LayerList from '@arcgis/core/widgets/LayerList';
-import Legend from '@arcgis/core/widgets/Legend';
 import Point from '@arcgis/core/geometry/Point';
 import PortalBasemapsSource from '@arcgis/core/widgets/BasemapGallery/support/PortalBasemapsSource';
 import * as query from '@arcgis/core/rest/query';
@@ -380,13 +382,11 @@ function MapWidgets({
   const pathname = window.location.pathname;
   const { getSignal } = useAbort();
   const watchHandles = useMemo<IHandle[]>(() => [], []);
-  const observers = useMemo<MutationObserver[]>(() => [], []);
   useEffect(() => {
     return function cleanup() {
       watchHandles.forEach((handle) => handle.remove());
-      observers.forEach((observer) => observer.disconnect());
     };
-  }, [observers, watchHandles]);
+  }, [watchHandles]);
 
   const {
     homeWidget,
@@ -606,95 +606,9 @@ function MapWidgets({
     updateVisibleLayers({ [toggledLayer.layerId]: toggledLayer.visible });
   }, [toggledLayer, lastToggledLayer, updateVisibleLayers]);
 
-  // manages which layers are visible in the legend
-  const legendTemp = document.createElement('div');
-  legendTemp.className = 'map-legend';
-  legendTemp.id = 'non-visible-legend';
-  legendTemp.classList.add('sr-only');
-  legendTemp.ariaHidden = 'true';
-  const hmwLegendTemp = document.createElement('div');
-  const esriLegendTemp = document.createElement('div');
-  esriLegendTemp.id = 'esri-legend-container';
-  esriLegendTemp.style.maxWidth = '240px';
-  legendTemp.appendChild(hmwLegendTemp);
-  legendTemp.appendChild(esriLegendTemp);
-  const [hmwLegendNode] = useState(hmwLegendTemp);
-  const [esriLegendNode] = useState(esriLegendTemp);
-  const [legendNode] = useState(legendTemp);
   const legendRoot = useRef<Root | null>(null);
-  if (!legendRoot.current) legendRoot.current = createRoot(hmwLegendNode);
-
-  // Creates and adds the legend widget to the map
-  const [legend, setLegend] = useState<__esri.Expand | null>(null);
-  useEffect(() => {
-    if (!view || legend) return;
-
-    document.body.appendChild(legendNode);
-    const syncedDiv = document.createElement('div');
-
-    const syncContent = () => {
-      syncedDiv.innerHTML = legendNode?.innerHTML ?? '';
-    };
-    syncContent();
-
-    // Observe changes to the source div and update the synced div
-    if (legendNode) {
-      const observer = new MutationObserver(syncContent);
-      observer.observe(legendNode, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-      });
-    }
-
-    const newLegend = new Expand({
-      content: syncedDiv,
-      view,
-      expanded: false,
-      expandIcon: 'legend',
-      expandTooltip: 'Open Legend',
-      collapseTooltip: 'Close Legend',
-      autoCollapse: true,
-      mode: 'floating',
-    });
-    view.ui.add(newLegend, { position: 'top-left', index: 0 });
-    setLegend(newLegend);
-  }, [view, legend, legendNode]);
-
-  // Create the layer list toolbar widget
-  const [esriLegend, setEsriLegend] = useState<__esri.Legend | null>(null);
   const [displayEsriLegend, setDisplayEsriLegend] = useState(false);
-  useEffect(() => {
-    if (!view || esriLegend) return;
-
-    // create the layer list using the same styles and structure as the
-    // esri version.
-    const tempLegend = new Legend({
-      view,
-      container: esriLegendNode,
-      layerInfos: [],
-    });
-
-    // Create an observer instance linked to the callback function
-    const observer = new MutationObserver((_mutationsList, _observerParam) => {
-      const esriMessages = esriLegendNode
-        ? esriLegendNode.querySelectorAll('.esri-legend__message')
-        : [];
-
-      setDisplayEsriLegend(esriMessages.length === 0);
-    });
-
-    // Start observing the target node for configured mutations
-    observer.observe(esriLegendNode, {
-      childList: true,
-      characterData: true,
-      subtree: true,
-    });
-
-    observers.push(observer);
-    setEsriLegend(tempLegend);
-  }, [view, esriLegend, esriLegendNode, observers]);
-
+  
   const surroundingsWidget = useSurroundingsWidget();
   useEffect(() => {
     if (!view?.ui) return;
@@ -926,7 +840,6 @@ function MapWidgets({
   }, [
     additionalLegendInfo,
     displayEsriLegend,
-    hmwLegendNode,
     layerListWidget,
     view,
     watchHandles,
@@ -966,7 +879,6 @@ function MapWidgets({
     additionalLegendInfo,
     basemap,
     setBasemap,
-    hmwLegendNode,
     view,
     displayEsriLegend,
   ]);
@@ -1166,7 +1078,6 @@ function MapWidgets({
     additionalLegendInfo,
     surroundingsVisible,
     displayEsriLegend,
-    hmwLegendNode,
     view,
     visibleLayers,
   ]);
@@ -1201,8 +1112,29 @@ function MapWidgets({
 
   return (
     <Fragment>
-      <arcgis-home position="top-left" ref={homeWidgetRef} />
-      <arcgis-zoom position="top-left" />
+      <arcgis-placement position="top-left">
+        <arcgis-expand 
+          autoCollapse={true}
+          closeOnEsc={true}
+          collapseTooltip="Close Legend"
+          expanded={false}
+          expandIcon="legend"
+          expandTooltip="Open Legend"
+          mode="floating"
+          style={{ marginBottom: '10px' }}
+        >
+          <arcgis-placement>
+            <LegendWidget
+              legendRoot={legendRoot}
+              setDisplayEsriLegend={setDisplayEsriLegend}
+            />
+          </arcgis-placement>
+        </arcgis-expand>
+        
+        <arcgis-home ref={homeWidgetRef} />
+        <arcgis-zoom />
+      </arcgis-placement>
+      
       <arcgis-scale-bar position="bottom-left" />
 
       <div
@@ -1263,6 +1195,104 @@ function MapWidgets({
       </div>
     </Fragment>
   );
+}
+
+function LegendWidget({
+  legendRoot,
+  setDisplayEsriLegend,
+}: {
+  legendRoot: React.RefObject<Root | null>;
+  setDisplayEsriLegend: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  const syncedNode = useRef<HTMLDivElement | null>(null);
+  const legendNode = useRef<HTMLDivElement | null>(null);
+  const hmwLegendTemp = useRef<HTMLDivElement | null>(null);
+  const esriLegendRef = useRef<HTMLDivElement | null>(null);
+
+  // Creates and adds the legend widget to the map
+  const [initialized, setInitialized] = useState(false);
+  useEffect(() => {
+    if (initialized || !syncedNode?.current || !legendNode?.current) return;
+
+    document.body.appendChild(legendNode.current);
+    
+    const syncContent = () => {
+      if (!syncedNode?.current) return;
+      syncedNode.current.innerHTML = legendNode?.current?.innerHTML ?? '';
+    };
+    syncContent();
+
+    // Observe changes to the source div and update the synced div
+    const observer = new MutationObserver(syncContent);
+    observer.observe(legendNode.current, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    setInitialized(true);
+  }, [initialized, legendNode, syncedNode]);
+
+  
+  useEffect(() => {
+    if (legendRoot?.current || !hmwLegendTemp?.current) return;
+    legendRoot.current = createRoot(hmwLegendTemp.current);
+  }, [hmwLegendTemp, legendRoot]);
+
+  const observers = useMemo<MutationObserver[]>(() => [], []);
+  useEffect(() => {
+    return function cleanup() {
+      observers.forEach((observer) => observer.disconnect());
+    };
+  }, [observers]);
+
+  const [observerInitialized, setObserverInitialized] = useState(false);
+  useEffect(() => {
+    if (observerInitialized || !esriLegendRef?.current) return;
+
+    // Create an observer instance linked to the callback function
+    const observer = new MutationObserver((_mutationsList, _observerParam) => {
+      const esriMessages = esriLegendRef.current
+        ? esriLegendRef.current.querySelectorAll('.esri-legend__message')
+        : [];
+
+      setDisplayEsriLegend(esriMessages.length === 0);
+    });
+
+    // Start observing the target node for configured mutations
+    observer.observe(esriLegendRef?.current, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+
+    observers.push(observer);
+
+    setObserverInitialized(true);
+  }, [observerInitialized, observers, setDisplayEsriLegend]);
+
+  return (
+    <Fragment>
+      <div ref={syncedNode} id="esri-legend-sync-div" />
+
+      <div 
+        aria-hidden={true}
+        className="map-legend sr-only"
+        id="non-visible-legend"
+        ref={legendNode}
+      >
+        <div ref={hmwLegendTemp} />
+        <arcgis-legend
+          layerInfos={[]}
+        />
+        <div
+          id="esri-legend-container"
+          ref={esriLegendRef}
+          style={{ maxWidth: '240px' }}
+        />
+      </div>
+    </Fragment>
+  )
 }
 
 function ShowAddSaveDataWidget({
