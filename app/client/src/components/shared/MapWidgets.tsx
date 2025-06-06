@@ -1,17 +1,18 @@
 /** @jsxImportSource @emotion/react */
 
+import '@arcgis/map-components/components/arcgis-home';
+import '@arcgis/map-components/components/arcgis-scale-bar';
+import '@arcgis/map-components/components/arcgis-zoom';
 import Polygon from '@arcgis/core/geometry/Polygon';
 import BasemapGallery from '@arcgis/core/widgets/BasemapGallery';
 import Expand from '@arcgis/core/widgets/Expand';
 import Graphic from '@arcgis/core/Graphic';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
-import Home from '@arcgis/core/widgets/Home';
 import LayerList from '@arcgis/core/widgets/LayerList';
 import Legend from '@arcgis/core/widgets/Legend';
 import Point from '@arcgis/core/geometry/Point';
 import PortalBasemapsSource from '@arcgis/core/widgets/BasemapGallery/support/PortalBasemapsSource';
 import * as query from '@arcgis/core/rest/query';
-import ScaleBar from '@arcgis/core/widgets/ScaleBar';
 import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 import Viewpoint from '@arcgis/core/Viewpoint';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
@@ -19,6 +20,7 @@ import * as webMercatorUtils from '@arcgis/core/geometry/support/webMercatorUtil
 import { CalciteIcon } from '@esri/calcite-components-react';
 import { css } from '@emotion/react';
 import React, {
+  Fragment,
   useCallback,
   useContext,
   useEffect,
@@ -356,7 +358,7 @@ type Props = {
   mapRef: MutableRefObject<HTMLDivElement | null>;
   view: __esri.MapView;
   layers: Array<__esri.Layer> | null;
-  onHomeWidgetRendered?: (homeWidget: __esri.Home) => void;
+  onHomeWidgetRendered?: (homeWidget: HTMLArcgisHomeElement) => void;
 };
 
 function MapWidgets({
@@ -578,15 +580,12 @@ function MapWidgets({
     });
   }, [layers, map, widgetLayers]);
 
-  // put the home widget back on the ui after the window is resized
+  const homeWidgetRef = useRef<HTMLArcgisHomeElement | null>(null);
   useEffect(() => {
-    if (homeWidget) {
-      const newHomeWidget = new Home({ view, viewpoint: homeWidget.viewpoint });
-      view.ui.add(newHomeWidget, { position: 'top-left', index: 1 });
-      view.ui.move('zoom', 'top-left');
-      setHomeWidget(newHomeWidget);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (homeWidget) return;
+    if (homeWidgetRef?.current) onHomeWidgetRendered(homeWidgetRef.current);
+    setHomeWidget(homeWidgetRef?.current ?? null);
+  }, [homeWidget, homeWidgetRef, onHomeWidgetRendered, setHomeWidget]);
 
   // Keeps the layer visiblity in sync with the layer list widget visibilities
   const [toggledLayer, setToggledLayer] = useState({
@@ -606,33 +605,6 @@ function MapWidgets({
 
     updateVisibleLayers({ [toggledLayer.layerId]: toggledLayer.visible });
   }, [toggledLayer, lastToggledLayer, updateVisibleLayers]);
-
-  // Creates and adds the home widget to the map
-  useEffect(() => {
-    if (!view || homeWidget) return;
-
-    // create the home widget
-    const newHomeWidget = new Home({ view });
-    view.ui.add(newHomeWidget, { position: 'top-left', index: 1 });
-    view.ui.move('zoom', 'top-left');
-    // pass the home widget up to the consumer of this component,
-    // so it can modify it as needed (e.g. update the viewpoint)
-    onHomeWidgetRendered(newHomeWidget);
-    setHomeWidget(newHomeWidget);
-  }, [onHomeWidgetRendered, setHomeWidget, view, homeWidget]);
-
-  // Creates and adds the scale bar widget to the map
-  const [scaleBar, setScaleBar] = useState<__esri.ScaleBar | null>(null);
-  useEffect(() => {
-    if (!view || scaleBar) return;
-
-    const newScaleBar = new ScaleBar({
-      view: view,
-      unit: 'dual',
-    });
-    view.ui.add(newScaleBar, { position: 'bottom-left', index: 0 });
-    setScaleBar(newScaleBar);
-  }, [view, scaleBar]);
 
   // manages which layers are visible in the legend
   const legendTemp = document.createElement('div');
@@ -662,7 +634,7 @@ function MapWidgets({
 
     const syncContent = () => {
       syncedDiv.innerHTML = legendNode?.innerHTML ?? '';
-    }
+    };
     syncContent();
 
     // Observe changes to the source div and update the synced div
@@ -671,7 +643,7 @@ function MapWidgets({
       observer.observe(legendNode, {
         childList: true,
         subtree: true,
-        characterData: true
+        characterData: true,
       });
     }
 
@@ -885,18 +857,18 @@ function MapWidgets({
     function defineActions(event: { item: __esri.ListItem }) {
       const item = event.item;
       if (!item.parent) {
-        //only add the item if it has not been added before
-        if (!uniqueParentItems.includes(item.title)) {
-          uniqueParentItems.push(item.title);
-          updateLegend(
-            view,
-            displayEsriLegend,
-            legendRoot.current,
-            additionalLegendInfoNonState,
-          );
+        uniqueParentItems.push(item.title);
+        updateLegend(
+          view,
+          displayEsriLegend,
+          legendRoot.current,
+          additionalLegendInfoNonState,
+        );
 
-          watchHandles.push(
-            item.watch('visible', function (_ev) {
+        watchHandles.push(
+          reactiveUtils.watch(
+            () => item.visible,
+            () => {
               updateLegend(
                 view,
                 displayEsriLegend,
@@ -908,9 +880,9 @@ function MapWidgets({
                 visible: item.layer.visible,
               };
               setToggledLayer(dict);
-            }),
-          );
-        }
+            },
+          ),
+        );
       }
     }
 
@@ -1228,62 +1200,68 @@ function MapWidgets({
   const viewportWidth = window.innerWidth;
 
   return (
-    <div
-      style={{
-        display: addSaveDataWidgetVisible ? 'block' : 'none',
-        position: 'absolute',
-        top: '0',
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-      }}
-    >
-      {viewportWidth < 960 ? (
-        <div
-          id="add-save-data-widget"
-          className={addSaveDataWidgetVisible ? '' : 'hidden'}
-          role="region"
-          style={{
-            backgroundColor: 'white',
-            pointerEvents: 'all',
-            height: '410px',
-            width: `${mapWidth}px`,
-            position: 'absolute',
-            bottom: 0,
-          }}
-          tabIndex={0}
-        >
-          <AddSaveDataWidget />
-        </div>
-      ) : (
-        <Rnd
-          id="add-save-data-widget"
-          className={addSaveDataWidgetVisible ? '' : 'hidden'}
-          style={{ backgroundColor: 'white', pointerEvents: 'all' }}
-          ref={rnd}
-          default={{
-            x: (mapWidth - 400 - 60) / 2,
-            y: 7.5,
-            width: '400px',
-            height: '410px',
-          }}
-          minWidth="275px"
-          minHeight="410px"
-          bounds="parent"
-          enableResizing={{
-            bottomRight: true,
-          }}
-          dragHandleClassName="drag-handle"
-          role="region"
-          tabIndex={0}
-        >
-          <AddSaveDataWidget />
-          <div css={resizeHandleStyles}>
-            <img src={resizeIcon} alt="Resize Handle"></img>
+    <Fragment>
+      <arcgis-home position="top-left" ref={homeWidgetRef} />
+      <arcgis-zoom position="top-left" />
+      <arcgis-scale-bar position="bottom-left" />
+
+      <div
+        style={{
+          display: addSaveDataWidgetVisible ? 'block' : 'none',
+          position: 'absolute',
+          top: '0',
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+        }}
+      >
+        {viewportWidth < 960 ? (
+          <div
+            id="add-save-data-widget"
+            className={addSaveDataWidgetVisible ? '' : 'hidden'}
+            role="region"
+            style={{
+              backgroundColor: 'white',
+              pointerEvents: 'all',
+              height: '410px',
+              width: `${mapWidth}px`,
+              position: 'absolute',
+              bottom: 0,
+            }}
+            tabIndex={0}
+          >
+            <AddSaveDataWidget />
           </div>
-        </Rnd>
-      )}
-    </div>
+        ) : (
+          <Rnd
+            id="add-save-data-widget"
+            className={addSaveDataWidgetVisible ? '' : 'hidden'}
+            style={{ backgroundColor: 'white', pointerEvents: 'all' }}
+            ref={rnd}
+            default={{
+              x: (mapWidth - 400 - 60) / 2,
+              y: 7.5,
+              width: '400px',
+              height: '410px',
+            }}
+            minWidth="275px"
+            minHeight="410px"
+            bounds="parent"
+            enableResizing={{
+              bottomRight: true,
+            }}
+            dragHandleClassName="drag-handle"
+            role="region"
+            tabIndex={0}
+          >
+            <AddSaveDataWidget />
+            <div css={resizeHandleStyles}>
+              <img src={resizeIcon} alt="Resize Handle"></img>
+            </div>
+          </Rnd>
+        )}
+      </div>
+    </Fragment>
   );
 }
 

@@ -1665,7 +1665,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
   }, [searchText, setHuc12]);
 
   useEffect(() => {
-    if (!mapView || !hucBoundaries || atHucBoundaries) {
+    if (!mapView || !hucBoundaries || !homeWidget || atHucBoundaries) {
       return;
     }
 
