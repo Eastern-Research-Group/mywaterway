@@ -1,8 +1,7 @@
 /** @jsxImportSource @emotion/react */
 
 import { useContext, useEffect, useRef, useState } from 'react';
-import EsriMap from '@arcgis/core/Map';
-import MapView from '@arcgis/core/views/MapView';
+import '@arcgis/map-components/dist/components/arcgis-map';
 import FullscreenContainer from 'components/shared/FullscreenContainer';
 import MapWidgets from 'components/shared/MapWidgets';
 import MapMouseEvents from 'components/shared/MapMouseEvents';
@@ -55,42 +54,20 @@ function Map({
     });
   }, [layers, map, visibleLayers, widgetLayers]);
 
-  const [mapInitialized, setMapInitialized] = useState(false);
-
+  const [basemapInitialized, setBasemapInitialized] = useState(false);
   useEffect(() => {
-    if (mapInitialized) return;
+    if (basemapInitialized) return;
 
     const mapBasemap =
       basemap ?? basemapFromPortalItem(services.basemaps.default);
     if (basemap !== mapBasemap) setBasemap(mapBasemap);
 
-    const esriMap = new EsriMap({
-      basemap: mapBasemap,
-      layers: [],
-    });
-
-    setMap(esriMap);
-
-    const view = new MapView({
-      container: 'hmw-map-container',
-      map: esriMap,
-      highlightOptions,
-      popupEnabled: false, // Popup is handled manually in the MapMouseEvents component
-      ...(homeWidget?.viewpoint
-        ? { viewpoint: homeWidget.viewpoint }
-        : { extent: startingExtent ?? initialExtent() }),
-    });
-
-    setMapView(view);
-
-    setMapInitialized(true);
+    setBasemapInitialized(true);
   }, [
     basemap,
-    highlightOptions,
-    homeWidget,
-    mapInitialized,
-    setMapView,
-    startingExtent,
+    basemapInitialized,
+    services,
+    setBasemap
   ]);
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -118,7 +95,6 @@ function Map({
   return (
     <div css={{ position: 'absolute', height: '100%', width: '100%' }}>
       <div
-        id="hmw-map-container"
         css={{
           position: 'relative',
           height: `calc(100% - ${footerHeight}px)`,
@@ -127,17 +103,38 @@ function Map({
         }}
         ref={mapContainerRef}
       >
-        {map && mapView && (
-          <>
-            <MapWidgets
-              map={map}
-              mapRef={mapContainerRef}
-              view={mapView}
-              layers={layers}
-            />
-            <MapMouseEvents view={mapView} />
-          </>
-        )}
+        <arcgis-map 
+          basemap={basemap}
+          id="hmw-map-container"
+          css={{
+            height: '100%',
+            width: '100%',
+          }}
+          onarcgisViewReadyChange={(event) => {
+            setMap(event.target.map);
+            setMapView(event.target.view);
+
+            // TODO highlightOptions was deprecated, need to switch it out
+            event.target.view.highlightOptions = highlightOptions;
+            event.target.view.popupEnabled = false;
+            if (homeWidget?.viewpoint)
+              event.target.viewpoint = homeWidget.viewpoint;
+            else
+              event.target.extent = (startingExtent as any) ?? initialExtent();
+          }}
+        >          
+          {map && mapView && (
+            <>
+              <MapWidgets
+                map={map}
+                mapRef={mapContainerRef}
+                view={mapView}
+                layers={layers}
+              />
+              <MapMouseEvents view={mapView} />
+            </>
+          )}
+        </arcgis-map>
       </div>
       <div ref={footerRef}>{children}</div>
     </div>

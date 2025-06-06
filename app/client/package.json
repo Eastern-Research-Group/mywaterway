@@ -69,6 +69,7 @@
   },
   "dependencies": {
     "@arcgis/core": "4.32.10",
+    "@arcgis/map-components-react": "4.32.14",
     "@emotion/babel-plugin": "11.13.5",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.0",
