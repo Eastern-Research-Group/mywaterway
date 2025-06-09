@@ -9,7 +9,6 @@ import '@arcgis/map-components/components/arcgis-placement';
 import '@arcgis/map-components/components/arcgis-scale-bar';
 import '@arcgis/map-components/components/arcgis-zoom';
 import Polygon from '@arcgis/core/geometry/Polygon';
-import Expand from '@arcgis/core/widgets/Expand';
 import Graphic from '@arcgis/core/Graphic';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import Point from '@arcgis/core/geometry/Point';
@@ -43,7 +42,7 @@ import {
   errorBoxStyles,
   successBoxStyles,
 } from 'components/shared/MessageBoxes';
-import { useSurroundingsWidget } from 'components/shared/SurroundingsWidget';
+import SurroundingsWidget from 'components/shared/SurroundingsWidget';
 // contexts
 import { useAddSaveDataWidgetState } from 'contexts/AddSaveDataWidget';
 import { useConfigFilesState } from 'contexts/ConfigFiles';
@@ -405,11 +404,8 @@ function MapWidgets({
   const {
     homeWidget,
     setHomeWidget,
-    upstreamWidget,
-    upstreamWidgetDisabled,
     setUpstreamWidgetDisabled,
     getUpstreamWidgetDisabled,
-    setUpstreamWidget,
     setUpstreamWatershedResponse,
     getCurrentExtent,
     setCurrentExtent,
@@ -621,21 +617,6 @@ function MapWidgets({
   const legendRoot = useRef<Root | null>(null);
   const [displayEsriLegend, setDisplayEsriLegend] = useState(false);
 
-  const surroundingsWidget = useSurroundingsWidget();
-  useEffect(() => {
-    if (!view?.ui) return;
-
-    view.ui.add({
-      component: surroundingsWidget,
-      position: 'top-right',
-      index: 1,
-    });
-
-    return function cleanup() {
-      view?.ui.remove(surroundingsWidget);
-    };
-  }, [surroundingsWidget, view]);
-
   // Creates and adds the add/save data widget to the map
   const rnd = useRef<Rnd | null>(null);
 
@@ -669,35 +650,16 @@ function MapWidgets({
     });
   }, []);
 
-  const [addSaveDataWidget, setAddSaveDataWidget] =
-    useState<HTMLDivElement | null>(null);
+  const [addSaveDataWidgetInitialized, setAddSaveDataWidgetInitialized] = useState<boolean>(false);
   useEffect(() => {
-    if (!view?.ui) return;
-
-    const node = document.createElement('div');
-    view.ui.add(node, { position: 'top-right', index: 2 });
-
-    createRoot(node).render(
-      <ShowAddSaveDataWidget
-        addSaveDataWidgetVisible={addSaveDataWidgetVisible}
-        setAddSaveDataWidgetVisible={setAddSaveDataWidgetVisible}
-      />,
-    );
-
+    if (addSaveDataWidgetInitialized) return;
     window.addEventListener('resize', handleResize);
-
-    setAddSaveDataWidget(node);
+    setAddSaveDataWidgetInitialized(true);
 
     return function cleanup() {
-      view?.ui.remove(node);
       window.removeEventListener('resize', handleResize);
     };
-  }, [
-    view,
-    addSaveDataWidgetVisible,
-    setAddSaveDataWidgetVisible,
-    handleResize,
-  ]);
+  }, [addSaveDataWidgetInitialized, handleResize]);
 
   // Fetch additional legend information. Data is stored in a dictionary
   // where the key is the layer id.
@@ -756,66 +718,11 @@ function MapWidgets({
     return function cleanup() {
       zoomHandle.remove();
     };
-  }, [additionalLegendInfo, basemap, view, displayEsriLegend]);
-
-  // create the home widget, layers widget, and setup map zoom change listener
-  const [
-    fullScreenWidgetCreated,
-    setFullScreenWidgetCreated, //
-  ] = useState(false);
-  useEffect(() => {
-    if (fullScreenWidgetCreated) return;
-
-    // create the basemap/layers widget
-    const node = document.createElement('div');
-    view.ui.add(node, { position: 'bottom-right', index: 0 });
-    createRoot(node).render(
-      <ExpandCollapse
-        fullscreenActive={fullscreenActive}
-        setFullscreenActive={setFullscreenActive}
-        mapViewSetter={setMapView}
-      />,
-    );
-    setFullScreenWidgetCreated(true);
-  }, [
-    fullscreenActive,
-    setFullscreenActive,
-    view,
-    setMapView,
-    fullScreenWidgetCreated,
-  ]);
-
-  // create the download widget
-  useEffect(() => {
-    if (!view) return;
-
-    const container = document.createElement('div');
-    createRoot(container).render(
-      <DownloadWidget services={services} view={view} />,
-    );
-
-    const downloadWidget = new Expand({
-      expandIcon: 'print',
-      expandTooltip: 'Open Printable Map Widget',
-      collapseTooltip: 'Close Printable Map Widget',
-      view,
-      mode: 'floating',
-      autoCollapse: true,
-      content: container,
-    });
-
-    view?.ui.add(downloadWidget, { position: 'top-right', index: 3 });
-
-    return function cleanup() {
-      if (downloadWidget) view?.ui.remove(downloadWidget);
-    };
-  }, [services, view]);
+  }, [additionalLegendInfo, view, displayEsriLegend]);
 
   // watch for location changes and disable/enable the upstream widget accordingly
   // widget should only be displayed on Tribal page or valid Community page location
   useEffect(() => {
-    if (!upstreamWidget) return;
-
     if (
       pathname === '/community' ||
       (pathname.includes('/community') && !huc12)
@@ -827,21 +734,7 @@ function MapWidgets({
 
     // display and enable the upstream widget
     setUpstreamWidgetDisabled(false);
-  }, [huc12, upstreamWidget, setUpstreamWidgetDisabled, pathname]);
-
-  useEffect(() => {
-    if (!upstreamWidget) {
-      return;
-    }
-
-    if (upstreamWidgetDisabled) {
-      upstreamWidget.style.opacity = '0.5';
-      upstreamWidget.style.cursor = 'default';
-    } else {
-      upstreamWidget.style.opacity = '1';
-      upstreamWidget.style.cursor = 'pointer';
-    }
-  }, [upstreamWidget, upstreamWidgetDisabled]);
+  }, [huc12, setUpstreamWidgetDisabled, pathname]);
 
   const setUpstreamLayerErrored = useCallback(
     (isErrored: boolean) => {
@@ -851,92 +744,6 @@ function MapWidgets({
   );
 
   const { upstreamLayer: upstreamLayerErrored } = erroredLayers;
-
-  // create upstream widget
-  useEffect(() => {
-    if (!pathname.includes('/community') && !pathname.includes('/tribe'))
-      return;
-    if (!map || !view?.ui) return;
-
-    const node = document.createElement('div');
-
-    const widget = pathname.includes('/community') ? (
-      <ShowCurrentUpstreamWatershed
-        abortSignal={getSignal()}
-        getCurrentExtent={getCurrentExtent}
-        getHuc12={getHuc12}
-        getTemplate={getTemplate}
-        getUpstreamExtent={getUpstreamExtent}
-        getUpstreamWidgetDisabled={getUpstreamWidgetDisabled}
-        getWatershed={getWatershed}
-        services={services}
-        setErrorMessage={setErrorMessage}
-        setUpstreamExtent={setUpstreamExtent}
-        setUpstreamLayerErrored={setUpstreamLayerErrored}
-        setUpstreamWatershedResponse={setUpstreamWatershedResponse}
-        setUpstreamWidgetDisabled={setUpstreamWidgetDisabled}
-        updateVisibleLayers={updateVisibleLayers}
-        upstreamLayer={upstreamLayer}
-        upstreamLayerErrored={upstreamLayerErrored}
-        view={view}
-      />
-    ) : (
-      <ShowSelectedUpstreamWatershed
-        abortSignal={getSignal()}
-        getCurrentExtent={getCurrentExtent}
-        getHuc12={getHuc12}
-        getTemplate={getTemplate}
-        getUpstreamExtent={getUpstreamExtent}
-        getUpstreamWidgetDisabled={getUpstreamWidgetDisabled}
-        getWatershed={getWatershed}
-        map={map}
-        mapRef={mapRef}
-        services={services}
-        setErrorMessage={setErrorMessage}
-        setUpstreamExtent={setUpstreamExtent}
-        setUpstreamLayerErrored={setUpstreamLayerErrored}
-        setUpstreamWatershedResponse={setUpstreamWatershedResponse}
-        setUpstreamWidgetDisabled={setUpstreamWidgetDisabled}
-        setCurrentExtent={setCurrentExtent}
-        updateVisibleLayers={updateVisibleLayers}
-        upstreamLayer={upstreamLayer}
-        upstreamLayerErrored={upstreamLayerErrored}
-        upstreamWidget={node}
-        view={view}
-      />
-    );
-
-    createRoot(node).render(widget);
-    setUpstreamWidget(node); // store the widget in context so it can be shown or hidden later
-    view.ui.add(node, { position: 'top-right', index: 4 });
-
-    return function cleanup() {
-      view?.ui.remove(node);
-    };
-  }, [
-    getCurrentExtent,
-    getHuc12,
-    getSignal,
-    getTemplate,
-    getUpstreamExtent,
-    getUpstreamWidgetDisabled,
-    getWatershed,
-    map,
-    mapRef,
-    pathname,
-    services,
-    setCurrentExtent,
-    setErrorMessage,
-    setUpstreamExtent,
-    setUpstreamLayerErrored,
-    setUpstreamWatershedResponse,
-    setUpstreamWidget,
-    setUpstreamWidgetDisabled,
-    updateVisibleLayers,
-    upstreamLayer,
-    upstreamLayerErrored,
-    view,
-  ]);
 
   const { visible: surroundingsVisible } = useSurroundingsState();
 
@@ -1010,7 +817,7 @@ function MapWidgets({
     }
   }
 
-  if (!addSaveDataWidget) return null;
+  if (!addSaveDataWidgetInitialized) return null;
 
   const mapWidth = document
     .getElementById('hmw-map-container')
@@ -1053,7 +860,7 @@ function MapWidgets({
           expandIcon="layers"
           expandTooltip="Open Basemaps and Layers"
           mode="floating"
-          // style={{ marginBottom: '10px' }}
+          style={{ marginBottom: '10px' }}
         >
           <arcgis-placement>
             <div className="hmw-map-toggle">
@@ -1068,9 +875,85 @@ function MapWidgets({
             </div>
           </arcgis-placement>
         </arcgis-expand>
+
+        <SurroundingsWidget />
+
+        <ShowAddSaveDataWidget
+          addSaveDataWidgetVisible={addSaveDataWidgetVisible}
+          setAddSaveDataWidgetVisible={setAddSaveDataWidgetVisible}
+        />
+
+        <arcgis-expand
+          autoCollapse={true}
+          closeOnEsc={true}
+          collapseTooltip="Close Printable Map Widget"
+          expanded={false}
+          expandIcon="print"
+          expandTooltip="Open Printable Map Widget"
+          mode="floating"
+          style={{ margin: '10px 0' }}
+        >
+          <arcgis-placement>
+            <DownloadWidget services={services} view={view} />
+          </arcgis-placement>
+        </arcgis-expand>
+
+        {pathname.includes('/community') && (
+          <ShowCurrentUpstreamWatershed
+            abortSignal={getSignal()}
+            getCurrentExtent={getCurrentExtent}
+            getHuc12={getHuc12}
+            getTemplate={getTemplate}
+            getUpstreamExtent={getUpstreamExtent}
+            getUpstreamWidgetDisabled={getUpstreamWidgetDisabled}
+            getWatershed={getWatershed}
+            services={services}
+            setErrorMessage={setErrorMessage}
+            setUpstreamExtent={setUpstreamExtent}
+            setUpstreamLayerErrored={setUpstreamLayerErrored}
+            setUpstreamWatershedResponse={setUpstreamWatershedResponse}
+            setUpstreamWidgetDisabled={setUpstreamWidgetDisabled}
+            updateVisibleLayers={updateVisibleLayers}
+            upstreamLayer={upstreamLayer}
+            upstreamLayerErrored={upstreamLayerErrored}
+            view={view}
+          />
+        )}
+        {pathname.includes('/tribe') && (
+          <ShowSelectedUpstreamWatershed
+            abortSignal={getSignal()}
+            getCurrentExtent={getCurrentExtent}
+            getHuc12={getHuc12}
+            getTemplate={getTemplate}
+            getUpstreamExtent={getUpstreamExtent}
+            getUpstreamWidgetDisabled={getUpstreamWidgetDisabled}
+            getWatershed={getWatershed}
+            map={map}
+            mapRef={mapRef}
+            services={services}
+            setErrorMessage={setErrorMessage}
+            setUpstreamExtent={setUpstreamExtent}
+            setUpstreamLayerErrored={setUpstreamLayerErrored}
+            setUpstreamWatershedResponse={setUpstreamWatershedResponse}
+            setUpstreamWidgetDisabled={setUpstreamWidgetDisabled}
+            setCurrentExtent={setCurrentExtent}
+            updateVisibleLayers={updateVisibleLayers}
+            upstreamLayer={upstreamLayer}
+            upstreamLayerErrored={upstreamLayerErrored}
+            view={view}
+          />
+        )}
       </arcgis-placement>
 
       <arcgis-scale-bar position="bottom-left" />
+
+      <arcgis-placement position="bottom-right">
+        <ExpandCollapse
+          fullscreenActive={fullscreenActive}
+          setFullscreenActive={setFullscreenActive}
+          mapViewSetter={setMapView}
+        />
+      </arcgis-placement>
 
       <div
         style={{
@@ -1714,7 +1597,6 @@ type ShowSelectedUpstreamWatershedProps = ShowCurrentUpstreamWatershedProps & {
   map: __esri.Map;
   mapRef: MutableRefObject<HTMLDivElement | null>;
   setCurrentExtent: Dispatch<SetStateAction<__esri.Extent>>;
-  upstreamWidget: HTMLDivElement;
 };
 
 function ShowSelectedUpstreamWatershed({
@@ -1738,8 +1620,8 @@ function ShowSelectedUpstreamWatershed({
   mapRef,
   setCurrentExtent,
   upstreamLayerErrored,
-  upstreamWidget,
 }: ShowSelectedUpstreamWatershedProps) {
+  const { upstreamWidgetDisabled } = useContext(LocationSearchContext);
   // Record visibility state of watersheds layer to restore later
   const [watershedsVisible, setWatershedsVisible] = useState(false);
 
@@ -1765,10 +1647,7 @@ function ShowSelectedUpstreamWatershed({
   // Show/hide instruction dialogue when watershed selection activity changes
   useEffect(() => {
     setInstructionsVisible(selectionActive);
-    upstreamWidget.style.filter = selectionActive
-      ? 'invert(0.8) brightness(1.5) contrast(1.5)'
-      : 'none';
-  }, [selectionActive, upstreamWidget]);
+  }, [selectionActive]);
 
   // Disable "selection mode" and/or restore the
   // initial visibility of the watersheds layer
@@ -1980,7 +1859,15 @@ function ShowSelectedUpstreamWatershed({
   }
 
   return (
-    <>
+    <div
+      style={{
+        cursor: upstreamWidgetDisabled ? 'default' : 'pointer',
+        filter: selectionActive
+          ? 'invert(0.8) brightness(1.5) contrast(1.5)'
+          : 'none',
+        opacity: upstreamWidgetDisabled ? '0.5' : '1',
+      }}
+    >
       {mapRef.current &&
         createPortal(
           <div css={instructionContainerStyles(instructionsVisible)}>
@@ -2008,7 +1895,7 @@ function ShowSelectedUpstreamWatershed({
         upstreamLayer={upstreamLayer}
         upstreamLoading={upstreamLoading}
       />
-    </>
+    </div>
   );
 }
 

@@ -78,7 +78,6 @@ type State = {
   mapView: __esri.MapView | null;
   basemap: Basemap | null;
   homeWidget: Object;
-  upstreamWidget: Object;
   upstreamWidgetDisabled: boolean;
   hucBoundaries: __esri.Graphic | null;
   atHucBoundaries: boolean;
@@ -144,7 +143,6 @@ export class LocationSearchProvider extends Component<Props, State> {
     nonprofits: { status: 'fetching', data: [] },
     mapView: null,
     homeWidget: null,
-    upstreamWidget: null,
     upstreamWidgetDisabled: false,
     basemap: null,
     hucBoundaries: null,
@@ -277,9 +275,6 @@ export class LocationSearchProvider extends Component<Props, State> {
     },
     setHomeWidget: (homeWidget) => {
       this.setState({ homeWidget });
-    },
-    setUpstreamWidget: (upstreamWidget) => {
-      this.setState({ upstreamWidget });
     },
     setBasemap: (basemap) => {
       this.setState({ basemap });

@@ -1,9 +1,10 @@
 /** @jsxImportSource @emotion/react */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { css, keyframes } from '@emotion/react';
 import { createPortal } from 'react-dom';
-import { Root, createRoot } from 'react-dom/client';
+import "@esri/calcite-components/dist/components/calcite-action";
+import "@esri/calcite-components/dist/components/calcite-icon";
 import { CalciteAction, CalciteIcon } from '@esri/calcite-components-react';
 // components
 import LoadingSpinner from 'components/shared/LoadingSpinner';
@@ -34,7 +35,11 @@ import type {
 ## Components
 */
 
-export function useSurroundingsWidget(triggerVisible = true) {
+export default function SurroundingsWidget({
+  triggerVisible = true
+} : {
+  triggerVisible?: boolean;
+}) {
   const { layers, visible: visibleLayers } = useLayersState();
   const { togglers, disabled, updating, visible } = useSurroundingsState();
 
@@ -52,41 +57,19 @@ export function useSurroundingsWidget(triggerVisible = true) {
     );
   }, [layers, visibleLayers]);
 
-  const [container] = useState(document.createElement('div'));
-  const [root, setRoot] = useState<Root | null>(null);
-  useEffect(() => {
-    const content = (
-      <SurroundingsWidget
-        layers={includedLayers}
-        layersUpdating={updating}
-        surroundingsVisible={visible}
-        toggles={togglers}
-        togglesDisabled={disabled}
-        triggerVisible={triggerVisible}
-      />
-    );
-
-    if (root) root.render(content);
-    else {
-      const newRoot = createRoot(container);
-      newRoot.render(content);
-      setRoot(newRoot);
-    }
-  }, [
-    container,
-    disabled,
-    includedLayers,
-    root,
-    togglers,
-    triggerVisible,
-    updating,
-    visible,
-  ]);
-
-  return container;
+  return (
+    <SurroundingsWidgetInner
+      layers={includedLayers}
+      layersUpdating={updating}
+      surroundingsVisible={visible}
+      toggles={togglers}
+      togglesDisabled={disabled}
+      triggerVisible={triggerVisible}
+    />
+  );
 }
 
-function SurroundingsWidget(props: Readonly<SurroundingsWidgetProps>) {
+function SurroundingsWidgetInner(props: Readonly<SurroundingsWidgetProps>) {
   const [contentVisible, setContentVisible] = useState(false);
   const toggleContentVisibility = useCallback(
     (ev: KeyboardEvent | MouseEvent) => {
@@ -273,6 +256,7 @@ const divStyle = (disabled: boolean, hover: boolean) => css`
   display: flex;
   height: 32px;
   justify-content: center;
+  margin-bottom: 10px;
   padding: 8.5px;
   opacity: ${disabled ? 0.5 : 1.0};
   position: relative;
@@ -301,8 +285,9 @@ const listItemContentStyles = (disabled: boolean, hover: boolean) => css`
   color: ${disabled ? '#6e6e6e' : 'inherit'};
   cursor: ${disabled ? 'normal' : 'pointer'};
   display: grid;
-  font-family: 'Source Sans Pro Web', 'Helvetica Neue', 'Helvetica', 'Roboto',
-    'Arial', sans-serif;
+  font-family:
+    'Source Sans Pro Web', 'Helvetica Neue', 'Helvetica', 'Roboto', 'Arial',
+    sans-serif;
   font-size: 1rem;
   grid-template-columns: 86% 14%;
   outline: none !important;
