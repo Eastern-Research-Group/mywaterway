@@ -19,7 +19,6 @@
   max-height: 420px;
 }
 
-.hmw-map-layers,
 .esri-view-root .esri-basemap-gallery {
   min-width: 225px;
   max-width: 225px;
@@ -44,6 +43,7 @@
   padding-top: 5px;
   overflow: visible !important;
   max-height: 100% !important;
+  width: 225px !important;
 }
 
 .esri-legend__symbol {

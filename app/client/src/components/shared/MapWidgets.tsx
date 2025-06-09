@@ -1,17 +1,17 @@
 /** @jsxImportSource @emotion/react */
 
-import "@arcgis/map-components/components/arcgis-expand";
+import '@arcgis/map-components/components/arcgis-basemap-gallery';
+import '@arcgis/map-components/components/arcgis-expand';
 import '@arcgis/map-components/components/arcgis-home';
-import "@arcgis/map-components/components/arcgis-legend";
-import "@arcgis/map-components/components/arcgis-placement";
+import '@arcgis/map-components/components/arcgis-layer-list';
+import '@arcgis/map-components/components/arcgis-legend';
+import '@arcgis/map-components/components/arcgis-placement';
 import '@arcgis/map-components/components/arcgis-scale-bar';
 import '@arcgis/map-components/components/arcgis-zoom';
 import Polygon from '@arcgis/core/geometry/Polygon';
-import BasemapGallery from '@arcgis/core/widgets/BasemapGallery';
 import Expand from '@arcgis/core/widgets/Expand';
 import Graphic from '@arcgis/core/Graphic';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
-import LayerList from '@arcgis/core/widgets/LayerList';
 import Point from '@arcgis/core/geometry/Point';
 import PortalBasemapsSource from '@arcgis/core/widgets/BasemapGallery/support/PortalBasemapsSource';
 import * as query from '@arcgis/core/rest/query';
@@ -193,6 +193,20 @@ const basemapNames = [
   // 'Firefly Imagery Hybrid',
   // 'USA Topo Maps',
 ];
+
+const basemapSource = new PortalBasemapsSource({
+  filterFunction: function (basemap) {
+    return basemapNames.indexOf(basemap.portalItem.title) !== -1;
+  },
+  updateBasemapsCallback: function (originalBasemaps) {
+    // sort the basemaps based on the ordering of basemapNames
+    return originalBasemaps.sort(
+      (a, b) =>
+        basemapNames.indexOf(a.portalItem.title) -
+        basemapNames.indexOf(b.portalItem.title),
+    );
+  },
+});
 
 // used to order the layer legends, so the ordering is consistent no matter
 // which layer legends are visible.
@@ -396,8 +410,6 @@ function MapWidgets({
     setUpstreamWidgetDisabled,
     getUpstreamWidgetDisabled,
     setUpstreamWidget,
-    setBasemap,
-    basemap,
     setUpstreamWatershedResponse,
     getCurrentExtent,
     setCurrentExtent,
@@ -608,7 +620,7 @@ function MapWidgets({
 
   const legendRoot = useRef<Root | null>(null);
   const [displayEsriLegend, setDisplayEsriLegend] = useState(false);
-  
+
   const surroundingsWidget = useSurroundingsWidget();
   useEffect(() => {
     if (!view?.ui) return;
@@ -725,128 +737,6 @@ function MapWidgets({
       });
   }, [additionalLegendInitialized, getSignal, services]);
 
-  // Creates and adds the basemap/layer list widget to the map
-  const [layerListWidget, setLayerListWidget] =
-    useState<__esri.LayerList | null>(null);
-  useEffect(() => {
-    if (
-      !view ||
-      additionalLegendInfo.status === 'fetching' ||
-      layerListWidget
-    ) {
-      return;
-    }
-
-    // create the basemap/layers widget
-    const basemapsSource = new PortalBasemapsSource({
-      filterFunction: function (basemap) {
-        return basemapNames.indexOf(basemap.portalItem.title) !== -1;
-      },
-      updateBasemapsCallback: function (originalBasemaps) {
-        // sort the basemaps based on the ordering of basemapNames
-        return originalBasemaps.sort(
-          (a, b) =>
-            basemapNames.indexOf(a.portalItem.title) -
-            basemapNames.indexOf(b.portalItem.title),
-        );
-      },
-    });
-
-    // basemaps
-    const basemapContainer = document.createElement('div');
-    basemapContainer.className = 'hmw-map-basemaps';
-
-    const basemapWidget = new BasemapGallery({
-      container: basemapContainer,
-      view: view,
-      source: basemapsSource,
-    });
-
-    // layers
-    const layersContainer = document.createElement('div');
-    layersContainer.className = 'hmw-map-layers';
-
-    // Creates actions in the LayerList to monitor layer visibility
-    const uniqueParentItems: string[] = [];
-    function defineActions(event: { item: __esri.ListItem }) {
-      const item = event.item;
-      if (!item.parent) {
-        uniqueParentItems.push(item.title);
-        updateLegend(
-          view,
-          displayEsriLegend,
-          legendRoot.current,
-          additionalLegendInfoNonState,
-        );
-
-        watchHandles.push(
-          reactiveUtils.watch(
-            () => item.visible,
-            () => {
-              updateLegend(
-                view,
-                displayEsriLegend,
-                legendRoot.current,
-                additionalLegendInfoNonState,
-              );
-              const dict = {
-                layerId: item.layer.id,
-                visible: item.layer.visible,
-              };
-              setToggledLayer(dict);
-            },
-          ),
-        );
-      }
-    }
-
-    const layerlist = new LayerList({
-      container: layersContainer,
-      view: view,
-      // executes for each ListItem in the LayerList
-      listItemCreatedFunction: defineActions,
-    });
-
-    // container
-    const container = document.createElement('div');
-    container.className = 'hmw-map-toggle';
-
-    const basemapHeader = document.createElement('h2');
-    basemapHeader.innerHTML = 'Basemaps:';
-
-    const layerListHeader = document.createElement('h2');
-    layerListHeader.innerHTML = 'Layers:';
-
-    container.appendChild(basemapHeader);
-    if (basemapWidget.container instanceof HTMLElement)
-      container.appendChild(basemapWidget.container);
-    container.appendChild(document.createElement('hr'));
-    container.appendChild(layerListHeader);
-    if (layerlist.container instanceof HTMLElement)
-      container.appendChild(layerlist.container);
-
-    const expandWidget = new Expand({
-      expandIcon: 'layers',
-      expandTooltip: 'Open Basemaps and Layers',
-      collapseTooltip: 'Close Basemaps and Layers',
-      view: view,
-      mode: 'floating',
-      autoCollapse: true,
-      content: container,
-    });
-
-    view.ui.add(expandWidget, { position: 'top-right', index: 0 });
-    setLayerListWidget(layerlist);
-  }, [
-    additionalLegendInfo,
-    displayEsriLegend,
-    layerListWidget,
-    view,
-    watchHandles,
-  ]);
-
-  // Sets up the zoom event handler that is used for determining if layers
-  // should be visible at the current zoom level.
   useEffect(() => {
     if (!view) return;
 
@@ -863,25 +753,10 @@ function MapWidgets({
       },
     );
 
-    // when basemap changes, update the basemap in context for persistent basemaps
-    // across fullscreen and mobile/desktop layout changes
-    const basemapHandle = view.map.allLayers.on('change', function (_ev) {
-      if (view.map.basemap !== basemap) {
-        setBasemap(view.map.basemap);
-      }
-    });
-
     return function cleanup() {
-      basemapHandle.remove();
       zoomHandle.remove();
     };
-  }, [
-    additionalLegendInfo,
-    basemap,
-    setBasemap,
-    view,
-    displayEsriLegend,
-  ]);
+  }, [additionalLegendInfo, basemap, view, displayEsriLegend]);
 
   // create the home widget, layers widget, and setup map zoom change listener
   const [
@@ -1101,6 +976,40 @@ function MapWidgets({
     setSaveDescription,
   ]);
 
+  // Creates actions in the LayerList to monitor layer visibility
+  const uniqueParentItems: string[] = [];
+  function defineActions(event: { item: __esri.ListItem }) {
+    const item = event.item;
+    if (!item.parent) {
+      uniqueParentItems.push(item.title);
+      updateLegend(
+        item.view,
+        displayEsriLegend,
+        legendRoot.current,
+        additionalLegendInfoNonState,
+      );
+
+      watchHandles.push(
+        reactiveUtils.watch(
+          () => item.visible,
+          () => {
+            updateLegend(
+              view,
+              displayEsriLegend,
+              legendRoot.current,
+              additionalLegendInfoNonState,
+            );
+            const dict = {
+              layerId: item.layer.id,
+              visible: item.layer.visible,
+            };
+            setToggledLayer(dict);
+          },
+        ),
+      );
+    }
+  }
+
   if (!addSaveDataWidget) return null;
 
   const mapWidth = document
@@ -1113,7 +1022,7 @@ function MapWidgets({
   return (
     <Fragment>
       <arcgis-placement position="top-left">
-        <arcgis-expand 
+        <arcgis-expand
           autoCollapse={true}
           closeOnEsc={true}
           collapseTooltip="Close Legend"
@@ -1130,11 +1039,37 @@ function MapWidgets({
             />
           </arcgis-placement>
         </arcgis-expand>
-        
+
         <arcgis-home ref={homeWidgetRef} />
         <arcgis-zoom />
       </arcgis-placement>
-      
+
+      <arcgis-placement position="top-right">
+        <arcgis-expand
+          autoCollapse={true}
+          closeOnEsc={true}
+          collapseTooltip="Close Basemaps and Layers"
+          expanded={false}
+          expandIcon="layers"
+          expandTooltip="Open Basemaps and Layers"
+          mode="floating"
+          // style={{ marginBottom: '10px' }}
+        >
+          <arcgis-placement>
+            <div className="hmw-map-toggle">
+              <h2>Basemaps:</h2>
+              <arcgis-basemap-gallery source={basemapSource} />
+              <hr />
+              <h2>Layers:</h2>
+              <arcgis-layer-list
+                data-testid="hmw-map-layers"
+                listItemCreatedFunction={defineActions}
+              />
+            </div>
+          </arcgis-placement>
+        </arcgis-expand>
+      </arcgis-placement>
+
       <arcgis-scale-bar position="bottom-left" />
 
       <div
@@ -1215,7 +1150,7 @@ function LegendWidget({
     if (initialized || !syncedNode?.current || !legendNode?.current) return;
 
     document.body.appendChild(legendNode.current);
-    
+
     const syncContent = () => {
       if (!syncedNode?.current) return;
       syncedNode.current.innerHTML = legendNode?.current?.innerHTML ?? '';
@@ -1233,7 +1168,6 @@ function LegendWidget({
     setInitialized(true);
   }, [initialized, legendNode, syncedNode]);
 
-  
   useEffect(() => {
     if (legendRoot?.current || !hmwLegendTemp?.current) return;
     legendRoot.current = createRoot(hmwLegendTemp.current);
@@ -1275,16 +1209,14 @@ function LegendWidget({
     <Fragment>
       <div ref={syncedNode} id="esri-legend-sync-div" />
 
-      <div 
+      <div
         aria-hidden={true}
         className="map-legend sr-only"
         id="non-visible-legend"
         ref={legendNode}
       >
         <div ref={hmwLegendTemp} />
-        <arcgis-legend
-          layerInfos={[]}
-        />
+        <arcgis-legend layerInfos={[]} />
         <div
           id="esri-legend-container"
           ref={esriLegendRef}
@@ -1292,7 +1224,7 @@ function LegendWidget({
         />
       </div>
     </Fragment>
-  )
+  );
 }
 
 function ShowAddSaveDataWidget({
