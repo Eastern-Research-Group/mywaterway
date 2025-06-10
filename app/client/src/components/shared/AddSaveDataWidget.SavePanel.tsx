@@ -300,14 +300,9 @@ function SavePanel({ visible }: Readonly<Props>) {
   const [mapLayerCount, setMapLayerCount] = useState(
     mapView?.map.layers.length,
   );
-  const [layerWatcher, setLayerWatcher] = useState<IHandle | null>(null);
+  const [layerWatcherInitialized, setLayerWatcherInitialized] = useState(false);
   useEffect(() => {
-    if (!mapView || layerWatcher) return;
-
-    const watcher = reactiveUtils.watch(
-      () => mapView.map.layers.length,
-      () => setMapLayerCount(mapView.map.layers.length),
-    );
+    if (!mapView || layerWatcherInitialized) return;
 
     const layerWatchers: { [id: string]: IHandle } = {};
 
@@ -352,6 +347,7 @@ function SavePanel({ visible }: Readonly<Props>) {
     mapView.map.layers.forEach((layer) => watchLayerVisibility(layer));
 
     mapView.map.layers.on('change', (e) => {
+      setMapLayerCount(mapView.map.layers.length);
       if (e.added.length > 0) {
         e.added.forEach((layer) => {
           watchLayerVisibility(layer);
@@ -375,8 +371,8 @@ function SavePanel({ visible }: Readonly<Props>) {
       }
     });
 
-    setLayerWatcher(watcher);
-  }, [layerWatcher, mapView, setSaveLayersList]);
+    setLayerWatcherInitialized(true);
+  }, [layerWatcherInitialized, mapView, setSaveLayersList]);
 
   // Build the list of switches
   useEffect(() => {

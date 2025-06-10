@@ -367,7 +367,7 @@ function useWaterbodyOnMap(
         ).map((info) => new UniqueValueInfo(info));
       }
 
-      layer.renderer = renderer;
+      if (layer) layer.renderer = renderer;
 
       // close popup and clear highlights when the renderer changes
       closePopup({ mapView, setHighlightedGraphic, setSelectedGraphic });

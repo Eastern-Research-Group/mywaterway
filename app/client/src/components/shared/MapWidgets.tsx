@@ -193,20 +193,6 @@ const basemapNames = [
   // 'USA Topo Maps',
 ];
 
-const basemapSource = new PortalBasemapsSource({
-  filterFunction: function (basemap) {
-    return basemapNames.indexOf(basemap.portalItem.title) !== -1;
-  },
-  updateBasemapsCallback: function (originalBasemaps) {
-    // sort the basemaps based on the ordering of basemapNames
-    return originalBasemaps.sort(
-      (a, b) =>
-        basemapNames.indexOf(a.portalItem.title) -
-        basemapNames.indexOf(b.portalItem.title),
-    );
-  },
-});
-
 // used to order the layer legends, so the ordering is consistent no matter
 // which layer legends are visible.
 const orderedLayers = [
@@ -402,6 +388,8 @@ function MapWidgets({
   }, [watchHandles]);
 
   const {
+    basemap,
+    setBasemap,
     homeWidget,
     setHomeWidget,
     setUpstreamWidgetDisabled,
@@ -650,7 +638,8 @@ function MapWidgets({
     });
   }, []);
 
-  const [addSaveDataWidgetInitialized, setAddSaveDataWidgetInitialized] = useState<boolean>(false);
+  const [addSaveDataWidgetInitialized, setAddSaveDataWidgetInitialized] =
+    useState<boolean>(false);
   useEffect(() => {
     if (addSaveDataWidgetInitialized) return;
     window.addEventListener('resize', handleResize);
@@ -715,10 +704,25 @@ function MapWidgets({
       },
     );
 
+    // when basemap changes, update the basemap in context for persistent basemaps
+    // across fullscreen and mobile/desktop layout changes
+    const basemapHandle = view.map.allLayers.on('change', function (_ev) {
+      if (view.map.basemap !== basemap) {
+        setBasemap(view.map.basemap);
+      }
+    });
+
     return function cleanup() {
+      basemapHandle.remove();
       zoomHandle.remove();
     };
-  }, [additionalLegendInfo, view, displayEsriLegend]);
+  }, [
+    additionalLegendInfo,
+    basemap,
+    setBasemap,
+    view,
+    displayEsriLegend
+  ]);
 
   // watch for location changes and disable/enable the upstream widget accordingly
   // widget should only be displayed on Tribal page or valid Community page location
@@ -816,6 +820,22 @@ function MapWidgets({
       );
     }
   }
+
+  const [basemapSource] = useState(
+    new PortalBasemapsSource({
+      filterFunction: function (basemap) {
+        return basemapNames.indexOf(basemap.portalItem.title) !== -1;
+      },
+      updateBasemapsCallback: function (originalBasemaps) {
+        // sort the basemaps based on the ordering of basemapNames
+        return originalBasemaps.sort(
+          (a, b) =>
+            basemapNames.indexOf(a.portalItem.title) -
+            basemapNames.indexOf(b.portalItem.title),
+        );
+      },
+    }),
+  );
 
   if (!addSaveDataWidgetInitialized) return null;
 

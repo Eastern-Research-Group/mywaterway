@@ -203,71 +203,53 @@ function Community() {
       <TabLinks />
       <WindowSize>
         {({ width, height }) => {
-          if (width < 960) {
-            // narrow screens
-            return (
-              <div css={columnsStyles} data-content="community">
-                <div css={leftColumnStyles} data-column="left">
-                  {errorMessage && (
-                    <div css={modifiedErrorBoxStyles}>
-                      <p>{errorMessage}</p>
-                    </div>
-                  )}
+          const layout = width < 960 ? 'narrow' : 'wide';
 
-                  {searchMarkup}
+          return (
+            <div css={columnsStyles} data-content="community">
+              <div css={leftColumnStyles} data-column="left">
+                {errorMessage && (
+                  <div css={modifiedErrorBoxStyles}>
+                    <p>{errorMessage}</p>
+                  </div>
+                )}
 
+                {layout === 'narrow' && searchMarkup}
+
+                {layout === 'narrow' && (
                   <div css={rightColumnStyles} data-column="right">
                     {/* Outlet is either CommunityIntro or CommunityTabs (upper tabs) */}
                     <Outlet />
                   </div>
-
-                  {!atCommunityIntroRoute && (
-                    <>
-                      <MapVisibilityButton>
-                        {(mapShown) => (
-                          <div
-                            css={mapContainerStyles}
-                            style={{ display: mapShown ? 'block' : 'none' }}
-                          >
-                            <LocationMap
-                              windowHeight={height}
-                              layout="narrow"
-                            />
-                          </div>
-                        )}
-                      </MapVisibilityButton>
-
-                      {lowerTab}
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          } else {
-            // wide screens
-            return (
-              <div css={columnsStyles} data-content="community">
-                <div css={leftColumnStyles} data-column="left">
-                  {errorMessage && (
-                    <div css={modifiedErrorBoxStyles}>
-                      <p>{errorMessage}</p>
+                )}
+                
+                <MapVisibilityButton value={layout === 'wide'} visible={layout === 'narrow'}>
+                  {(mapShown) => (
+                    <div
+                      css={layout === 'narrow' ? mapContainerStyles : css`display: inline;`}
+                      className={mapShown ? '' : 'sr-only'}
+                    >
+                      <LocationMap
+                        windowHeight={height}
+                        layout={layout}
+                      >
+                        {layout === 'wide' && searchMarkup}
+                      </LocationMap>
                     </div>
                   )}
+                </MapVisibilityButton>
 
-                  <LocationMap windowHeight={height} layout="wide">
-                    {searchMarkup}
-                  </LocationMap>
-                </div>
-
+                {layout === 'narrow' && !atCommunityIntroRoute && lowerTab}
+              </div>
+              
+              {layout === 'wide' && (
                 <div css={rightColumnStyles} data-column="right">
-                  {/* Outlet is either CommunityIntro or CommunityTabs (upper tabs) */}
                   <Outlet />
-
                   {!atCommunityIntroRoute && lowerTab}
                 </div>
-              </div>
-            );
-          }
+              )}
+            </div>
+          );
         }}
       </WindowSize>
     </Page>

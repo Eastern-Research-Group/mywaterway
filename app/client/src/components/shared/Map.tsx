@@ -44,6 +44,13 @@ function Map({
   const [map, setMap] = useState<__esri.Map | null>(null);
 
   useEffect(() => {
+    return function cleanup() {
+      setMap(null);
+      setMapView(null);
+    }
+  }, [setMap, setMapView]);
+
+  useEffect(() => {
     if (!layers || layers.length === 0) return;
 
     // hide/show layers based on the visibleLayers object
@@ -58,8 +65,8 @@ function Map({
   useEffect(() => {
     if (basemapInitialized) return;
 
-    const mapBasemap =
-      basemap ?? basemapFromPortalItem(services.basemaps.default);
+    const mapBasemap = 
+      basemapFromPortalItem(basemap?.portalItem?.id ?? services.basemaps.default);
     if (basemap !== mapBasemap) setBasemap(mapBasemap);
 
     setBasemapInitialized(true);

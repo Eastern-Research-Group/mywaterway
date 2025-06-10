@@ -25,6 +25,7 @@ type Props = {
   children?: (mapShown: boolean) => void;
   text?: string;
   value?: boolean;
+  visible?: boolean;
 };
 
 function MapVisibilityButton({
@@ -32,6 +33,7 @@ function MapVisibilityButton({
   children,
   text = 'Map',
   value = false,
+  visible = true,
 }: Props) {
   const { selectedGraphic } = useMapHighlightState();
   const [mapShown, setMapShown] = useState(value);
@@ -52,17 +54,19 @@ function MapVisibilityButton({
 
   return (
     <>
-      <div css={buttonContainerStyles} style={{ opacity: mapShown ? 0.6 : 1 }}>
-        <button
-          onClick={(ev) => {
-            setMapShown(!mapShown);
-            if (callback) callback(!mapShown);
-          }}
-        >
-          {mapShown ? `Hide ${text}` : `Show ${text}`}&nbsp;&nbsp;
-          <i className={iconClassName} aria-hidden="true" />
-        </button>
-      </div>
+      {visible && (
+        <div css={buttonContainerStyles} style={{ opacity: mapShown ? 0.6 : 1 }}>
+          <button
+            onClick={(ev) => {
+              setMapShown(!mapShown);
+              if (callback) callback(!mapShown);
+            }}
+          >
+            {mapShown ? `Hide ${text}` : `Show ${text}`}&nbsp;&nbsp;
+            <i className={iconClassName} aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       {children?.(mapShown)}
     </>
