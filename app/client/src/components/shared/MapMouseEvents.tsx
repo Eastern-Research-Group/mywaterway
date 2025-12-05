@@ -266,7 +266,6 @@ function MapMouseEvents({ view }: Props) {
           // user clicked outside of the selected huc boundaries
           if (
             !graphic &&
-            !onTribePage &&
             !hucBoundaries?.geometry.contains(location)
           ) {
             //get the huc boundaries of where the user clicked

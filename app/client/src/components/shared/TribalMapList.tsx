@@ -53,6 +53,7 @@ import { StateTribalTabsContext } from 'contexts/StateTribalTabs';
 import {
   useCyanWaterbodiesLayers,
   useDischargersLayers,
+  useDynamicPopup,
   useMonitoringLocations,
   useMonitoringLocationsLayers,
   useSharedLayers,
@@ -660,6 +661,9 @@ function TribalMap({
       },
     },
   });
+
+  const { getTemplate, getTitle } = useDynamicPopup();
+
   const [layers, setLayers] = useState(null);
 
   // Initially sets up the layers
@@ -672,13 +676,8 @@ function TribalMap({
 
     const popupTemplate = {
       outFields: ['*'],
-      title: (feature) => getPopupTitle(feature.graphic.attributes),
-      content: (feature) =>
-        getPopupContent({
-          configFiles: configFiles.data,
-          feature: feature.graphic,
-          navigate,
-        }),
+      title: getTitle,
+      content: getTemplate,
     };
 
     const { attainsId } = activeState;
