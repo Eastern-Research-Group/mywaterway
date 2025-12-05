@@ -64,8 +64,6 @@ import {
   basemapFromPortalItem,
   createWaterbodySymbol,
   createUniqueValueInfos,
-  getPopupTitle,
-  getPopupContent,
 } from 'utils/mapFunctions';
 import {
   browserIsCompatibleWithArcGIS,
