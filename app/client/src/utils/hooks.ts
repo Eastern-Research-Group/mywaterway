@@ -55,7 +55,7 @@ import {
   hideShowGraphicsFill,
 } from 'utils/mapFunctions';
 // types
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+import type { Dispatch, MutableRefObject, ReactNode, SetStateAction } from 'react';
 import type {
   ClickedHucState,
   ExtendedGraphic,
@@ -820,7 +820,7 @@ function useDynamicPopup() {
 
   // Wrapper function for getting the content of the popup
   const getTemplate = useCallback(
-    (graphic: Feature, checkHuc = true) => {
+    (graphic: Feature, extraContent?: ReactNode) => {
       if (configFiles.status !== 'success') return;
 
       // get the currently selected huc boundaries, if applicable
@@ -828,16 +828,15 @@ function useDynamicPopup() {
       const mapView = getMapView();
       const location = mapView?.popup?.location;
       const fields = dynamicPopupFields;
-      const onTribePage = window.location.pathname.startsWith('/tribe/');
       // only look for huc boundaries if no graphics were clicked and the
       // user clicked outside of the selected huc boundaries
       if (
         !location ||
-        onTribePage ||
         hucBoundaries?.geometry?.contains(location)
       ) {
         return getPopupContent({
           configFiles: configFiles.data,
+          extraContent,
           feature: graphic.graphic,
           fields,
           mapView,
@@ -847,9 +846,10 @@ function useDynamicPopup() {
 
       return getPopupContent({
         configFiles: configFiles.data,
+        extraContent,
         feature: graphic.graphic,
         fields,
-        getClickedHuc: checkHuc ? getClickedHuc(location) : null,
+        getClickedHuc: getClickedHuc(location),
         mapView,
         resetData: reset,
         navigate,
@@ -863,7 +863,7 @@ function useDynamicPopup() {
     return getPopupTitle(graphic.graphic.attributes);
   }, []);
 
-  return { getTitle, getTemplate, setDynamicPopupFields };
+  return { getClickedHuc, getTitle, getTemplate, setDynamicPopupFields };
 }
 
 function useSharedLayers({

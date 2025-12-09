@@ -1952,6 +1952,9 @@ function ShowSelectedUpstreamWatershed({
     if (!view) return;
     const mapClickHandler = view.on('click', async (ev) => {
       if (!selectionActive) return;
+
+      ev.stopPropagation();
+
       let res;
       try {
         res = await handleHucSelection(ev);

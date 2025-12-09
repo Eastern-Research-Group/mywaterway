@@ -470,7 +470,7 @@ function buildLayer(
           complexProps,
           feature.graphic.attributes,
         );
-        return getTemplate(feature, type === 'surrounding');
+        return getTemplate(feature);
       },
     },
     visible: type === 'enclosed',

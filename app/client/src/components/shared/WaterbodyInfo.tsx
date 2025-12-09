@@ -1475,11 +1475,9 @@ function MapPopup({
 
   const { attributes } = feature;
 
-  const getTypeTitle = (feature: __esri.Graphic) => {
+  const getTypeTitle = () => {
     const typesToSkip = [
-      'Action',
       'Change Location',
-      'Waterbody State Overview',
     ];
     if (!type || typesToSkip.includes(type)) return null;
 
@@ -1495,6 +1493,9 @@ function MapPopup({
     }
     if (type === 'Upstream Watershed') {
       title = <GlossaryTerm term="Upstream Watershed">{title}</GlossaryTerm>;
+    }
+    if (['Action', 'Waterbody State Overview'].includes(type)) {
+      title = 'Waterbody';
     }
 
     return <p css={popupTitleStyles}>{title}</p>;
@@ -1512,7 +1513,7 @@ function MapPopup({
           {clickedHuc.status === 'success' && (
             <>
               {type !== 'Change Location' && (
-                <p css={popupTitleStyles}>Change to this location?</p>
+                <p css={popupTitleStyles}>Change to this watershed?</p>
               )}
 
               <div css={changeWatershedContainerStyles}>
@@ -1535,7 +1536,7 @@ function MapPopup({
                 <div css={buttonsContainer}>
                   <button
                     css={buttonStyles}
-                    title="Change to this location"
+                    title="Change to this watershed"
                     className="btn"
                     onClick={(_ev) => {
                       // Clear all data before navigating.
@@ -1571,7 +1572,7 @@ function MapPopup({
         </>
       )}
 
-      {!isChangeLocationPopup(feature) && getTypeTitle(feature)}
+      {!isChangeLocationPopup(feature) && getTypeTitle()}
 
       {!isChangeLocationPopup(feature) && (
         <div css={popupContentStyles}>
