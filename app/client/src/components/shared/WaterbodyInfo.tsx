@@ -1513,7 +1513,7 @@ function MapPopup({
           {clickedHuc.status === 'success' && (
             <>
               {type !== 'Change Location' && (
-                <p css={popupTitleStyles}>Change to this location?</p>
+                <p css={popupTitleStyles}>Change to this watershed?</p>
               )}
 
               <div css={changeWatershedContainerStyles}>
@@ -1536,7 +1536,7 @@ function MapPopup({
                 <div css={buttonsContainer}>
                   <button
                     css={buttonStyles}
-                    title="Change to this location"
+                    title="Change to this watershed"
                     className="btn"
                     onClick={(_ev) => {
                       // Clear all data before navigating.

@@ -186,7 +186,7 @@ function MapMouseEvents({ view }: Props) {
       view.closePopup();
       view.popup = new Popup({
         location: point,
-        title: 'Change to this location?',
+        title: 'Change to this watershed?',
         visible: true,
         visibleElements: {
           collapseButton: false,
