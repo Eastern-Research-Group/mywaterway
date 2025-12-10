@@ -1,5 +1,5 @@
+import * as containsOperator from '@arcgis/core/geometry/operators/containsOperator.js';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
-import * as containsOperator from "@arcgis/core/geometry/operators/containsOperator.js";
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
@@ -127,7 +127,7 @@ function useUpdateData() {
       usgsSiteTypes,
       usgsStaParameters,
       controller.signal,
-      hucBoundaries?.geometry as __esri.Polygon ?? null,
+      (hucBoundaries?.geometry as __esri.Polygon) ?? null,
     ).then((data) => {
       setHucData(data);
     });
@@ -300,7 +300,12 @@ async function fetchAndTransformData(
   });
 
   const responses = await Promise.all([
-    fetchMonitoringLocations(monLocIdSet, services, abortSignal, huc12Boundaries),
+    fetchMonitoringLocations(
+      monLocIdSet,
+      services,
+      abortSignal,
+      huc12Boundaries,
+    ),
     fetchDaily(monLocIdSet, services, abortSignal),
     fetchPrecipitation(monLocIdSet, services, abortSignal),
   ]);
@@ -597,10 +602,13 @@ function fetchMonitoringLocations(
               spatialReference: {
                 wkid: 102100,
               },
-            })
-            return !huc12Boundaries || containsOperator.execute(huc12Boundaries, geometry);
+            });
+            return (
+              !huc12Boundaries ||
+              containsOperator.execute(huc12Boundaries, geometry)
+            );
           }),
-        }
+        },
       } as FetchSuccessState<UsgsMonitoringLocationData>;
     })
     .catch(handleFetchError);

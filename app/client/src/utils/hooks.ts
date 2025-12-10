@@ -3,12 +3,11 @@ import { useNavigate } from 'react-router';
 import ClassBreaksRenderer from '@arcgis/core/renderers/ClassBreaksRenderer';
 import Color from '@arcgis/core/Color';
 import ColorVariable from '@arcgis/core/renderers/visualVariables/ColorVariable';
+import * as differenceOperator from '@arcgis/core/geometry/operators/differenceOperator.js';
+import Extent from '@arcgis/core/geometry/Extent';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import Layer from '@arcgis/core/layers/Layer';
-import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
-import * as geometryEngineAsync from '@arcgis/core/geometry/geometryEngineAsync';
 import Graphic from '@arcgis/core/Graphic';
-import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import GroupLayer from '@arcgis/core/layers/GroupLayer';
 import Handles from '@arcgis/core/core/Handles';
 import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
@@ -55,7 +54,12 @@ import {
   hideShowGraphicsFill,
 } from 'utils/mapFunctions';
 // types
-import type { Dispatch, MutableRefObject, ReactNode, SetStateAction } from 'react';
+import type {
+  Dispatch,
+  MutableRefObject,
+  ReactNode,
+  SetStateAction,
+} from 'react';
 import type {
   ClickedHucState,
   ExtendedGraphic,
@@ -830,10 +834,7 @@ function useDynamicPopup() {
       const fields = dynamicPopupFields;
       // only look for huc boundaries if no graphics were clicked and the
       // user clicked outside of the selected huc boundaries
-      if (
-        !location ||
-        hucBoundaries?.geometry?.contains(location)
-      ) {
+      if (!location || hucBoundaries?.geometry?.contains(location)) {
         return getPopupContent({
           configFiles: configFiles.data,
           extraContent,
@@ -1993,78 +1994,70 @@ function useGeometryUtils() {
     resFeatures: __esri.Graphic[],
     hucGeometry: __esri.Geometry,
   ) {
-    return new Promise<any>((resolve, reject) => {
-      // start by getting the extend of the huc boundaries
-      let extent = hucGeometry.extent;
+    // start by getting the extend of the huc boundaries
+    const extent = hucGeometry.extent ?? new Extent();
 
-      // add the extent of all of the waterbodies
-      const features: __esri.Graphic[] = [];
-      resFeatures.forEach((feature) => {
-        extent.union(feature.geometry.extent);
-      });
-
-      // build geometry from the extent
-      const extentGeometry = new Polygon({
-        spatialReference: hucGeometry.spatialReference,
-        rings: [
-          [
-            [extent.xmin, extent.ymin],
-            [extent.xmin, extent.ymax],
-            [extent.xmax, extent.ymax],
-            [extent.xmax, extent.ymin],
-            [extent.xmin, extent.ymin],
-          ],
-        ],
-      });
-
-      // subtract the huc from the full extent
-      const subtractor = geometryEngine.difference(extentGeometry, hucGeometry);
-
-      // crop any geometry that extends beyond the huc 12
-      const requests: Promise<__esri.Geometry>[] = [];
-      resFeatures.forEach((feature, index) => {
-        // crop the waterbodies that extend outside of the huc
-        requests.push(
-          geometryEngineAsync.difference(
-            feature.geometry,
-            Array.isArray(subtractor) ? subtractor[0] : subtractor,
-          ),
-        );
-      });
-
-      Promise.all(requests)
-        .then((responses) => {
-          responses.forEach((newGeometry, index) => {
-            const feature = resFeatures[index];
-            feature.geometry = Array.isArray(newGeometry)
-              ? newGeometry[0]
-              : newGeometry;
-            features.push(feature);
-          });
-
-          // order the features by overall status
-          const sortBy = [
-            'Cause',
-            'Not Supporting',
-            'Insufficient Information',
-            'Not Assessed',
-            'Meeting Criteria',
-            'Fully Supporting',
-          ];
-          features.sort((a, b) => {
-            return (
-              sortBy.indexOf(a.attributes.overallstatus) -
-              sortBy.indexOf(b.attributes.overallstatus)
-            );
-          });
-
-          resolve(features);
-        })
-        .catch((err) => {
-          console.error(err);
-          reject(err);
-        });
+    // add the extent of all of the waterbodies
+    const features: __esri.Graphic[] = [];
+    resFeatures.forEach((feature) => {
+      if (!feature.geometry?.extent) return;
+      extent.union(feature.geometry.extent);
     });
+
+    // build geometry from the extent
+    const extentGeometry = new Polygon({
+      spatialReference: hucGeometry.spatialReference,
+      rings: [
+        [
+          [extent.xmin, extent.ymin],
+          [extent.xmin, extent.ymax],
+          [extent.xmax, extent.ymax],
+          [extent.xmax, extent.ymin],
+          [extent.xmin, extent.ymin],
+        ],
+      ],
+    });
+
+    // subtract the huc from the full extent
+    const subtractor = differenceOperator.execute(
+      extentGeometry,
+      hucGeometry as __esri.Polygon,
+    );
+
+    resFeatures.forEach((feature, index) => {
+      if (!feature.geometry) {
+        features.push(feature);
+        return;
+      }
+
+      // crop the waterbodies that extend outside of the huc
+      const newGeometry = differenceOperator.execute(
+        feature.geometry,
+        Array.isArray(subtractor) ? subtractor[0] : subtractor,
+      );
+
+      const resFeature = resFeatures[index];
+      resFeature.geometry = newGeometry;
+      features.push(resFeature);
+    });
+
+    // order the features by overall status
+    const sortBy = [
+      'Cause',
+      'Not Supporting',
+      'Insufficient Information',
+      'Not Assessed',
+      'Meeting Criteria',
+      'Fully Supporting',
+    ];
+    features.sort((a, b) => {
+      return (
+        sortBy.indexOf(a.attributes.overallstatus) -
+        sortBy.indexOf(b.attributes.overallstatus)
+      );
+    });
+
+    return features;
   };
 
   return { cropGeometryToHuc };
