@@ -20,7 +20,6 @@ import Point from '@arcgis/core/geometry/Point';
 import Search from '@arcgis/core/widgets/Search';
 import LocatorSearchSource from '@arcgis/core/widgets/Search/LocatorSearchSource';
 import LayerSearchSource from '@arcgis/core/widgets/Search/LayerSearchSource';
-import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 // components
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
@@ -849,6 +848,33 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     [formSubmit],
   );
 
+  const openTribalPage = useCallback(
+    async (result: FlattenedResult, callback?: (text: string) => void) => {
+        if (!(result.source instanceof LayerSearchSource)) return;
+
+        // query to get the feature and search based on the centroid
+        const layer = result.source.layer as FeatureLayer;
+        const params = layer.createQuery();
+        params.returnGeometry = false;
+        params.where = `${layer.objectIdField} = ${result.key}`;
+        params.outFields = ['EPA_ID'];
+        try {
+          const res = await layer.queryFeatures(params);
+          if (res.features.length > 0) {
+            const epaId = res.features[0].getAttribute('EPA_ID');
+            formSubmit({
+              target: `/tribe/${epaId}`,
+            });
+          }
+        } catch (_err) {
+          setErrorMessageLocal(webServiceErrorMessage);
+        }
+
+        if (callback && result.text) callback(result.text);
+    },
+    [formSubmit],
+  );
+
   // prevent next useEffect from running more than once per enter key press
   const [lock, setLock] = useState(false);
   const [prevEnterPress, setPrevEnterPress] = useState(false);
@@ -862,22 +888,22 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     if (!enterPress || cursor < -1 || lock || cursor > resultsFlat.length)
       return;
 
+    const updateSearch = (text: string) => {
+      setInputText(text);
+      setSuggestionsVisible(false);
+      setCursor(-1);
+    };
+
     setLock(true);
 
     if (cursor === -1 || resultsFlat.length === 0) {
       formSubmit({ searchTerm: inputText });
     } else if (resultsFlat[cursor].source.name === WATERBODIES) {
-      openWaterbodyReport(resultsFlat[cursor], (text) => {
-        setInputText(text);
-        setSuggestionsVisible(false);
-        setCursor(-1);
-      });
+      openWaterbodyReport(resultsFlat[cursor], updateSearch);
     } else if (resultsFlat[cursor].source.name === MONITORING_LOCATIONS) {
-      openMonitoringReport(resultsFlat[cursor], (text) => {
-        setInputText(text);
-        setSuggestionsVisible(false);
-        setCursor(-1);
-      });
+      openMonitoringReport(resultsFlat[cursor], updateSearch);
+    } else if (resultsFlat[cursor].source instanceof LayerSearchSource) {
+      openTribalPage(resultsFlat[cursor], updateSearch);
     } else if (resultsFlat[cursor].text) {
       setInputText(resultsFlat[cursor].text);
       formSubmit({ searchTerm: resultsFlat[cursor].text });
@@ -1033,34 +1059,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
       } else if (result.source.name === WATERBODIES) {
         openWaterbodyReport(result);
       } else if (result.source instanceof LayerSearchSource) {
-        // query to get the feature and search based on the centroid
-        const layer = result.source.layer as FeatureLayer;
-        const params = layer.createQuery();
-        params.returnGeometry = true;
-        params.outSpatialReference = SpatialReference.WGS84;
-        params.where = `${layer.objectIdField} = ${result.key}`;
-        try {
-          function hasCentroid(
-            geometry: __esri.Geometry | nullish,
-          ): geometry is __esri.Polygon {
-            if (!geometry) return false;
-            return (geometry as __esri.Polygon).centroid !== undefined;
-          }
-          const res = await layer.queryFeatures(params);
-          if (res.features.length > 0) {
-            const geometry = res.features[0].geometry;
-            const center = hasCentroid(geometry)
-              ? geometry?.centroid
-              : geometry;
-            formSubmit({
-              searchTerm: result.text,
-              geometry: center as Point | nullish,
-            });
-            searchWidget.search(result.text);
-          }
-        } catch (_err) {
-          setErrorMessageLocal(webServiceErrorMessage);
-        }
+        openTribalPage(result);
       }
     };
   }
