@@ -40,6 +40,7 @@ import {
   stateGeneralError,
   stateNoDataError,
   usesStateSummaryServiceInvalidResponse,
+  webServiceErrorMessage,
 } from 'config/errorMessages';
 
 const allSources = ['All', 'State', 'Tribe'];
@@ -434,6 +435,12 @@ function StateTribal() {
           </div>
         )}
 
+        {errorType === 'service-error' && (
+          <div css={modifiedErrorBoxStyles}>
+            <p>{webServiceErrorMessage}</p>
+          </div>
+        )}
+
         {(states.status === 'success' || tribes.status === 'success') && (
           <>
             <label css={promptStyles} htmlFor="hmw-state-select-input">
@@ -568,7 +575,11 @@ function StateTribal() {
                 onClick={() => handleSubmit(selectedStateTribe)}
                 css={buttonStyles}
               >
-                <i className="fas fa-angle-double-right" style={{ display: 'inline' }} aria-hidden="true" />{' '}
+                <i
+                  className="fas fa-angle-double-right"
+                  style={{ display: 'inline' }}
+                  aria-hidden="true"
+                />{' '}
                 Go
               </button>
             </div>

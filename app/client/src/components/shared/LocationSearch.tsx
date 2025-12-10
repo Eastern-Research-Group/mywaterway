@@ -20,6 +20,7 @@ import Point from '@arcgis/core/geometry/Point';
 import Search from '@arcgis/core/widgets/Search';
 import LocatorSearchSource from '@arcgis/core/widgets/Search/LocatorSearchSource';
 import LayerSearchSource from '@arcgis/core/widgets/Search/LayerSearchSource';
+import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 // components
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
@@ -46,21 +47,18 @@ import { MonitoringLocationsResponse } from 'types';
 // --- utils ---
 
 // Finds the source of the suggestion
-function findSource(
-  name: string,
-  suggestions: __esri.SearchResultsSuggestions[],
-) {
+function findSource(name: string, suggestions: SearchResultsSuggestions[]) {
   return suggestions.find((item) => item.source.name === name) ?? null;
 }
 
 function getGroupTitle(
-  suggestions: __esri.SearchResultsSuggestions,
+  suggestions: FlattenedSearchResultsSuggestions,
   groups: SourceGroup[],
 ) {
   const group = groups
     .filter((g) => g.name !== 'All')
     .find((g) => {
-      return g.sources.some((s) => s.name === suggestions.source.name);
+      return g.id === suggestions.group;
     });
   return group ? (
     <>
@@ -263,7 +261,21 @@ type WaterbodyCodesResult = Array<{
   organizationId: string;
 }>;
 
+type SearchResultsSuggestions = {
+  error?: Error;
+  results: __esri.SuggestResult[];
+  source: LocationSearchSource;
+  sourceIndex: number;
+};
+
+type FlattenedSearchResultsSuggestions = {
+  error?: Error;
+  group: keyof SourceGroups;
+  results: FlattenedResult[];
+};
+
 type SourceGroup = {
+  id: string;
   name: string;
   placeholder: string;
   sources: LocationSearchSource[];
@@ -297,6 +309,14 @@ const WATERSHEDS = 'Watersheds';
 const MONITORING_LOCATIONS = 'Monitoring Locations';
 const WATERBODIES = 'Waterbodies';
 
+const tribalLayerNames = [
+  ALASKA_NATIVE_VILLAGES,
+  AMERICAN_INDIAN_RESERVATIONS,
+  AMERICAN_INDIAN_OFF_RESERVATION_TRUST_LANDS,
+  AMERICAN_INDIAN_OKLAHOMA_STATISTICAL_AREAS,
+  VIRGINIA_FEDERALLY_RECOGNIZED_TRIBES,
+];
+
 // --- defaults ---
 const initialWebserviceErrorMessages: Record<string, string> = {
   [MONITORING_LOCATIONS]: '',
@@ -324,9 +344,8 @@ function LocationSearch({ route, label }: Readonly<Props>) {
   const sourceEnterPress = useKeyPress('Enter', sourceList);
   const clearButton = useRef(null);
   const clearEnterPress = useKeyPress('Enter', clearButton);
-  const { errorMessage, huc12, noGeocodeResults, searchText, watershed } = useContext(
-    LocationSearchContext,
-  );
+  const { errorMessage, huc12, noGeocodeResults, searchText, watershed } =
+    useContext(LocationSearchContext);
   const [searchWidget, setSearchWidget] = useState<Search | null>(null);
 
   // Store the waterbody suggestions to avoid a second fetch.
@@ -503,16 +522,19 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     const pickSources = pickSourcesHof(allSources);
     return {
       all: {
+        id: 'all',
         name: 'All',
         placeholder: allPlaceholder,
         sources: allSources,
       },
       arcGis: {
+        id: 'arcGis',
         name: 'Address, zip code, and place search',
         placeholder: allPlaceholder,
         sources: pickSources([ARC_GIS]),
       },
       tribal: {
+        id: 'tribal',
         name: 'EPA Tribal Areas',
         placeholder: 'Search EPA tribal areas...',
         sources: pickSources([
@@ -524,11 +546,13 @@ function LocationSearch({ route, label }: Readonly<Props>) {
         ]),
       },
       watershed: {
+        id: 'watershed',
         name: 'Watershed',
         placeholder: 'Search watersheds...',
         sources: pickSources([WATERSHEDS]),
       },
       monitoring: {
+        id: 'monitoring',
         name: 'Monitoring Location',
         menuHeaderExtra:
           '(Below items open into the Monitoring Report page in a new browser tab)',
@@ -536,6 +560,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
         sources: pickSources([MONITORING_LOCATIONS]),
       },
       waterbody: {
+        id: 'waterbody',
         name: 'Waterbody',
         menuHeaderExtra:
           '(Below items open into the Waterbody Report page in a new browser tab)',
@@ -563,9 +588,9 @@ function LocationSearch({ route, label }: Readonly<Props>) {
   );
 
   // Initialize the esri search widget
-  const [suggestions, setSuggestions] = useState<
-    __esri.SearchResultsSuggestions[]
-  >([]);
+  const [suggestions, setSuggestions] = useState<SearchResultsSuggestions[]>(
+    [],
+  );
   useEffect(() => {
     if (searchWidget) return;
 
@@ -589,7 +614,9 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     reactiveUtils.watch(
       () => search.suggestions,
       () => {
-        const suggestions = search.suggestions;
+        const suggestions = search.suggestions as
+          | SearchResultsSuggestions[]
+          | null;
         setSuggestions(suggestions ?? []);
       },
     );
@@ -635,24 +662,22 @@ function LocationSearch({ route, label }: Readonly<Props>) {
 
   // Filter the suggestions down to just sources that have results and combine grouped sources.
   const [filteredSuggestions, setFilteredSuggestions] = useState<
-    __esri.SearchResultsSuggestions[]
+    FlattenedSearchResultsSuggestions[]
   >([]);
   const [prevSuggestions, setPrevSuggestions] = useState<
-    __esri.SearchResultsSuggestions[]
+    SearchResultsSuggestions[]
   >([]);
   if (prevSuggestions !== suggestions) {
     setPrevSuggestions(suggestions);
     const newFilteredSuggestions = Object.entries(sourceGroups)
       .filter(([key]) => key !== 'all')
-      .reduce<__esri.SearchResultsSuggestions[]>((acc1, [_key, group]) => {
+      .reduce<FlattenedSearchResultsSuggestions[]>((acc1, [key, group]) => {
         // Combine group sources into a single source, i.e. combine the 3 tribes sources into one source.
-        const { results, source, sourceIndex, error } = group.sources.reduce<{
-          results: __esri.SuggestResult[];
-          source: LocationSearchSource;
-          sourceIndex: number;
+        const { results, error } = group.sources.reduce<{
+          results: FlattenedResult[];
           error?: Error;
         }>(
-          (acc2, source) => {
+          (acc2, source, i) => {
             // If the source has an error message, return an empty results array with the error message.
             if (
               ['All', group.name].includes(selectedGroup.name) &&
@@ -660,9 +685,8 @@ function LocationSearch({ route, label }: Readonly<Props>) {
               webserviceErrorMessages[source.name]
             ) {
               return {
+                group,
                 results: [],
-                source,
-                sourceIndex: -1,
                 error: new Error(
                   'WebServiceError',
                   webserviceErrorMessages[source.name],
@@ -675,9 +699,14 @@ function LocationSearch({ route, label }: Readonly<Props>) {
 
             if (sug.results && sug.results.length > 0) {
               return {
-                results: [...acc2.results, ...sug.results],
-                source,
-                sourceIndex: Math.min(acc2.sourceIndex, sug.sourceIndex),
+                results: [
+                  ...acc2.results,
+                  ...sug.results.map((result: __esri.SuggestResult) => ({
+                    ...result,
+                    source,
+                    sourceIndex: i,
+                  })),
+                ],
               };
             }
 
@@ -685,14 +714,15 @@ function LocationSearch({ route, label }: Readonly<Props>) {
           },
           {
             results: [],
-            source: new LocatorSearchSource(),
-            sourceIndex: Infinity,
             error: undefined,
           },
         );
 
-        if (error || (source && results.length > 0)) {
-          return [...acc1, { sourceIndex, source, results, error }];
+        if (error || results.length > 0) {
+          return [
+            ...acc1,
+            { results, error, group: key as keyof SourceGroups },
+          ];
         }
 
         return acc1;
@@ -700,17 +730,8 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     setFilteredSuggestions(newFilteredSuggestions);
   }
 
-  const resultsFlat = useMemo(() => {
-    return filteredSuggestions.reduce<Array<FlattenedResult>>((acc, sug) => {
-      sug.results?.forEach((result) => {
-        acc.push({
-          ...result,
-          source: sug.source,
-          sourceIndex: sug.sourceIndex,
-        });
-      });
-      return acc;
-    }, []);
+  const resultsFlat: FlattenedResult[] = useMemo(() => {
+    return filteredSuggestions.map((sug) => sug.results).flat();
   }, [filteredSuggestions]);
 
   const [cursor, setCursor] = useState(-1);
@@ -850,27 +871,27 @@ function LocationSearch({ route, label }: Readonly<Props>) {
 
   const openTribalPage = useCallback(
     async (result: FlattenedResult, callback?: (text: string) => void) => {
-        if (!(result.source instanceof LayerSearchSource)) return;
+      if (!(result.source instanceof LayerSearchSource)) return;
 
-        // query to get the feature and search based on the centroid
-        const layer = result.source.layer as FeatureLayer;
-        const params = layer.createQuery();
-        params.returnGeometry = false;
-        params.where = `${layer.objectIdField} = ${result.key}`;
-        params.outFields = ['EPA_ID'];
-        try {
-          const res = await layer.queryFeatures(params);
-          if (res.features.length > 0) {
-            const epaId = res.features[0].getAttribute('EPA_ID');
-            formSubmit({
-              target: `/tribe/${epaId}`,
-            });
-          }
-        } catch (_err) {
-          setErrorMessageLocal(webServiceErrorMessage);
+      // query to get the feature and search based on the centroid
+      const layer = result.source.layer as FeatureLayer;
+      const params = layer.createQuery();
+      params.returnGeometry = false;
+      params.where = `${layer.objectIdField} = ${result.key}`;
+      params.outFields = ['EPA_ID'];
+      try {
+        const res = await layer.queryFeatures(params);
+        if (res.features.length > 0) {
+          const epaId = res.features[0].getAttribute('EPA_ID');
+          formSubmit({
+            target: `/tribe/${epaId}`,
+          });
         }
+      } catch (_err) {
+        setErrorMessageLocal(webServiceErrorMessage);
+      }
 
-        if (callback && result.text) callback(result.text);
+      if (callback && result.text) callback(result.text);
     },
     [formSubmit],
   );
@@ -902,7 +923,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
       openWaterbodyReport(resultsFlat[cursor], updateSearch);
     } else if (resultsFlat[cursor].source.name === MONITORING_LOCATIONS) {
       openMonitoringReport(resultsFlat[cursor], updateSearch);
-    } else if (resultsFlat[cursor].source instanceof LayerSearchSource) {
+    } else if (tribalLayerNames.includes(resultsFlat[cursor].source.name)) {
       openTribalPage(resultsFlat[cursor], updateSearch);
     } else if (resultsFlat[cursor].text) {
       setInputText(resultsFlat[cursor].text);
@@ -915,6 +936,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     inputText,
     lock,
     openMonitoringReport,
+    openTribalPage,
     openWaterbodyReport,
     resultsFlat,
   ]);
@@ -1058,8 +1080,37 @@ function LocationSearch({ route, label }: Readonly<Props>) {
         openMonitoringReport(result);
       } else if (result.source.name === WATERBODIES) {
         openWaterbodyReport(result);
-      } else if (result.source instanceof LayerSearchSource) {
+      } else if (tribalLayerNames.includes(result.source.name)) {
         openTribalPage(result);
+      } else if (result.source instanceof LayerSearchSource) {
+        // query to get the feature and search based on the centroid
+        const layer = result.source.layer as FeatureLayer;
+        const params = layer.createQuery();
+        params.returnGeometry = true;
+        params.outSpatialReference = SpatialReference.WGS84;
+        params.where = `${layer.objectIdField} = ${result.key}`;
+        try {
+          function hasCentroid(
+            geometry: __esri.Geometry | nullish,
+          ): geometry is __esri.Polygon {
+            if (!geometry) return false;
+            return (geometry as __esri.Polygon).centroid !== undefined;
+          }
+          const res = await layer.queryFeatures(params);
+          if (res.features.length > 0) {
+            const geometry = res.features[0].geometry;
+            const center = hasCentroid(geometry)
+              ? geometry?.centroid
+              : geometry;
+            formSubmit({
+              searchTerm: result.text,
+              geometry: center as Point | nullish,
+            });
+            searchWidget.search(result.text);
+          }
+        } catch (_err) {
+          setErrorMessageLocal(webServiceErrorMessage);
+        }
       }
     };
   }
@@ -1068,7 +1119,11 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     <>
       {(errorMessage || noGeocodeResults) && (
         <div css={modifiedErrorBoxStyles}>
-          <p>{noGeocodeResults && filteredSuggestions.length > 0 ? noGeocodeDataAvailableError : errorMessage}</p>
+          <p>
+            {noGeocodeResults && filteredSuggestions.length > 0
+              ? noGeocodeDataAvailableError
+              : errorMessage}
+          </p>
         </div>
       )}
       {errorMessageLocal && (
@@ -1252,7 +1307,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
                         <LayerSuggestions
                           cursor={cursor}
                           inputText={inputText}
-                          key={`layer-suggestions-key-${suggestions.source.name}`}
+                          key={`layer-suggestions-key-${suggestions.group}`}
                           onSuggestionClick={handleSuggestionClick}
                           title={title}
                           suggestions={suggestions}
@@ -1377,7 +1432,7 @@ type LayerSuggestionsProps = {
   onSuggestionClick: (
     result: FlattenedResult,
   ) => (ev: React.KeyboardEvent | React.MouseEvent) => void;
-  suggestions: __esri.SearchResultsSuggestions;
+  suggestions: FlattenedSearchResultsSuggestions;
   startIndex: number;
   title: ReactElement;
 };
@@ -1401,12 +1456,7 @@ function LayerSuggestions({
           role="presentation"
           className="esri-menu__list esri-search__suggestions-list"
         >
-          {suggestions.results?.map((result, idx) => {
-            const flattenedResult: FlattenedResult = {
-              ...result,
-              source: suggestions.source,
-              sourceIndex: suggestions.sourceIndex,
-            };
+          {suggestions.results?.map((result: FlattenedResult, idx) => {
             index = startIndex + idx;
 
             return (
@@ -1418,8 +1468,8 @@ function LayerSuggestions({
                 }`}
                 tabIndex={-1}
                 key={`suggestion-key-${index}`}
-                onClick={onSuggestionClick(flattenedResult)}
-                onKeyDown={onSuggestionClick(flattenedResult)}
+                onClick={onSuggestionClick(result)}
+                onKeyDown={onSuggestionClick(result)}
               >
                 {getHighlightParts(result.text ?? '', inputText).map(
                   (part, index) => {
