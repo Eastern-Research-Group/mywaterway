@@ -903,6 +903,10 @@ function LocationSearch({ route, label }: Readonly<Props>) {
 
       if (cursor === -1 || resultsFlat.length === 0) {
         formSubmit({ searchTerm: inputText });
+      } else if (resultsFlat[cursor].source.name === WATERSHEDS) {
+        // extract the huc from "Watershed (huc)" and search on the huc
+        const huc = resultsFlat[cursor].text?.split('(')[1].replace(')', '') ?? '';
+        formSubmit({ searchTerm: huc });
       } else if (resultsFlat[cursor].source.name === WATERBODIES) {
         openWaterbodyReport(resultsFlat[cursor], updateSearch);
       } else if (resultsFlat[cursor].source.name === MONITORING_LOCATIONS) {
@@ -1055,35 +1059,6 @@ function LocationSearch({ route, label }: Readonly<Props>) {
         openWaterbodyReport(result);
       } else if (tribalLayerNames.includes(result.source.name)) {
         openTribalPage(result);
-      } else if (result.source instanceof LayerSearchSource) {
-        // query to get the feature and search based on the centroid
-        const layer = result.source.layer as FeatureLayer;
-        const params = layer.createQuery();
-        params.returnGeometry = true;
-        params.outSpatialReference = SpatialReference.WGS84;
-        params.where = `${layer.objectIdField} = ${result.key}`;
-        try {
-          function hasCentroid(
-            geometry: __esri.Geometry | nullish,
-          ): geometry is __esri.Polygon {
-            if (!geometry) return false;
-            return (geometry as __esri.Polygon).centroid !== undefined;
-          }
-          const res = await layer.queryFeatures(params);
-          if (res.features.length > 0) {
-            const geometry = res.features[0].geometry;
-            const center = hasCentroid(geometry)
-              ? geometry?.centroid
-              : geometry;
-            formSubmit({
-              searchTerm: result.text,
-              geometry: center as Point | nullish,
-            });
-            searchWidget.search(result.text);
-          }
-        } catch (_err) {
-          setErrorMessageLocal(webServiceErrorMessage);
-        }
       }
     };
   }
@@ -1111,10 +1086,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
 
       <form
         css={formStyles}
-        onSubmit={(ev) => {
-          ev.preventDefault();
-          formSubmit({ searchTerm: inputText });
-        }}
+        onSubmit={(ev) => ev.preventDefault()}
       >
         <div css={searchBoxStyles}>
           <div
