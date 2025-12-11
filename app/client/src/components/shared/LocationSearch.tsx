@@ -300,13 +300,13 @@ const WATERSHEDS = 'Watersheds';
 const MONITORING_LOCATIONS = 'Monitoring Locations';
 const WATERBODIES = 'Waterbodies';
 
-const tribalLayerNames = [
+const tribalLayerNames = new Set([
   ALASKA_NATIVE_VILLAGES,
   AMERICAN_INDIAN_RESERVATIONS,
   AMERICAN_INDIAN_OFF_RESERVATION_TRUST_LANDS,
   AMERICAN_INDIAN_OKLAHOMA_STATISTICAL_AREAS,
   VIRGINIA_FEDERALLY_RECOGNIZED_TRIBES,
-];
+]);
 
 // --- defaults ---
 const initialWebserviceErrorMessages: Record<string, string> = {
@@ -723,7 +723,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
   }
 
   const resultsFlat: FlattenedResult[] = useMemo(() => {
-    return filteredSuggestions.map((sug) => sug.results).flat();
+    return filteredSuggestions.flatMap((sug) => sug.results);
   }, [filteredSuggestions]);
 
   const [cursor, setCursor] = useState(-1);
@@ -909,7 +909,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
         openWaterbodyReport(resultsFlat[cursor], updateSearch);
       } else if (resultsFlat[cursor].source.name === MONITORING_LOCATIONS) {
         openMonitoringReport(resultsFlat[cursor], updateSearch);
-      } else if (tribalLayerNames.includes(resultsFlat[cursor].source.name)) {
+      } else if (tribalLayerNames.has(resultsFlat[cursor].source.name)) {
         openTribalPage(resultsFlat[cursor], updateSearch);
       } else if (resultsFlat[cursor].text) {
         setInputText(resultsFlat[cursor].text);
@@ -1055,7 +1055,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
         openMonitoringReport(result);
       } else if (result.source.name === WATERBODIES) {
         openWaterbodyReport(result);
-      } else if (tribalLayerNames.includes(result.source.name)) {
+      } else if (tribalLayerNames.has(result.source.name)) {
         openTribalPage(result);
       }
     };

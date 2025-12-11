@@ -119,7 +119,7 @@ function StateTribalTabs() {
 
         if (!match) {
           const epaId = Number(code);
-          if (!isNaN(epaId)) {
+          if (!Number.isNaN(epaId)) {
             // If no match, try to find the mapping by EPA ID
             match = findByEpaId(epaId);
 
