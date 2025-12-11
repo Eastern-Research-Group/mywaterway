@@ -155,7 +155,6 @@ function StateTribalTabs() {
     states,
     tribes,
   ]);
-  console.log(activeState);
 
   // reset the error after a successful search
   useEffect(() => {

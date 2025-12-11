@@ -20,7 +20,6 @@ import Point from '@arcgis/core/geometry/Point';
 import Search from '@arcgis/core/widgets/Search';
 import LocatorSearchSource from '@arcgis/core/widgets/Search/LocatorSearchSource';
 import LayerSearchSource from '@arcgis/core/widgets/Search/LayerSearchSource';
-import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 // components
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
@@ -679,7 +678,6 @@ function LocationSearch({ route, label }: Readonly<Props>) {
               webserviceErrorMessages[source.name]
             ) {
               return {
-                group,
                 results: [],
                 error: new Error(
                   'WebServiceError',
