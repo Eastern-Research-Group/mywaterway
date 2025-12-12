@@ -58,7 +58,7 @@ const containerStyles = css`
   svg {
     padding-right: 0.5rem;
     color: ${colors.navyBlue()};
-    font-size: 2rem;
+    font-size: 2.25rem;
   }
 `;
 

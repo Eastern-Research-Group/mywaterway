@@ -72,6 +72,10 @@ const containerStyles = css`
 const accordionContentStyles = css`
   padding-top: 0.875em;
   padding-bottom: 0.875em;
+
+  a > svg {
+    margin-bottom: 2px;
+  }
 `;
 
 const switchStyles = css`

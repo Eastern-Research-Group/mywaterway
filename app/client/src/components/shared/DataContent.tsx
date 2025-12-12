@@ -92,7 +92,7 @@ const titleStyles = css`
   }
 
   svg {
-    font-size: 2rem;
+    font-size: 1.75rem;
     padding-right: 0.5rem;
   }
 `;

@@ -33,8 +33,8 @@ const termStyles = css`
 
 const iconStyles = css`
   color: rgba(0, 113, 188, 0.5);
-  margin-bottom: 2px;
-  margin-right: 0.25em;
+  height: 1.2em !important;
+  margin-bottom: 4px !important;
   padding-right: 0 !important;
 `;
 

@@ -103,8 +103,8 @@ const footerBarPageStyles = css`
 const pageControlStyles = css`
   color: black;
   background-color: transparent;
-  padding: 3px;
-  margin: 0 3px;
+  padding: 0;
+  margin: 0;
 
   &:disabled {
     background-color: inherit;

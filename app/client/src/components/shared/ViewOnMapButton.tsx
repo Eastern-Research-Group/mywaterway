@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 
 import { css } from '@emotion/react';
-import IconMapMarkedAlt from '~icons/fa7-solid/map-marked-alt';
+import IconMapMarkedAlt from '~icons/fa7-solid/map-marker-alt';
 // components
 import { WarningIcon } from 'components/shared/Icons';
 // contexts

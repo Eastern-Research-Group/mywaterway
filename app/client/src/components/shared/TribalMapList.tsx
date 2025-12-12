@@ -143,7 +143,6 @@ const mapFooterStatusStyles = css`
   align-items: center;
 
   svg {
-    margin: 0 -0.875rem;
     height: 0.6875rem;
   }
 `;

@@ -141,7 +141,6 @@ const inlineBoxSectionStyles = css`
   /* loading icon */
   svg {
     display: inline-block;
-    margin: -0.5rem;
     height: 1.25rem;
   }
 

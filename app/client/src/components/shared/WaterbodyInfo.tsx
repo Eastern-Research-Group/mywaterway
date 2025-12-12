@@ -399,6 +399,12 @@ const waterbodyDownloadContainerStyles = css`
   margin-top: 1.5em;
 `;
 
+const waterbodyInfoContainerStyles = css`
+  a > svg { 
+    margin-bottom: 3px;
+  }
+`;
+
 /*
 ## Types
 */
@@ -1427,7 +1433,7 @@ function WaterbodyInfo({
     );
   }
 
-  return content;
+  return <div css={waterbodyInfoContainerStyles}>{content}</div>;
 }
 
 type MapPopupProps = {
