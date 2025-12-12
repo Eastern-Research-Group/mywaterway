@@ -96,7 +96,7 @@ function HelpTooltip({
         onClick={(_ev) => triggerRef.current?.focus()}
         ref={triggerRef}
       >
-        {children ? children : <Icon aria-hidden css={helpIconStyles} />}
+        {children || <Icon aria-hidden css={helpIconStyles} />}
         <span className="sr-only">{description ?? 'Information Tooltip'}</span>
       </button>
     </Tooltip>
