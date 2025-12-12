@@ -89,28 +89,30 @@ describe('Homepage search', () => {
       cy.stub(win, 'open').as('windowOpen');
     });
 
-    cy.findByPlaceholderText('Search by address', { exact: false }).type(waterbodyId);
-    cy.findByRole('menuitem', { name: (name) => name.includes(waterbodyId) }).click();
+    cy.location('href').then((beforeUrl) => {
+      cy.findByPlaceholderText('Search by address', { exact: false }).type(waterbodyId);
+      cy.findByRole('menuitem', { name: (name) => name.includes(waterbodyId) }).click();
+      cy.location('href').should((afterUrl) => {
+        expect(afterUrl).to.equal(beforeUrl);
+      });
+    });
 
     cy.get('@windowOpen').should('have.been.called');
     cy.get('@windowOpen').should('have.been.calledWithMatch', /\/waterbody-report/);
   });
 
-  it('Searching for a tribal location routes to the correct location on the Community page', () => {
+  it('Searching for a tribal location correctly routes to the Tribal page', () => {
     const tribeName = 'Red Lake Band of Chippewa Indians, Minnesota';
 
-    cy.on('url:changed', (newUrl) => {
-      expect(newUrl).to.contain('95.14628076639758');
-      expect(newUrl).to.contain('48.00973038592249');
+    cy.window().then((win) => {
+      cy.stub(win, 'open').as('windowOpen');
     });
 
-    cy.location('href').then((beforeUrl) => {
-      cy.findByPlaceholderText('Search by address', { exact: false }).type(tribeName);
-      cy.findByRole('menuitem', { name: (name) => name.includes(tribeName) }).click();
-      cy.location('href').should((afterUrl) => {
-        expect(afterUrl).to.not.equal(beforeUrl);
-      });
-    });
+    cy.findByPlaceholderText('Search by address', { exact: false }).type(tribeName);
+    cy.findByRole('menuitem', { name: (name) => name.includes(tribeName) }).click();
+
+    cy.get('@windowOpen').should('have.been.called');
+    cy.get('@windowOpen').should('have.been.calledWithMatch', /\/tribe\/100000237/);
   });
 });
 
