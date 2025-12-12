@@ -144,10 +144,10 @@ const buttonStyles = css`
   }
 `;
 
-const faPulseStyles = css`
-  animation: fa-spin 1s infinite steps(8);
+const spinStyles = css`
+  animation: loading-spin 1s infinite steps(8);
 
-  @keyframes fa-spin {
+  @keyframes loading-spin {
     0% {
       transform: rotate(0deg);
     }
@@ -1376,7 +1376,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
                   </>
                 ) : (
                   <>
-                    <IconSpinner aria-hidden="true" css={faPulseStyles} />
+                    <IconSpinner aria-hidden="true" css={spinStyles} />
                     &nbsp;&nbsp;Getting Location...
                   </>
                 )}
