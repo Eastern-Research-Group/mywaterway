@@ -43,6 +43,7 @@ import {
   stateGeneralError,
   stateNoDataError,
   usesStateSummaryServiceInvalidResponse,
+  webServiceErrorMessage,
 } from 'config/errorMessages';
 
 const allSources = ['All', 'State', 'Tribe'];
@@ -444,6 +445,12 @@ function StateTribal() {
               Invalid URL path. Please select a state, territory or tribe from
               the dropdown below.
             </p>
+          </div>
+        )}
+
+        {errorType === 'service-error' && (
+          <div css={modifiedErrorBoxStyles}>
+            <p>{webServiceErrorMessage}</p>
           </div>
         )}
 
