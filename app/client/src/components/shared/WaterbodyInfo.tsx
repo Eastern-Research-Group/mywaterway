@@ -448,7 +448,7 @@ function WaterbodyInfo({
   configFiles,
   mapView,
   type,
-}: WaterbodyInfoProps) {
+}: Readonly<WaterbodyInfoProps>) {
   const { attributes } = feature;
   const onWaterbodyReportPage =
     window.location.pathname.indexOf('waterbody-report') !== -1;
