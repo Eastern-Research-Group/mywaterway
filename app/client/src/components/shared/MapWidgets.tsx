@@ -325,14 +325,6 @@ const resizeHandleStyles = css`
   position: absolute;
   right: 0;
   bottom: 0;
-
-  .fa-rotate-45 {
-    transform: rotate(45deg);
-  }
-
-  .fa-rotate-315 {
-    transform: rotate(315deg);
-  }
 `;
 
 /*

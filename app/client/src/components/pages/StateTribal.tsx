@@ -4,6 +4,9 @@ import { css } from '@emotion/react';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import Select from 'react-select';
+import IconDoubleAngleRight from '~icons/fa7-solid/angles-right';
+import IconChartLine from '~icons/fa7-solid/chart-line';
+import IconWater from '~icons/fa7-solid/water';
 // components
 import Page from 'components/shared/Page';
 import TabLinks from 'components/shared/TabLinks';
@@ -69,6 +72,12 @@ const formStyles = css`
   margin-bottom: 1em;
 `;
 
+const headingStyles = css`
+  ${h2Styles}
+  display: flex;
+  align-items: center;
+`;
+
 const selectStyles = css`
   flex: 1;
   font-size: 0.9375em;
@@ -80,6 +89,10 @@ const buttonStyles = css`
   margin-bottom: 0;
   font-size: 0.9375em;
   padding: 0.375rem 0.75rem;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
 `;
 
 const modifiedErrorBoxStyles = css`
@@ -575,12 +588,7 @@ function StateTribal() {
                 onClick={() => handleSubmit(selectedStateTribe)}
                 css={buttonStyles}
               >
-                <i
-                  className="fas fa-angle-double-right"
-                  style={{ display: 'inline' }}
-                  aria-hidden="true"
-                />{' '}
-                Go
+                <IconDoubleAngleRight aria-hidden="true" /> Go
               </button>
             </div>
           </>
@@ -613,13 +621,12 @@ function StateTribal() {
                       <>
                         {stateIntro.organizationMetrics.length > 0 && (
                           <>
-                            <h2 css={h2Styles}>
-                              <i
-                                className="fas fa-chart-line"
-                                aria-hidden="true"
-                              />
-                              <strong>{activeState.label}</strong> by the
-                              Numbers
+                            <h2 css={headingStyles}>
+                              <IconChartLine aria-hidden="true" />
+                              <span>
+                                <strong>{activeState.label}</strong> by the
+                                Numbers
+                              </span>
                             </h2>
 
                             <div css={keyMetricsStyles}>
@@ -665,9 +672,11 @@ function StateTribal() {
 
                         {stateIntro.description && (
                           <>
-                            <h2 css={h2Styles}>
-                              <i aria-hidden="true" className="fas fa-water" />
-                              About <strong>{activeState.label}</strong>
+                            <h2 css={headingStyles}>
+                              <IconWater aria-hidden="true" />
+                              <span>
+                                About <strong>{activeState.label}</strong>
+                              </span>
                             </h2>
                             <div css={modifiedIntroBoxStyles}>
                               <p>

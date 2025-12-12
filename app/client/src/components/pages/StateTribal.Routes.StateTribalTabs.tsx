@@ -2,9 +2,11 @@
 
 import * as query from '@arcgis/core/rest/query';
 import { useContext, useEffect, useRef } from 'react';
+import { css } from '@emotion/react';
 import { useOutletContext, useParams, useNavigate } from 'react-router';
 import { Tab, Tabs, TabList, TabPanel, TabPanels } from '@reach/tabs';
 import { useWindowSize } from '@reach/window-size';
+import IconMapMarkedAlt from '~icons/fa7-solid/map-marked-alt';
 // components
 import { tabsStyles, tabPanelStyles } from 'components/shared/ContentTabs';
 import WaterQualityOverview from 'components/pages/StateTribal.Tabs.WaterQualityOverview';
@@ -17,6 +19,18 @@ import { h2Styles } from 'styles/stateTribal';
 // contexts
 import { useConfigFilesState } from 'contexts/ConfigFiles';
 import { StateTribalTabsContext } from 'contexts/StateTribalTabs';
+
+const headingStyles = css`
+  ${h2Styles}
+  margin-top: 0 !important;
+  display: flex;
+  align-items: center;
+
+  svg {
+    margin-right: 0.3125em;
+    color: #2c72b5;
+  }
+`;
 
 function StateTribalTabs() {
   const { stateCode, tabName } = useParams();
@@ -186,8 +200,8 @@ function StateTribalTabs() {
 
     return (
       <div>
-        <h2 css={h2Styles}>
-          <i className="fas fa-map-marked-alt" aria-hidden="true" />
+        <h2 css={headingStyles}>
+          <IconMapMarkedAlt aria-hidden="true" />
           <strong>{activeState.label}</strong> at a Glance
         </h2>
         <div>{mapContent}</div>
