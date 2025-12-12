@@ -16,6 +16,10 @@ import {
 } from 'react';
 import { useParams } from 'react-router';
 import Select from 'react-select';
+import IconArrowDown from '~icons/fa7-solid/arrow-down';
+import IconArrowUp from '~icons/fa7-solid/arrow-up';
+import IconBookOpen from '~icons/fa7-solid/book-open';
+import IconFilter from '~icons/fa7-solid/filter';
 // components
 import { AccordionList, AccordionItem } from 'components/shared/Accordion';
 import { BoxContent, FlexRow } from 'components/shared/BoxContent';
@@ -1225,7 +1229,7 @@ function CharacteristicChartSection({
             type="button"
             onClick={() => shiftDown(charcName)}
           >
-            <i aria-hidden className="fas fa-arrow-down" />
+            <IconArrowDown aria-hidden />
           </button>
           <button
             aria-label="Shift chart up"
@@ -1234,7 +1238,7 @@ function CharacteristicChartSection({
             type="button"
             onClick={() => shiftUp(charcName)}
           >
-            <i aria-hidden className="fas fa-arrow-up" />
+            <IconArrowUp aria-hidden />
           </button>
           <HelpTooltip label="Adjust the slider handles to filter the data displayed on the chart by the selected year range, and use the drop-down inputs to filter the data by the corresponding fields" />
         </span>
@@ -2021,11 +2025,7 @@ function DownloadSection({ charcs, charcsStatus, site, siteStatus }) {
           <div>
             <p>
               <a rel="noopener noreferrer" target="_blank" href={portalUrl}>
-                <i
-                  css={iconStyles}
-                  className="fas fa-filter"
-                  aria-hidden="true"
-                />
+                <IconFilter css={iconStyles} aria-hidden="true" />
                 Advanced Filtering
               </a>
               &nbsp;&nbsp;
@@ -2039,11 +2039,7 @@ function DownloadSection({ charcs, charcsStatus, site, siteStatus }) {
                 target="_blank"
                 href="https://www.waterqualitydata.us/portal_userguide/"
               >
-                <i
-                  css={iconStyles}
-                  className="fas fa-book-open"
-                  aria-hidden="true"
-                />
+                <IconBookOpen css={iconStyles} aria-hidden="true" />
                 Water Quality Portal User Guide
               </a>
               &nbsp;&nbsp;

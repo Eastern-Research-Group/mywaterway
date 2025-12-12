@@ -12,6 +12,8 @@ import Graphic from '@arcgis/core/Graphic';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import GroupLayer from '@arcgis/core/layers/GroupLayer';
 import Viewpoint from '@arcgis/core/Viewpoint';
+import IconList from '~icons/fa7-solid/list';
+import IconMapMarkedAlt from '~icons/fa7-solid/map-marked-alt';
 // components
 import {
   AccordionList,
@@ -90,6 +92,8 @@ const accordionContentStyles = css`
 `;
 
 const buttonStyles = css`
+  display: flex;
+  align-items: center;
   margin-bottom: 0;
   font-size: 0.9375em;
   &.active {
@@ -461,7 +465,7 @@ function TribalMapList({ activeState, windowHeight }: Props) {
               setMapShown(true);
             }}
           >
-            <i className="fas fa-map-marked-alt" aria-hidden="true" />
+            <IconMapMarkedAlt aria-hidden="true" />
             &nbsp;&nbsp;Map
           </button>
           <button
@@ -475,7 +479,7 @@ function TribalMapList({ activeState, windowHeight }: Props) {
               setListShown(true);
             }}
           >
-            <i className="fas fa-list" aria-hidden="true" />
+            <IconList aria-hidden="true" />
             &nbsp;&nbsp;List
           </button>
         </div>

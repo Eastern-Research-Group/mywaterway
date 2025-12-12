@@ -21,7 +21,11 @@ import Search from '@arcgis/core/widgets/Search';
 import LocatorSearchSource from '@arcgis/core/widgets/Search/LocatorSearchSource';
 import LayerSearchSource from '@arcgis/core/widgets/Search/LayerSearchSource';
 import SpatialReference from '@arcgis/core/geometry/SpatialReference';
+import IconCrosshairs from '~icons/fa7-solid/crosshairs';
+import IconDoubleAngleRight from '~icons/fa7-solid/angles-right';
+import IconSpinner from '~icons/fa7-solid/spinner';
 // components
+import { WarningIcon } from 'components/shared/Icons';
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
 import { useConfigFilesState } from 'contexts/ConfigFiles';
@@ -132,12 +136,28 @@ const formStyles = css`
 `;
 
 const buttonStyles = css`
+  display: flex;
+  align-items: center;
+  gap: 2px;
   margin-top: 1em;
   margin-bottom: 0;
   font-size: 0.875em;
 
   @media (min-width: 480px) {
     font-size: 0.9375em;
+  }
+`;
+
+const faPulseStyles = css`
+  animation: fa-spin 1s infinite steps(8);
+
+  @keyframes fa-spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 `;
 
@@ -325,9 +345,8 @@ function LocationSearch({ route, label }: Readonly<Props>) {
   const sourceEnterPress = useKeyPress('Enter', sourceList);
   const clearButton = useRef(null);
   const clearEnterPress = useKeyPress('Enter', clearButton);
-  const { errorMessage, huc12, noGeocodeResults, searchText, watershed } = useContext(
-    LocationSearchContext,
-  );
+  const { errorMessage, huc12, noGeocodeResults, searchText, watershed } =
+    useContext(LocationSearchContext);
   const [searchWidget, setSearchWidget] = useState<Search | null>(null);
 
   // Store the waterbody suggestions to avoid a second fetch.
@@ -1069,7 +1088,11 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     <>
       {(errorMessage || noGeocodeResults) && (
         <div css={modifiedErrorBoxStyles}>
-          <p>{noGeocodeResults && filteredSuggestions.length > 0 ? noGeocodeDataAvailableError : errorMessage}</p>
+          <p>
+            {noGeocodeResults && filteredSuggestions.length > 0
+              ? noGeocodeDataAvailableError
+              : errorMessage}
+          </p>
         </div>
       )}
       {errorMessageLocal && (
@@ -1298,7 +1321,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
           type="submit"
           disabled={inputText === searchText}
         >
-          <i className="fas fa-angle-double-right" aria-hidden="true" /> Go
+          <IconDoubleAngleRight aria-hidden="true" /> Go
         </button>
 
         {navigator.geolocation && (
@@ -1307,7 +1330,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
 
             {geolocationError ? (
               <button css={buttonStyles} type="button" disabled>
-                <i className="fas fa-exclamation-triangle" aria-hidden="true" />
+                <WarningIcon aria-hidden="true" />
                 &nbsp;&nbsp;Error Getting Location
               </button>
             ) : (
@@ -1354,12 +1377,12 @@ function LocationSearch({ route, label }: Readonly<Props>) {
               >
                 {!geolocating ? (
                   <>
-                    <i className="fas fa-crosshairs" aria-hidden="true" />
+                    <IconCrosshairs aria-hidden="true" />
                     &nbsp;&nbsp;Use My Location
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-spinner fa-pulse" aria-hidden="true" />
+                    <IconSpinner aria-hidden="true" css={faPulseStyles} />
                     &nbsp;&nbsp;Getting Location...
                   </>
                 )}

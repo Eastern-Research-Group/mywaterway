@@ -4,6 +4,7 @@ import { useContext, useEffect, useRef } from 'react';
 import { useOutletContext, useParams, useNavigate } from 'react-router';
 import { Tab, Tabs, TabList, TabPanel, TabPanels } from '@reach/tabs';
 import { useWindowSize } from '@reach/window-size';
+import IconMapMarkedAlt from '~icons/fa7-solid/map-marked-alt';
 // components
 import { tabsStyles, tabPanelStyles } from 'components/shared/ContentTabs';
 import WaterQualityOverview from 'components/pages/StateTribal.Tabs.WaterQualityOverview';
@@ -121,7 +122,7 @@ function StateTribalTabs() {
     return (
       <div>
         <h2 css={h2Styles}>
-          <i className="fas fa-map-marked-alt" aria-hidden="true" />
+          <IconMapMarkedAlt aria-hidden="true" />
           <strong>{activeState.label}</strong> at a Glance
         </h2>
         <div>{mapContent}</div>

@@ -10,6 +10,14 @@ import { css } from '@emotion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 import * as symbolUtils from '@arcgis/core/symbols/support/symbolUtils';
+import IconAngleDown from '~icons/fa7-solid/angle-down';
+import IconAngleRight from '~icons/fa7-solid/angle-right';
+import IconBell from '~icons/fa7-solid/bell';
+import IconFileAlt from '~icons/fa7-solid/file-alt';
+import IconFileCsv from '~icons/fa7-solid/file-csv';
+import IconFileExcel from '~icons/fa7-solid/file-excel';
+import IconFilter from '~icons/fa7-solid/filter';
+import IconInfoCircle from '~icons/fa7-solid/info-circle';
 // components
 import { HelpTooltip } from 'components/shared/HelpTooltip';
 import { ListContent } from 'components/shared/BoxContent';
@@ -159,7 +167,7 @@ function labelValue(
                     margin-left: 5px;
                   `}
                 >
-                  <i aria-hidden className="fas fa-info-circle"></i>
+                  <IconInfoCircle aria-hidden />
                 </button>
               }
             >
@@ -475,7 +483,7 @@ function WaterbodyInfo({
             `${attributes.reportingcycle || ''}`
           }
         >
-          <i css={iconStyles} className="fas fa-file-alt" aria-hidden="true" />
+          <IconFileAlt css={iconStyles} aria-hidden="true" />
           View Waterbody Report
         </a>
         &nbsp;&nbsp;
@@ -697,10 +705,7 @@ function WaterbodyInfo({
                                   fetchDetailedUses();
                                 }}
                               >
-                                <i
-                                  aria-hidden
-                                  className="fas fa-info-circle"
-                                ></i>
+                                <IconInfoCircle aria-hidden />
                               </button>
                             }
                           >
@@ -912,7 +917,7 @@ function WaterbodyInfo({
           target="_blank"
           rel="noopener noreferrer"
         >
-          <i css={iconStyles} className="fas fa-file-alt" aria-hidden="true" />
+          <IconFileAlt css={iconStyles} aria-hidden="true" />
           <span>Facility Report</span>
         </a>
         &nbsp;&nbsp;
@@ -998,11 +1003,7 @@ function WaterbodyInfo({
       </p>
       <p>
         <a rel="noopener noreferrer" target="_blank" href={attributes.WEBLINK}>
-          <i
-            css={iconStyles}
-            className="fas fa-info-circle"
-            aria-hidden="true"
-          />
+          <IconInfoCircle css={iconStyles} aria-hidden="true" />
           More Information
         </a>
         &nbsp;&nbsp;
@@ -1476,9 +1477,7 @@ function MapPopup({
   const { attributes } = feature;
 
   const getTypeTitle = () => {
-    const typesToSkip = [
-      'Change Location',
-    ];
+    const typesToSkip = ['Change Location'];
     if (!type || typesToSkip.includes(type)) return null;
 
     let title: string | ReactNode = type;
@@ -2527,11 +2526,7 @@ function CyanContent({
                 label="Download CSV"
                 description="Download data as a CSV file."
               >
-                <i
-                  css={iconStyles}
-                  className="fas fa-file-csv"
-                  aria-hidden="true"
-                />
+                <IconFileCsv css={iconStyles} aria-hidden="true" />
               </HelpTooltip>
               Download Blue-Green Algae Data
             </a>
@@ -2542,11 +2537,7 @@ function CyanContent({
               target="_blank"
               href={configFiles.services.cyan.application}
             >
-              <i
-                css={iconStyles}
-                className="fas fa-info-circle"
-                aria-hidden="true"
-              />
+              <IconInfoCircle css={iconStyles} aria-hidden="true" />
               More Information
             </a>
             &nbsp;&nbsp;
@@ -3025,7 +3016,7 @@ function MonitoringLocationsContent({
                             setModalTriggered(true);
                           }}
                         >
-                          <i aria-hidden className="fas fa-info-circle"></i>
+                          <IconInfoCircle aria-hidden />
                         </button>
                       }
                     >
@@ -3105,11 +3096,7 @@ function MonitoringLocationsContent({
                   href={portalUrl ?? undefined}
                   style={{ fontWeight: 'normal' }}
                 >
-                  <i
-                    css={iconStyles}
-                    className="fas fa-filter"
-                    aria-hidden="true"
-                  />
+                  <IconFilter css={iconStyles} aria-hidden="true" />
                   Advanced Filtering
                 </a>
                 &nbsp;&nbsp;
@@ -3130,7 +3117,7 @@ function MonitoringLocationsContent({
                       label="Download XLSX"
                       description="Download selected data as an XLSX file."
                     >
-                      <i className="fas fa-file-excel" aria-hidden="true" />
+                      <IconFileExcel aria-hidden="true" />
                     </HelpTooltip>
                   </a>
                   &nbsp;&nbsp;
@@ -3143,7 +3130,7 @@ function MonitoringLocationsContent({
                       label="Download CSV"
                       description="Download selected data as a CSV file."
                     >
-                      <i className="fas fa-file-csv" aria-hidden="true" />
+                      <IconFileCsv aria-hidden="true" />
                     </HelpTooltip>
                   </a>
                 </span>
@@ -3161,11 +3148,7 @@ function MonitoringLocationsContent({
             target="_blank"
             href={locationUrlPartial}
           >
-            <i
-              css={iconStyles}
-              className="fas fa-file-alt"
-              aria-hidden="true"
-            />
+            <IconFileAlt css={iconStyles} aria-hidden="true" />
             View Water Monitoring Report
           </a>
           &nbsp;&nbsp;
@@ -3318,12 +3301,12 @@ function UsgsStreamgagesContent({
                   >
                     {additionalMeasurementsShown ? (
                       <>
-                        <i className="fas fa-angle-down" aria-hidden="true" />
+                        <IconAngleDown aria-hidden="true" />
                         &nbsp;&nbsp;Show less categories
                       </>
                     ) : (
                       <>
-                        <i className="fas fa-angle-right" aria-hidden="true" />
+                        <IconAngleRight aria-hidden="true" />
                         &nbsp;&nbsp;Show more categories
                       </>
                     )}
@@ -3339,11 +3322,7 @@ function UsgsStreamgagesContent({
 
       <p css={paragraphStyles}>
         <a rel="noopener noreferrer" target="_blank" href={locationUrl}>
-          <i
-            css={iconStyles}
-            className="fas fa-info-circle"
-            aria-hidden="true"
-          />
+          <IconInfoCircle css={iconStyles} aria-hidden="true" />
           More Information
         </a>
         &nbsp;&nbsp;
@@ -3356,7 +3335,7 @@ function UsgsStreamgagesContent({
           target="_blank"
           href={alertUrl ?? undefined}
         >
-          <i css={iconStyles} className="fas fa-bell" aria-hidden="true" />
+          <IconBell css={iconStyles} aria-hidden="true" />
           Sign Up for Alerts
         </a>
         &nbsp;&nbsp;

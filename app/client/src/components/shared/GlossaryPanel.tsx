@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import type { Node } from 'react';
 import { css, Global } from '@emotion/react';
 import Glossary from 'glossary-panel';
+import IconBook from '~icons/fa7-solid/book';
+import IconTimes from '~icons/fa7-solid/times';
 // contexts
 import { useConfigFilesState } from 'contexts/ConfigFiles';
 // styles
@@ -30,8 +32,8 @@ const termStyles = css`
 `;
 
 const iconStyles = css`
-  font-weight: 900;
   color: rgba(0, 113, 188, 0.5);
+  margin-bottom: 2px;
   margin-right: 0.25em;
   padding-right: 0 !important;
 `;
@@ -203,7 +205,7 @@ function GlossaryPanel() {
             className="js-glossary-close"
             title="Close glossary"
           >
-            <i className="fas fa-times" aria-hidden="true"></i>
+            <IconTimes aria-hidden="true" />
           </button>
         </header>
 
@@ -248,9 +250,8 @@ function GlossaryTerm({ term, className, id, style, children }: Props) {
       className={className}
       style={style}
     >
-      <i
-        css={[iconStyles, { fontSize: '87.5%' }]}
-        className={'fas fa-book'}
+      <IconBook
+        css={[iconStyles, { fontSize: '87.5% !important' }]}
         aria-hidden="true"
       />
       {children}
