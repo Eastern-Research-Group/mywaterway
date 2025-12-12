@@ -318,17 +318,16 @@ const legendContainerStyles = css`
   margin-top: 1em;
 `;
 
+const loadingIconStyles = css`
+  margin: 0 -0.375rem 0 -0.875rem;
+  height: 1rem;
+`;
+
 const locationHeadingStyles = css`
   ${boxHeadingStyles}
 
   & > small {
     display: block;
-  }
-
-  /* loading icon */
-  svg {
-    margin: 0 -0.375rem 0 -0.875rem;
-    height: 1rem;
   }
 `;
 
@@ -2122,7 +2121,7 @@ function InformationSection({ siteId, site, siteStatus }) {
           <div css={locationRowStyles}>
             <strong>Location Name:</strong>
             <span>
-              {siteStatus === 'pending' && <LoadingSpinner />}
+              {siteStatus === 'pending' && <LoadingSpinner css={loadingIconStyles} />}
               {siteStatus === 'success' && site.locationName}
             </span>
           </div>
