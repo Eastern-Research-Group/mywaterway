@@ -1292,8 +1292,9 @@ function LocationSearch({ route, label }: Readonly<Props>) {
 
         <button
           css={buttonStyles}
-          type="submit"
+          type="button"
           disabled={inputText === searchText}
+          onClick={(_ev) => formSubmit({ searchTerm: inputText })}
         >
           <i className="fas fa-angle-double-right" aria-hidden="true" /> Go
         </button>
