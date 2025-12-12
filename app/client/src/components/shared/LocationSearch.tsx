@@ -20,7 +20,6 @@ import Point from '@arcgis/core/geometry/Point';
 import Search from '@arcgis/core/widgets/Search';
 import LocatorSearchSource from '@arcgis/core/widgets/Search/LocatorSearchSource';
 import LayerSearchSource from '@arcgis/core/widgets/Search/LayerSearchSource';
-import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 import IconCrosshairs from '~icons/fa7-solid/crosshairs';
 import IconDoubleAngleRight from '~icons/fa7-solid/angles-right';
 import IconSpinner from '~icons/fa7-solid/spinner';
