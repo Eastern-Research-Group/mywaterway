@@ -30,7 +30,7 @@ import { errorBoxStyles } from 'components/shared/MessageBoxes';
 import { useConfigFilesState } from 'contexts/ConfigFiles';
 import { LocationSearchContext } from 'contexts/locationSearch';
 // helpers
-import { fetchCheck, fetchPost } from 'utils/fetchUtils';
+import { fetchCheck, fetchParseCsv, fetchPost } from 'utils/fetchUtils';
 import { useKeyPress } from 'utils/hooks';
 import { containsScriptTag, indicesOf, isClick, isHuc12 } from 'utils/utils';
 import { splitSuggestedSearch } from 'utils/mapFunctions';
@@ -45,7 +45,7 @@ import {
 } from 'config/errorMessages';
 // types
 import type { ReactElement, ReactNode } from 'react';
-import { MonitoringLocationsResponse } from 'types';
+import { MonitoringLocationsData } from 'types';
 
 // --- utils ---
 
@@ -268,7 +268,7 @@ type LocationSearchSource =
   | __esri.LocatorSearchSource;
 
 type MonitoringLocationCodesResult = {
-  codes: Array<{
+  codes?: Array<{
     desc: string;
     value: string;
   }>;
@@ -465,13 +465,13 @@ function LocationSearch({ route, label }: Readonly<Props>) {
               return [];
             }
 
-            return (res as MonitoringLocationCodesResult).codes.map(
+            return (res as MonitoringLocationCodesResult).codes?.map(
               ({ desc, value }) => ({
                 key: value,
                 text: `${desc ?? value} (${value})`,
                 sourceIndex,
               }),
-            );
+            ) ?? [];
           } catch (_err) {
             setWebserviceErrorMessages((prev) => ({
               ...prev,
@@ -836,22 +836,20 @@ function LocationSearch({ route, label }: Readonly<Props>) {
       // query WQP's station service to get the lat/long
       const url = `${services.waterQualityPortal.stationSearch}mimeType=geojson&zip=no&siteid=${result.key}`;
       try {
-        const res = (await fetchCheck(url)) as MonitoringLocationsResponse;
-        const feature = res.features[0];
+        const res = (await fetchParseCsv(url)) as MonitoringLocationsData;
+        const feature = res[0];
         if (!feature) {
           setErrorMessageLocal(webServiceErrorMessage);
           return;
         }
         const {
-          properties: {
-            MonitoringLocationIdentifier,
-            OrganizationIdentifier,
-            ProviderName,
-          },
+          Location_Identifier,
+          Org_Identifier,
+          ProviderName,
         } = feature;
 
         formSubmit({
-          target: `/monitoring-report/${ProviderName}/${OrganizationIdentifier}/${MonitoringLocationIdentifier}`,
+          target: `/monitoring-report/${ProviderName}/${Org_Identifier}/${Location_Identifier}`,
         });
         if (callback && result.text) callback(result.text);
       } catch (err) {

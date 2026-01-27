@@ -352,7 +352,8 @@ function WaterbodyReport() {
 
         setWaterbodyTypes({ status: 'success', data: types });
 
-        // return early if no monitoring stations were returned
+        // TODO: Water monitoring stations section disabled for now
+        /*// return early if no monitoring stations were returned
         if (monitoringStations.length === 0) {
           setMonitoringLocations({ status: 'success', data: [] });
           return;
@@ -408,7 +409,7 @@ function WaterbodyReport() {
             setMonitoringLocations({ status: 'failure', data: [] });
             console.error(err);
           },
-        );
+        );*/
       },
       (err) => {
         console.error(err);

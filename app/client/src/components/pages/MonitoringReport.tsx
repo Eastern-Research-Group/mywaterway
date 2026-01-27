@@ -929,10 +929,11 @@ function useCharacteristics(provider, orgId, siteId, characteristicsByGroup) {
   const [status, setStatus] = useState('idle');
 
   const extractEpochFromRecord = (record) => {
-    let timestamp = record.ActivityStartDate;
-    if (record['ActivityStartTime/Time']) {
-      timestamp += `T${record['ActivityStartTime/Time']}`;
+    let timestamp = record.Activity_StartDate;
+    if (record['Activity_StartTime']) {
+      timestamp += `T${record['Activity_StartTime']}`;
     }
+    // TODO: Handle timezones properly
     return new Date(timestamp).getTime();
   };
 
@@ -948,31 +949,32 @@ function useCharacteristics(provider, orgId, siteId, characteristicsByGroup) {
         return;
       }
       const recordsByCharc = {};
-      records.forEach((record) => {
-        if (!recordsByCharc[record.CharacteristicName]) {
+      records.forEach((record, i) => {
+        if (!record.Result_Characteristic) console.log(record, i);
+        if (!recordsByCharc[record.Result_Characteristic]) {
           const charcGroup = getCharcGroup(
-            record.CharacteristicName,
+            record.Result_Characteristic,
             charcsByGroup,
           );
-          recordsByCharc[record.CharacteristicName] = {
-            name: record.CharacteristicName,
+          recordsByCharc[record.Result_Characteristic] = {
+            name: record.Result_Characteristic,
             records: [],
             group: charcGroup,
             count: 0,
           };
         }
-        const curCharc = recordsByCharc[record.CharacteristicName];
+        const curCharc = recordsByCharc[record.Result_Characteristic];
         curCharc.count += 1;
         curCharc.records.push({
-          activityTypeCode: record.ActivityTypeCode,
-          depth: record['ResultDepthHeightMeasure/MeasureValue'],
-          depthUnit: record['ResultDepthHeightMeasure/MeasureUnitCode'] || null,
-          fraction: record.ResultSampleFractionText || 'None',
-          measurement: record.ResultMeasureValue,
-          medium: record.ActivityMediaName || 'None',
+          activityTypeCode: record.Activity_TypeCode,
+          depth: record['ResultDepthHeight_Measure'],
+          depthUnit: record['ResultDepthHeight_MeasureUnit'] || null,
+          fraction: record.Result_SampleFraction || 'None',
+          measurement: record.Result_Measure,
+          medium: record.Activity_Media || 'None',
           timestamp: extractEpochFromRecord(record),
-          timestampType: record['ActivityStartTime/Time'] ? 'datetime' : 'date',
-          unit: record['ResultMeasure/MeasureUnitCode'] || 'None',
+          timestampType: record['Activity_StartTime'] ? 'datetime' : 'date',
+          unit: record['Result_MeasureUnit'] || 'None',
         });
       });
       setCharcs(recordsByCharc);
@@ -990,7 +992,7 @@ function useCharacteristics(provider, orgId, siteId, characteristicsByGroup) {
     setStatus('pending');
     const url =
       `${configFiles.data.services.waterQualityPortal.resultSearch}` +
-      `&mimeType=csv&zip=no&dataProfile=resultPhysChem` +
+      `&mimeType=csv&zip=no&dataProfile=narrow` +
       `&providers=${encodeURIComponent(
         provider,
       )}&organization=${encodeURIComponent(orgId)}&siteid=${encodeURIComponent(
@@ -1859,7 +1861,6 @@ function DownloadSection({ charcs, charcsStatus, site, siteStatus }) {
   const queryData =
     siteStatus === 'success'
       ? {
-          dataProfile: 'resultPhysChem',
           siteid: [site.siteId],
           organization: [site.orgId],
           providers: [site.providerName],
@@ -1878,7 +1879,7 @@ function DownloadSection({ charcs, charcsStatus, site, siteStatus }) {
       );
     else queryPartial += `&${key}=${encodeURIComponent(value)}`;
     return query + queryPartial;
-  }, `${configFiles.data.services.waterQualityPortal.userInterface}#advanced=true&dataProfile=resultPhysChem`);
+  }, `${configFiles.data.services.waterQualityPortal.userInterface}#advanced=true&dataProfile=narrow`); // FIXME: Portal not respecting specified data profile
 
   if (checkboxes.all === Checkbox.indeterminate) {
     const selectedGroups = Object.values(checkboxes.groups)
@@ -2061,7 +2062,7 @@ function DownloadSection({ charcs, charcsStatus, site, siteStatus }) {
                     fileBaseName="wqp-results"
                     fileType={fileType}
                     setError={setDownloadError}
-                    url={`${configFiles.data.services.waterQualityPortal.resultSearch}zip=no&mimeType=${fileType}`}
+                    url={`${configFiles.data.services.waterQualityPortal.resultSearch}zip=no&mimeType=${fileType}&dataProfile=narrow`} // FIXME: POST not allowed
                   />
                 </Fragment>
               ))}

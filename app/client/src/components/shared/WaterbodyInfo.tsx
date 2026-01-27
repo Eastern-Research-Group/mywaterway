@@ -2864,13 +2864,13 @@ function MonitoringLocationsContent({
   // (see setCharGroupFilters in Table's onChange handler)
   const downloadUrl = configFiles
     ? `${configFiles.services.waterQualityPortal.resultSearch}zip=no&siteid=` +
-      `${siteId}&providers=${providerName}` +
+      `${siteId}&providers=${providerName}&dataProfile=narrow` +
       `${charGroupFilters}`
     : null;
   const portalUrl = configFiles
     ? `${configFiles.services.waterQualityPortal.userInterface}#` +
       `siteid=${siteId}${charGroupFilters}` +
-      `&advanced=true&dataProfile=resultPhysChem` +
+      `&advanced=true&dataProfile=narrow` +
       `&providers=NWIS&providers=STEWARDS&providers=STORET`
     : null;
 

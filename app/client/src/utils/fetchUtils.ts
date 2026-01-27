@@ -50,6 +50,7 @@ export function fetchParseCsv(url: string, { worker = true } = {}) {
       error: (err) => reject(err),
       header: true,
       worker,
+      skipEmptyLines: true,
     });
   });
 }

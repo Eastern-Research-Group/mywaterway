@@ -361,12 +361,14 @@ export function PastWaterConditionsFilters({
     `${configFiles.data.services.waterQualityPortal.resultSearch}zip=no` +
     (huc12 ? `&huc=${huc12}` : '') +
     wqxIds.map((id) => `&organization=${id}`).join('') +
+    '&dataProfile=narrow' +
     `${charGroupFilters}`;
   const portalUrl =
     `${configFiles.data.services.waterQualityPortal.userInterface}#advanced=true` +
     (huc12 ? `&huc=${huc12}` : '') +
     wqxIds.map((id) => `&organization=${id}`).join('') +
-    `${charGroupFilters}&dataProfile=resultPhysChem` +
+    `${charGroupFilters}` +
+    '&dataProfile=narrow' +
     `&providers=NWIS&providers=STEWARDS&providers=STORET`;
 
   const handleDateSliderChange = useCallback(

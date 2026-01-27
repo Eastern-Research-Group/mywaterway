@@ -423,29 +423,22 @@ export interface MonitoringLocationGroups {
 }
 
 export type MonitoringLocationData = {
-  geometry: {
-    coordinates: [number, number];
-    type: 'Point';
+  CountyName: string;
+  HUCEightDigitCode: string;
+  Location_Identifier: string;
+  MonitoringLocationName: string;
+  MonitoringLocationTypeName: string;
+  OrganizationFormalName: string;
+  Org_Identifier: string;
+  ProviderName: string;
+  ResolvedMonitoringLocationTypeName: string;
+  StateName: string;
+  activityCount: string;
+  characteristicGroupResultCount: {
+    Physical: number;
   };
-  properties: {
-    CountyName: string;
-    HUCEightDigitCode: string;
-    MonitoringLocationIdentifier: string;
-    MonitoringLocationName: string;
-    MonitoringLocationTypeName: string;
-    OrganizationFormalName: string;
-    OrganizationIdentifier: string;
-    ProviderName: string;
-    ResolvedMonitoringLocationTypeName: string;
-    StateName: string;
-    activityCount: string;
-    characteristicGroupResultCount: {
-      Physical: number;
-    };
-    resultCount: string;
-    siteUrl: string;
-  };
-  type: 'Feature';
+  resultCount: string;
+  siteUrl: string;
 };
 
 export type MonitoringLocationsData = Array<MonitoringLocationData>;
