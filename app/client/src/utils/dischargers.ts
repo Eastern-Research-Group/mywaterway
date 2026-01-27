@@ -162,8 +162,8 @@ function buildFeatures(data: DischargerAttributes[]) {
     return new Graphic({
       attributes: datum,
       geometry: new Point({
-        latitude: parseFloat(datum['FacLat']),
-        longitude: parseFloat(datum['FacLong']),
+        latitude: Number.parseFloat(datum['FacLat']),
+        longitude: Number.parseFloat(datum['FacLong']),
         spatialReference: {
           wkid: 102100,
         },
