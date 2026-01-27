@@ -84,7 +84,6 @@ function useUpdateData() {
   const { huc12, hucBoundaries, mapView } = useContext(LocationSearchContext);
   const configFiles = useConfigFilesState();
   const services = configFiles.data.services;
-  const usgsParameterCodes = configFiles.data.usgsParameterCodes;
   const usgsSiteTypes = configFiles.data.usgsSiteTypes;
   const usgsStaParameters = configFiles.data.usgsStaParameters;
 
@@ -123,7 +122,6 @@ function useUpdateData() {
       services,
       fetchedDataDispatch,
       localFetchedDataKey,
-      usgsParameterCodes,
       usgsSiteTypes,
       usgsStaParameters,
       controller.signal,
@@ -140,7 +138,6 @@ function useUpdateData() {
     huc12,
     hucBoundaries,
     services,
-    usgsParameterCodes,
     usgsSiteTypes,
     usgsStaParameters,
   ]);
@@ -163,7 +160,6 @@ function useUpdateData() {
         services,
         fetchedDataDispatch,
         surroundingFetchedDataKey,
-        usgsParameterCodes,
         usgsSiteTypes,
         usgsStaParameters,
         abortSignal,
@@ -176,7 +172,6 @@ function useUpdateData() {
       hucData,
       mapView,
       services,
-      usgsParameterCodes,
       usgsSiteTypes,
       usgsStaParameters,
     ],
@@ -272,7 +267,6 @@ async function fetchAndTransformData(
   services: ServicesData,
   dispatch: Dispatch<FetchedDataAction>,
   fetchedDataId: 'usgsStreamgages' | 'surroundingUsgsStreamgages',
-  usgsParameterCodes: ConfigFiles['usgsParameterCodes'],
   usgsSiteTypes: ConfigFiles['usgsSiteTypes'],
   usgsStaParameters: UsgsStaParameter[],
   abortSignal: AbortSignal,
@@ -314,7 +308,6 @@ async function fetchAndTransformData(
     const usgsStreamgageAttributes = transformServiceData(
       ...(responses.map((res) => res.data) as UsgsServiceData),
       latestContinuous.data,
-      usgsParameterCodes,
       usgsSiteTypes,
       usgsStaParameters,
     );
@@ -346,7 +339,6 @@ function transformServiceData(
   usgsDailyAverages: UsgsDailyAveragesData,
   usgsPrecipitation: UsgsDailyData,
   usgsLatestContinuous: UsgsLatestContinuousData,
-  usgsParameterCodes: ConfigFiles['usgsParameterCodes'],
   usgsSiteTypes: ConfigFiles['usgsSiteTypes'],
   usgsStaParameters: UsgsStaParameter[],
 ) {
@@ -364,7 +356,6 @@ function transformServiceData(
     gageLatestMeasurements.forEach((item) => {
       let measurement = parseFloat(item.properties.value) || null;
       const parameterCode = item.properties.parameter_code;
-      const parameterDesc = usgsParameterCodes[parameterCode];
       const parameterUnit = item.properties.unit_of_measure;
 
       // convert measurements recorded in celsius to fahrenheit
@@ -383,8 +374,8 @@ function transformServiceData(
       const data = {
         parameterCategory: matchedParam?.hmwCategory ?? 'exclude',
         parameterOrder: matchedParam?.hmwOrder ?? 0,
-        parameterName: matchedParam?.hmwName ?? parameterDesc,
-        parameterUsgsName: matchedParam?.staDescription ?? parameterDesc,
+        parameterName: matchedParam?.hmwName ?? '',
+        parameterUsgsName: matchedParam?.staDescription ?? '',
         parameterCode,
         measurement,
         datetime: datetime.toLocaleString(),
