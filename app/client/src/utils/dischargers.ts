@@ -260,10 +260,7 @@ async function fetchAndTransformData(
           wkid: 102100,
         },
       });
-      return (
-        !huc12Boundaries ||
-        containsOperator.execute(huc12Boundaries, geometry)
-      );
+      return containsOperator.execute(huc12Boundaries, geometry);
     });
 
     const payload = dataToExclude
