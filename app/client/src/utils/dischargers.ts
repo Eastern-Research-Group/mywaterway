@@ -254,8 +254,8 @@ async function fetchAndTransformData(
     const permittedDischargersHuc = permittedDischargers.filter((discharger) => {
       if (!huc12Boundaries) return true;
       const geometry = new Point({
-        longitude: parseFloat(discharger.FacLong) ?? 0,
-        latitude: parseFloat(discharger.FacLat) ?? 0,
+        longitude: Number.parseFloat(discharger.FacLong),
+        latitude: Number.parseFloat(discharger.FacLat),
         spatialReference: {
           wkid: 102100,
         },
