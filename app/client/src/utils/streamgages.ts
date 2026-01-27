@@ -81,7 +81,7 @@ export function useStreamgages() {
 
 function useUpdateData() {
   // Build the data update function
-  const { huc12, hucBoundaries, mapView } = useContext(LocationSearchContext);
+  const { hucBoundaries, mapView } = useContext(LocationSearchContext);
   const configFiles = useConfigFilesState();
   const services = configFiles.data.services;
   const usgsSiteTypes = configFiles.data.usgsSiteTypes;
@@ -93,7 +93,7 @@ function useUpdateData() {
   useEffect(() => {
     const controller = new AbortController();
 
-    if (!huc12 || !hucBoundaries?.geometry) {
+    if (!hucBoundaries?.geometry) {
       setHucData([]);
       fetchedDataDispatch({
         type: 'success',
@@ -135,7 +135,6 @@ function useUpdateData() {
     };
   }, [
     fetchedDataDispatch,
-    huc12,
     hucBoundaries,
     services,
     usgsSiteTypes,
