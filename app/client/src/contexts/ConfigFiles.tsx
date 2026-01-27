@@ -80,9 +80,6 @@ export type ConfigFiles = {
     [key: string]: { body: string; disclaimerKey?: string };
   };
   useFields: AttainsUseField[];
-  usgsParameterCodes: {
-    [parameterCode: string]: string;
-  };
   usgsSiteTypes: {
     [siteTypeCode: string]: string;
   };
