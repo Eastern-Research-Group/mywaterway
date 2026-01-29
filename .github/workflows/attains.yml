@@ -30,10 +30,10 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
-          base: staging
+          base: wqp
           filters: |
             workflows:
-              - '.github/workflows/staging.yml'
+              - '.github/workflows/attains.yml'
             app:
               - 'app/**'
 
@@ -140,13 +140,3 @@ jobs:
       - name: Deploy ATTAINS version of application to Cloud.gov
         run: cf push $APP_NAME_ATTAINS --strategy rolling -f ../manifest-attains.yml -p . -t 180 -s $CF_STACK
         working-directory: app/server
-
-      - name: Zip artifacts
-        run: tar -czf hmwv2.tar.gz server
-        working-directory: app
-
-      - name: Store artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: hmwv2
-          path: app/hmwv2.tar.gz
