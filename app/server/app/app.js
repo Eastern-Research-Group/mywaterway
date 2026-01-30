@@ -9,7 +9,6 @@ const { getEnvironment } = require('./server/utilities/environment');
 const logger = require('./server/utilities/logger');
 const { getS3Config } = require('./server/utilities/s3');
 const updateGlossary = require('./tasks/updateGlossary');
-const updateUsgsParameterCodes = require('./tasks/updateUsgsParameterCodes');
 const updateUsgsSiteTypes = require('./tasks/updateUsgsSiteTypes');
 const log = logger.logger;
 
@@ -180,7 +179,6 @@ if (isLocal || process.env.CF_INSTANCE_INDEX === '0') {
   // run glossary task once at start-up
   updateGlossary();
   updateUsgsSiteTypes();
-  updateUsgsParameterCodes();
 
   log.info('Scheduling glossary cron task to run every day at 1AM');
   cron.schedule(
@@ -188,7 +186,6 @@ if (isLocal || process.env.CF_INSTANCE_INDEX === '0') {
     () => {
       updateGlossary();
       updateUsgsSiteTypes();
-      updateUsgsParameterCodes();
     },
     { scheduled: true },
   );
