@@ -1,8 +1,8 @@
 /** @jsxImportSource @emotion/react */
 
 import { css } from '@emotion/react';
-import { Fragment, useContext, useRef } from 'react';
-import { createRoot, Root } from 'react-dom/client';
+import { Fragment, useContext } from 'react';
+import parse, { HTMLReactParserOptions } from 'html-react-parser';
 // components
 import Overview from 'components/pages/Community.Tabs.Overview';
 import DrinkingWater from 'components/pages/Community.Tabs.DrinkingWater';
@@ -30,7 +30,7 @@ import restoreIcon from 'images/restore.png';
 import protectIcon from 'images/protect.png';
 import extremeWeatherIcon from 'images/extreme-weather.png';
 // types
-import type { MutableRefObject, RefCallback } from 'react';
+import type { RefObject, ReactNode, RefCallback } from 'react';
 
 const upperContentStyles = css`
   div:first-of-type {
@@ -59,6 +59,7 @@ const upperContentStyles = css`
 
 function EatingFishUpper() {
   const { fishingInfo, statesData } = useContext(LocationSearchContext);
+  const { data } = useConfigFilesState();
 
   const stateLinks =
     fishingInfo.status === 'success' ? (
@@ -95,30 +96,30 @@ function EatingFishUpper() {
       <>your state.</>
     );
 
-  const stateLinksRoot = useRef<Root | null>(null);
-
-  const bodyRef = (node: HTMLDivElement | null) => {
-    if (!node) return;
-
-    const stateLinksSpan = node.querySelector('span#eating-fish-state-links');
-    if (!stateLinksSpan) return;
-
-    if (!stateLinksRoot.current) {
-      stateLinksRoot.current = createRoot(stateLinksSpan);
-    }
-    stateLinksRoot.current.render(stateLinks);
+  const options: HTMLReactParserOptions = {
+    replace: (domNode: any) => {
+      if (domNode?.attribs?.id === 'eating-fish-state-links')
+        return <span>{stateLinks}</span>;
+    },
   };
 
-  return <UpperContent tabKey="eatingFish" bodyRef={bodyRef} />;
+  return (
+    <UpperContent
+      tabKey="eatingFish"
+      bodyNode={parse(data.upperContent.eatingFish.body, options)}
+    />
+  );
 }
 
 function UpperContent({
+  bodyNode,
   bodyRef,
   tabKey,
 }: {
+  bodyNode?: ReactNode;
   bodyRef?:
     | RefCallback<HTMLDivElement>
-    | MutableRefObject<HTMLDivElement | null>;
+    | RefObject<HTMLDivElement | null>;
   tabKey: string;
 }) {
   const {
@@ -131,7 +132,11 @@ function UpperContent({
 
   return (
     <div css={upperContentStyles}>
-      <div dangerouslySetInnerHTML={{ __html: body }} ref={bodyRef} />
+      {bodyNode ? (
+        bodyNode
+      ) : (
+        <div dangerouslySetInnerHTML={{ __html: body }} ref={bodyRef} />
+      )}
 
       {disclaimerKey && <DisclaimerModal disclaimerKey={disclaimerKey} />}
     </div>

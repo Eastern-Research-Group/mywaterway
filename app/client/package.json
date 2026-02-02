@@ -91,6 +91,7 @@
     "glossary-panel": "github:Eastern-Research-Group/glossary",
     "highcharts": "12.4.0",
     "highcharts-react-official": "3.2.3",
+    "html-react-parser": "5.2.15",
     "html-to-image": "1.11.13",
     "papaparse": "5.5.3",
     "pdf-lib": "1.17.1",
