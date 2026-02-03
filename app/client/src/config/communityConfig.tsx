@@ -2,7 +2,7 @@
 
 import { css } from '@emotion/react';
 import { Fragment, useContext } from 'react';
-import parse, { HTMLReactParserOptions } from 'html-react-parser';
+import parse, { Element } from 'html-react-parser';
 // components
 import Overview from 'components/pages/Community.Tabs.Overview';
 import DrinkingWater from 'components/pages/Community.Tabs.DrinkingWater';
@@ -96,17 +96,15 @@ function EatingFishUpper() {
       <>your state.</>
     );
 
-  const options: HTMLReactParserOptions = {
-    replace: (domNode: any) => {
-      if (domNode?.attribs?.id === 'eating-fish-state-links')
-        return <span id="eating-fish-state-links">{stateLinks}</span>;
-    },
-  };
-
   return (
     <UpperContent
       tabKey="eatingFish"
-      bodyNode={parse(data.upperContent.eatingFish.body, options)}
+      bodyNode={parse(data.upperContent.eatingFish.body, {
+        replace: (domNode) => {
+          if ((domNode as Element)?.attribs?.id === 'eating-fish-state-links')
+            return <span id="eating-fish-state-links">{stateLinks}</span>;
+        },
+      })}
     />
   );
 }
@@ -117,9 +115,7 @@ function UpperContent({
   tabKey,
 }: {
   bodyNode?: ReactNode;
-  bodyRef?:
-    | RefCallback<HTMLDivElement>
-    | RefObject<HTMLDivElement | null>;
+  bodyRef?: RefCallback<HTMLDivElement> | RefObject<HTMLDivElement | null>;
   tabKey: string;
 }) {
   const {
@@ -132,9 +128,7 @@ function UpperContent({
 
   return (
     <div css={upperContentStyles}>
-      {bodyNode ? (
-        bodyNode
-      ) : (
+      {bodyNode || (
         <div dangerouslySetInnerHTML={{ __html: body }} ref={bodyRef} />
       )}
 
