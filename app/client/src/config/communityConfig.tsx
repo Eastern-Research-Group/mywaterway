@@ -99,7 +99,7 @@ function EatingFishUpper() {
   const options: HTMLReactParserOptions = {
     replace: (domNode: any) => {
       if (domNode?.attribs?.id === 'eating-fish-state-links')
-        return <span>{stateLinks}</span>;
+        return <span id="eating-fish-state-links">{stateLinks}</span>;
     },
   };
 
