@@ -60,6 +60,8 @@ describe('Eating Fish page', () => {
       },
     ).as('nlfaFail');
 
+    // this particular service should quietly fail and instruct the user 
+    // to check their state for fish advisories
     cy.visit('/community/dc/eating-fish');
     cy.get('#eating-fish-state-links')
         .filter(`:contains("your state.")`)
