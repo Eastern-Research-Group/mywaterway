@@ -1,8 +1,6 @@
 /** @jsxImportSource @emotion/react */
 
 import { css } from '@emotion/react';
-import { Fragment, useContext } from 'react';
-import parse, { Element } from 'html-react-parser';
 // components
 import Overview from 'components/pages/Community.Tabs.Overview';
 import DrinkingWater from 'components/pages/Community.Tabs.DrinkingWater';
@@ -17,7 +15,6 @@ import ExtremeWeather from 'components/pages/Community.Tabs.ExtremeWeather';
 import { DisclaimerModal } from 'components/shared/Modal';
 // contexts
 import { useConfigFilesState } from 'contexts/ConfigFiles';
-import { LocationSearchContext } from 'contexts/locationSearch';
 // images
 import overviewIcon from 'images/overview.png';
 import drinkingWaterIcon from 'images/drinking-water.png';
@@ -57,65 +54,9 @@ const upperContentStyles = css`
   }
 `;
 
-function EatingFishUpper() {
-  const { fishingInfo, statesData } = useContext(LocationSearchContext);
-  const { data } = useConfigFilesState();
-
-  const stateLinks =
-    fishingInfo.status === 'success' ? (
-      <>
-        {fishingInfo.data.map((state, index) => {
-          let seperator = ', ';
-          if (index === 0) seperator = '';
-          else if (index === fishingInfo.data.length - 1) seperator = ' and ';
-
-          const matchedState = statesData.data.find((s) => {
-            return s.code === state.stateCode;
-          });
-
-          return (
-            <Fragment key={state.stateCode}>
-              {seperator}
-              <a href={state.url} target="_blank" rel="noopener noreferrer">
-                {matchedState ? matchedState.name : state.stateCode}
-              </a>
-            </Fragment>
-          );
-        })}
-        .{' '}
-        <a
-          className="exit-disclaimer"
-          href="https://www.epa.gov/home/exit-epa"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          EXIT
-        </a>
-      </>
-    ) : (
-      <>your state.</>
-    );
-
-  return (
-    <UpperContent
-      tabKey="eatingFish"
-      bodyNode={parse(data.upperContent.eatingFish.body, {
-        replace: (domNode) => {
-          if ((domNode as Element)?.attribs?.id === 'eating-fish-state-links')
-            return <span id="eating-fish-state-links">{stateLinks}</span>;
-        },
-      })}
-    />
-  );
-}
-
 function UpperContent({
-  bodyNode,
-  bodyRef,
   tabKey,
 }: {
-  bodyNode?: ReactNode;
-  bodyRef?: RefCallback<HTMLDivElement> | RefObject<HTMLDivElement | null>;
   tabKey: string;
 }) {
   const {
@@ -128,9 +69,7 @@ function UpperContent({
 
   return (
     <div css={upperContentStyles}>
-      {bodyNode || (
-        <div dangerouslySetInnerHTML={{ __html: body }} ref={bodyRef} />
-      )}
+      <div dangerouslySetInnerHTML={{ __html: body }} />
 
       {disclaimerKey && <DisclaimerModal disclaimerKey={disclaimerKey} />}
     </div>
@@ -166,7 +105,7 @@ const tabs = [
     title: 'Eating Fish',
     route: '/community/{urlSearch}/eating-fish',
     icon: eatingfishIcon,
-    upper: <EatingFishUpper />,
+    upper: <UpperContent tabKey="eatingFish" />,
     lower: <EatingFish />,
     layers: {
       boundariesLayer: true,
