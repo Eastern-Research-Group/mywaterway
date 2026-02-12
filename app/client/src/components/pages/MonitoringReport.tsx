@@ -995,7 +995,7 @@ function useCharacteristics(provider, orgId, siteId, characteristicsByGroup) {
       `&mimeType=csv&zip=no&dataProfile=narrow` +
       `&providers=${encodeURIComponent(
         provider,
-      )}&organization=${encodeURIComponent(orgId)}&siteid=${encodeURIComponent(
+      )}&siteid=${encodeURIComponent(
         siteId,
       )}`;
     fetchParseCsv(url)
@@ -1862,7 +1862,6 @@ function DownloadSection({ charcs, charcsStatus, site, siteStatus }) {
     siteStatus === 'success'
       ? {
           siteid: [site.siteId],
-          organization: [site.orgId],
           providers: [site.providerName],
         }
       : {};
@@ -2147,7 +2146,6 @@ function MonitoringReportContent() {
 
   const siteFilter =
     `provider=${encodeURIComponent(provider)}` +
-    `&organization=${encodeURIComponent(orgId)}` +
     `&siteid=${encodeURIComponent(siteId)}`;
 
   useMonitoringLocationsLayers({
