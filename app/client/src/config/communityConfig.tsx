@@ -26,8 +26,6 @@ import identifiedIssuesIcon from 'images/identified-issues.png';
 import restoreIcon from 'images/restore.png';
 import protectIcon from 'images/protect.png';
 import extremeWeatherIcon from 'images/extreme-weather.png';
-// types
-import type { RefObject, ReactNode, RefCallback } from 'react';
 
 const upperContentStyles = css`
   div:first-of-type {
