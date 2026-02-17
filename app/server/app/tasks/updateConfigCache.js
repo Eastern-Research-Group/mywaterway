@@ -135,9 +135,6 @@ async function updateCache(s3BucketUrl) {
           };
         },
       ).then((res) => configCache.set('configFiles', res)),
-    );
-
-    promises.push(
       getFiles(s3BucketUrl, ['content/config/supported-browsers.json']).then(
         (res) => configCache.set('supportedBrowsers', res),
       ),

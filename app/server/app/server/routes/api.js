@@ -1,19 +1,19 @@
 const express = require('express');
 const configCache = require('../utilities/configCache');
 
+function sendCachedData(res, key, message) {
+  const data = configCache.get(key);
+  if (!data) return res.status(503).json({ message });
+
+  res.set({
+    'Content-Type': 'application/json',
+    'Content-Encoding': 'gzip',
+  });
+  res.send(data);
+}
+
 module.exports = function (app) {
   const router = express.Router();
-
-  function sendCachedData(res, key, message) {
-    const data = configCache.get(key);
-    if (!data) return res.status(503).json({ message });
-
-    res.set({
-      'Content-Type': 'application/json',
-      'Content-Encoding': 'gzip',
-    });
-    res.send(data);
-  }
 
   router.get('/health', function (req, res, next) {
     res.json({ status: 'UP' });
