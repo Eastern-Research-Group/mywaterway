@@ -191,11 +191,11 @@ if (isLocal || process.env.CF_INSTANCE_INDEX === '0') {
   );
 }
 
-updateConfigCache(app.get('s3BucketUrl'));
+updateConfigCache(app.get('s3_bucket_url'));
 cron.schedule(
   '*/15 * * * *',
   () => {
-    updateConfigCache(app.get('s3BucketUrl'));
+    updateConfigCache(app.get('s3_bucket_url'));
   },
   { scheduled: true },
 );
