@@ -1176,7 +1176,6 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     [
       boundariesLayer,
       configFiles,
-      getFishingLinkData,
       getProtectedAreas,
       getSignal,
       getTemplate,
