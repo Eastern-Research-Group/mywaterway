@@ -460,6 +460,7 @@ function SiteSpecific({
 
       {topic === 'fishing' && (
         <div 
+          data-testid="hmw-fish-advisory-section"
           css={fishAdvisoryStyles}
           dangerouslySetInnerHTML={{__html: configFiles.data.statePage.fishAdvisory}} 
         />

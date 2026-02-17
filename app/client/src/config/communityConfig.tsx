@@ -66,7 +66,7 @@ function UpperContent({
   } = useConfigFilesState();
 
   return (
-    <div css={upperContentStyles}>
+    <div css={upperContentStyles} data-testid="hmw-upper-content-section">
       <div dangerouslySetInnerHTML={{ __html: body }} />
 
       {disclaimerKey && <DisclaimerModal disclaimerKey={disclaimerKey} />}
