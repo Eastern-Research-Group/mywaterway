@@ -12,6 +12,8 @@
 
 - Removed the fish advisory links from the community and state pages, since NLFA services are being taken down. 
 
+- Fixed issue with the extreme weather tab breaking after turning off the full screen map mode while on the extreme weather tab.
+
 ### Chores
 
 - Updated dependencies.
