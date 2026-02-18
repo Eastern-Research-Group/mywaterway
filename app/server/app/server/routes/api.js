@@ -8,7 +8,7 @@ async function sendCachedData(res, key, message) {
     try {
       await updateConfigCache();
     } catch (err) {
-      res.status(500).json({ message });
+      return res.status(500).json({ message });
     }
   }
 
