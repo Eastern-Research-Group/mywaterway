@@ -1,9 +1,16 @@
 const express = require('express');
+const updateConfigCache = require('../../tasks/updateConfigCache');
 const configCache = require('../utilities/configCache');
 
-function sendCachedData(res, key, message) {
+async function sendCachedData(res, key, message) {
   const data = configCache.get(key);
-  if (!data) return res.status(503).json({ message });
+  if (!data) {
+    try {
+      await updateConfigCache();
+    } catch (err) {
+      return res.status(500).json({ message });
+    }
+  }
 
   res.set({
     'Content-Type': 'application/json',
@@ -21,16 +28,12 @@ module.exports = function (app) {
 
   // --- get static content from S3
   router.get('/configFiles', (req, res) => {
-    sendCachedData(res, 'configFiles', 'Config file cache not available...');
+    sendCachedData(res, 'configFiles', 'Failed to get config file cache...');
   });
 
   // --- get static content from S3
   router.get('/supportedBrowsers', (req, res) => {
-    sendCachedData(
-      res,
-      'supportedBrowsers',
-      'Supported Browsers cache not available...',
-    );
+    sendCachedData(res, 'supportedBrowsers', 'Failed to get supported browsers cache...');
   });
 
   router.use((req, res) => {
