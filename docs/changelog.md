@@ -1,5 +1,23 @@
 # Change Log
 
+## 2.17.0
+
+### Changed
+
+- Updated ECHO service calls to not use the HUC12 value at all.
+
+- Updated the configFiles api endpoint to cache files in the server for better memory performance.
+
+- Removed the USGS parameter lookup cache as it wasn't being used.
+
+- Removed the fish advisory links from the community and state pages, since NLFA services are being taken down. 
+
+- Fixed issue with the extreme weather tab breaking after turning off the full screen map mode while on the extreme weather tab.
+
+### Chores
+
+- Updated dependencies.
+
 ## 2.16.0
 
 ### Changed

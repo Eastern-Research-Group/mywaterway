@@ -75,6 +75,7 @@ export type ConfigFiles = {
   reportStatusMapping: any;
   services: ServicesData;
   stateNationalUses: any;
+  statePage: { fishAdvisory: string };
   surveyMapping: any;
   upperContent: {
     [key: string]: { body: string; disclaimerKey?: string };
