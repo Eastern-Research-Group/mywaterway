@@ -63,8 +63,9 @@
     "getSSByHUC12": "https://ordspub.epa.gov/ords/grts/grtsadm/grts_rest_apex/GetSSByHUC12"
   },
   "attains": {
-    "serviceUrlDev": "https://attains-demo.epa-ow-cloud.com/attains-public/api/",
-    "serviceUrl": "https://attains-demo.epa-ow-cloud.com/attains-public/api/"
+    "apiKey": "HbKMDkKyzWJoihZMdbYeRq4jubuBBo5ghuV8vn0d",
+    "serviceUrlDev": "https://api.epa.gov/attains/",
+    "serviceUrl": "https://api.epa.gov/attains/"
   },
   "fishingInformationService": {
     "serviceUrl": "https://watersgeo.epa.gov/arcgis/rest/services/NLFA/FISH_GEN/MapServer/13/",
