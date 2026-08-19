@@ -116,7 +116,7 @@ describe('Waterbody Report page', () => {
 
   it('Test assessments service failure', () => {
     cy.intercept(
-      'https://attains.epa.gov/attains-public/api/assessments?organizationId=DOEE&assessmentUnitIdentifier=DCANA00E_02&reportingCycle=2020',
+      'https://api.epa.gov/attains/assessments?organizationId=DOEE&assessmentUnitIdentifier=DCANA00E_02&reportingCycle=2020',
       {
         statusCode: 500,
         body: {},
@@ -133,7 +133,7 @@ describe('Waterbody Report page', () => {
 
   it('Test assessments no data version 1', () => {
     cy.intercept(
-      'https://attains.epa.gov/attains-public/api/assessments?organizationId=DOEE&assessmentUnitIdentifier=DCANA00E_02&reportingCycle=2020',
+      'https://api.epa.gov/attains/assessments?organizationId=DOEE&assessmentUnitIdentifier=DCANA00E_02&reportingCycle=2020',
       {
         statusCode: 200,
         body: {
@@ -151,7 +151,7 @@ describe('Waterbody Report page', () => {
 
   it('Test assessments no data version 2', () => {
     cy.intercept(
-      'https://attains.epa.gov/attains-public/api/assessments?organizationId=DOEE&assessmentUnitIdentifier=DCANA00E_02&reportingCycle=2020',
+      'https://api.epa.gov/attains/assessments?organizationId=DOEE&assessmentUnitIdentifier=DCANA00E_02&reportingCycle=2020',
       {
         statusCode: 200,
         body: {
@@ -173,7 +173,7 @@ describe('Waterbody Report page', () => {
 
   it('Test assessments no data version 3', () => {
     cy.intercept(
-      'https://attains.epa.gov/attains-public/api/assessments?organizationId=DOEE&assessmentUnitIdentifier=DCANA00E_02&reportingCycle=2020',
+      'https://api.epa.gov/attains/assessments?organizationId=DOEE&assessmentUnitIdentifier=DCANA00E_02&reportingCycle=2020',
       {
         statusCode: 200,
         body: {
