@@ -90,6 +90,7 @@ type State = {
   waterbodyCountMismatch: boolean;
   upstreamWatershedResponse: { status: Status; data: __esri.FeatureSet | null };
   errorMessage: string;
+  noGeocodeResults: boolean;
   summaryLayerMaxRecordCount?: number;
   watershedsLayerMaxRecordCount?: number;
   FIPS: Object;
@@ -129,7 +130,6 @@ export class LocationSearchProvider extends Component<Props, State> {
     assessmentUnitIDs: [],
     watershed: initialWatershed(),
     address: '',
-    fishingInfo: { status: 'fetching', data: [] },
     statesData: { status: 'fetching', data: [] },
     wsioHealthIndexData: { status: 'fetching', data: [] },
     wildScenicRiversData: { status: 'fetching', data: [] },
@@ -158,6 +158,7 @@ export class LocationSearchProvider extends Component<Props, State> {
 
     upstreamWatershedResponse: { status: 'idle', data: null },
     errorMessage: '',
+    noGeocodeResults: false,
     summaryLayerMaxRecordCount: null,
     watershedsLayerMaxRecordCount: null,
 
@@ -198,6 +199,9 @@ export class LocationSearchProvider extends Component<Props, State> {
     setErrorMessage: (errorMessage) => {
       this.setState({ errorMessage });
     },
+    setNoGeocodeResults: (noGeocodeResults) => {
+      this.setState({ noGeocodeResults });
+    },
     setUpstreamExtent: (upstreamExtent) => {
       this.setState({ upstreamExtent });
     },
@@ -218,9 +222,6 @@ export class LocationSearchProvider extends Component<Props, State> {
     },
     setWatershed: (watershed) => {
       this.setState({ watershed });
-    },
-    setFishingInfo: (fishingInfo) => {
-      this.setState({ fishingInfo });
     },
     setStatesData: (statesData) => {
       this.setState({ statesData });

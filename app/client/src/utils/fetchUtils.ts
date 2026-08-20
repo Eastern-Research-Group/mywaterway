@@ -6,11 +6,12 @@ const defaultTimeout = 60000;
 export function fetchCheck(
   apiUrl: string,
   signal: AbortSignal | null = null,
+  headers: object = {},
   timeout: number = defaultTimeout,
   responseType = 'json',
 ) {
   const startTime = performance.now();
-  return timeoutPromise(timeout, fetch(apiUrl, { signal }))
+  return timeoutPromise(timeout, fetch(apiUrl, { headers, signal }))
     .then((response) => {
       logCallToGoogleAnalytics(apiUrl, response.status, startTime);
       return checkResponse(response, responseType);
@@ -29,6 +30,7 @@ export function fetchCheck(
 export function proxyFetch(
   apiUrl: string,
   signal: AbortSignal | null = null,
+  headers: object = {},
   timeout: number = defaultTimeout,
   responseType = 'json',
 ) {
@@ -37,7 +39,7 @@ export function proxyFetch(
   const proxyUrl = VITE_PROXY_URL || `${window.location.origin}/proxy`;
   const url = `${proxyUrl}?url=${apiUrl}`;
 
-  return fetchCheck(url, signal, timeout, responseType);
+  return fetchCheck(url, signal, {}, timeout, responseType);
 }
 
 export function fetchParseCsv(url: string, { worker = true } = {}) {
@@ -60,6 +62,7 @@ export function fetchPostParseCsv(url: string, data: any = {}, { worker = true }
       url,
       data,
       { 'Content-Type': 'application/json' },
+      null,
       defaultTimeout,
       'csv',
     )
@@ -80,6 +83,7 @@ export function fetchPost<T>(
   apiUrl: string,
   data: object,
   headers: object,
+  signal: AbortSignal | null = null,
   timeout: number = defaultTimeout,
   responseType = 'json',
 ): Promise<T> {
@@ -90,6 +94,7 @@ export function fetchPost<T>(
       method: 'POST',
       headers,
       body: JSON.stringify(data),
+      signal,
     }),
   )
     .then((response) => {

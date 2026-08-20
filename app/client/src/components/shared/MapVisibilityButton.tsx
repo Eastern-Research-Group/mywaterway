@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { css } from '@emotion/react';
+import IconEye from '~icons/fa7-regular/eye';
+import IconEyeSlash from '~icons/fa7-regular/eye-slash';
 // contexts
 import { useMapHighlightState } from 'contexts/MapHighlight';
 // styles
@@ -25,7 +27,6 @@ type Props = {
   children?: (mapShown: boolean) => void;
   text?: string;
   value?: boolean;
-  visible?: boolean;
 };
 
 function MapVisibilityButton({
@@ -33,12 +34,11 @@ function MapVisibilityButton({
   children,
   text = 'Map',
   value = false,
-  visible = true,
 }: Props) {
   const { selectedGraphic } = useMapHighlightState();
   const [mapShown, setMapShown] = useState(value);
 
-  const iconClassName = mapShown ? 'far fa-eye-slash' : 'far fa-eye';
+  const Icon = mapShown ? IconEyeSlash : IconEye;
 
   // show the map if the View on Map button is clicked
   // (i.e. when the selected graphic changes)
@@ -54,19 +54,17 @@ function MapVisibilityButton({
 
   return (
     <>
-      {visible && (
-        <div css={buttonContainerStyles} style={{ opacity: mapShown ? 0.6 : 1 }}>
-          <button
-            onClick={(ev) => {
-              setMapShown(!mapShown);
-              if (callback) callback(!mapShown);
-            }}
-          >
-            {mapShown ? `Hide ${text}` : `Show ${text}`}&nbsp;&nbsp;
-            <i className={iconClassName} aria-hidden="true" />
-          </button>
-        </div>
-      )}
+      <div css={buttonContainerStyles} style={{ opacity: mapShown ? 0.6 : 1 }}>
+        <button
+          onClick={(ev) => {
+            setMapShown(!mapShown);
+            if (callback) callback(!mapShown);
+          }}
+        >
+          {mapShown ? `Hide ${text}` : `Show ${text}`}&nbsp;&nbsp;
+          <Icon aria-hidden="true" />
+        </button>
+      </div>
 
       {children?.(mapShown)}
     </>

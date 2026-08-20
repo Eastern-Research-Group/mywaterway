@@ -44,6 +44,10 @@ export const geocodeError =
 export const noDataAvailableError =
   'Data is not available for this location. Please try a new search.';
 
+// no data available for selected location
+export const noGeocodeDataAvailableError =
+  'Data is not available for this location. If you were looking for one of the items below, click the corresponding item; otherwise, please try a new search.';
+
 // invalid search
 export const invalidSearchError = 'Invalid search. Please try a new search.';
 
@@ -172,10 +176,6 @@ export const waterbodyReportError = (type) =>
 // Attains Parameter Mapping Errors
 export const attainsParameterServiceError =
   'Parameter information is temporarily unavailable, please try again later.';
-
-// WatersGEO Fishing Advisory Service Error
-export const fishingAdvisoryError =
-  'Fishing Advisory information is not available at this time. Please try again later.';
 
 // Add Data Widget //
 export const webServiceErrorMessage = 'An error occurred in the web service';

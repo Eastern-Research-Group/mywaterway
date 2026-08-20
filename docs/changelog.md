@@ -1,6 +1,102 @@
 # Change Log
 
-## 2.13.0 (March 2025)
+## 2.18.0
+
+### Changed
+
+- Updated ATTAINS API calls to go through api.epa.gov with an API key.
+
+- Updated the Watershed Health Scores (RPS) legend to have more space between the color gradient box and the numeric labels.
+
+- Fixed issue of duplicate ATTAINS calls on the Waterbody Report page.
+
+- Fixed issue of duplicate API calls being issued on the State page.
+
+- Fixed issue of missing space between the tribe name and "at a glance" on the tribe pages.
+
+- Fixed issue with Cyan imagery not loading.
+
+### Chores
+
+- Updated dependencies.
+
+## 2.17.0
+
+### Changed
+
+- Updated ECHO service calls to not use the HUC12 value at all.
+
+- Updated the configFiles api endpoint to cache files in the server for better memory performance.
+
+- Removed the USGS parameter lookup cache as it wasn't being used.
+
+- Removed the fish advisory links from the community and state pages, since NLFA services are being taken down. 
+
+- Fixed issue with the extreme weather tab breaking after turning off the full screen map mode while on the extreme weather tab.
+
+### Chores
+
+- Updated dependencies.
+
+## 2.16.0
+
+### Changed
+
+- Updated USGS service calls to not use the HUC12 value at all.
+
+- Updated the tribe page to have a change to this watershed popup.
+
+- Updated the tribe search suggestions to link to the tribe page.
+
+- Fixed issue of searching for a tribe redirecting to the wrong location.
+
+- Fixed issue of icons not showing up by, switching icons over to Iconify from FontAwesome.
+
+## 2.15.0
+
+### Changed
+
+- Updated to the latest version of the USGS web services.
+
+- Updated to the latest version of FontAwesome.
+
+- Updated links to have underlines, per SiteImprove.
+
+- Updated the search to popup the suggestion list, if the Esri service is unable to find a location matching the user's search. 
+
+- Updated the scatter plot disclaimers on the Monitoring Report to explain quality control data.
+
+- Updated all disclaimers to be configurable.
+
+- Fixed a 301 redirect issue, due to the S3 buckets having the same folder name as the data page.
+
+- Fixed an error with selecting a monitoring station from the search suggestions menu.
+
+### Chores
+
+- Updated dependencies.
+
+## 2.14.0
+
+### Changed
+
+- Added the ability to add disclaimers to items on the data page.
+
+- Updated past water conditions section to use client side geospatial operations to get monitoring locations for the selected HUC12.
+
+- Removed unnecessary meta tags.
+
+- Fixed issue of print map widget failing to load images in the legend section.
+
+- Fixed issue of layers staying toggled on in the Save tab of the Add & Save Data widget even after changing pages.
+
+### Chores
+
+- Updated dependencies.
+
+- Updated automated testing logic to save a report of test results.
+
+## 2.13.0
 
 ### Changed
 
@@ -20,7 +116,7 @@
 
 - Updated dependencies.
 
-## 2.12.1 (December 2024)
+## 2.12.1
 
 ### Added
 
@@ -54,7 +150,7 @@
 
 - Updated dependencies.
 
-## 2.12.0 (October 2024)
+## 2.12.0
 
 ### Added
 
@@ -92,7 +188,7 @@
 
 - Switched from create react app to Vite.
 
-## 2.11.0 (September 2024)
+## 2.11.0
 
 ### Added
 
@@ -122,7 +218,7 @@
 
 - Updated ArcGIS JS API.
 
-## 2.10.0 (July 2024)
+## 2.10.0
 
 ### Added
 
@@ -168,7 +264,7 @@
 
 - Created a github action for building production.
 
-## 2.9.0 (February 2024)
+## 2.9.0
 
 ### Changed
 
@@ -192,7 +288,7 @@
 
 - Fixed issue of scrolling not being smooth for some large lists.
 
-## 2.8.0 (October 2023)
+## 2.8.0
 
 ### Added
 
@@ -224,7 +320,7 @@
 
 - Fixed issue of "Detailed Characteristics" modal closing on its own when more data is loaded.
 
-## 2.7.0 (September 2023)
+## 2.7.0
 
 ### Added
 
@@ -288,7 +384,7 @@
 
 - Fixed an issue of the loading spinner not being displayed on the State/Tribe page.
 
-## 2.6.1 (June 2023)
+## 2.6.1
 
 ### Changed
 
@@ -308,7 +404,7 @@
 
 - Fixed a bug where locations with a lot of waterbodies without GIS were not loading on the community page.
 
-## 2.6.0 (April 2023)
+## 2.6.0
 
 ### Added
 
@@ -350,13 +446,13 @@
 
 - Fixed an error in calculating the median statistic for a characteristic on the Monitoring Report page.
 
-## 2.5.0.1 (January 2023)
+## 2.5.0.1
 
 ### Changed
 
 - Fixed a bug where the attains page crashed because of a new Attains Parameter Group.
 
-## 2.5.0 (January 2023)
+## 2.5.0
 
 ### Added
 
@@ -374,7 +470,7 @@
 
 - Fixed a bug where the waterbody counts did not match up with the number of items in the list view for some locations.
 
-## 2.4.0 (November 2022)
+## 2.4.0
 
 ### Added
 
@@ -412,7 +508,7 @@
 
 - Fixed a bug where an infinite loading spinner is displayed for American Samoa, which has no GIS data.
 
-## 2.3.0 (September 2022)
+## 2.3.0
 
 ### Added
 
@@ -442,7 +538,7 @@
 
 - Fixed a bug on the state page where using the browser's back/forward buttons would change the URL but the data on the page would not change.
 
-## 2.2.0 (June 2022)
+## 2.2.0
 
 ### Added
 
@@ -494,7 +590,7 @@
 
 - Fixed the Tribal Areas layer, which was broken due to changes in the service.
 
-## 2.1.1 (March 2022)
+## 2.1.1
 
 ### Added
 
@@ -534,7 +630,7 @@
 
 - Fixed an infinite loading spinner bug that occurs when clicking an assessment that is outside of HUC boundaries.
 
-## 2.1.0 (January 2022)
+## 2.1.0
 
 ### Added
 
@@ -572,7 +668,7 @@
 
 - Updated accordions on the Community page to have counts listed in the headers.
 
-## 2.0.5 (May 2021)
+## 2.0.5
 
 ### Added
 
@@ -620,7 +716,7 @@
 
 - Fixed an issue with the legend not syncing correctly when navigating between the community home page and community details pages.
 
-## 2.0.4 (February 2021)
+## 2.0.4
 
 ### Added
 
@@ -664,7 +760,7 @@
 
 - Fixed an issue with counties showing up as "undefined" on the Drinking Water tab of the Community page.
 
-## 2.0.3 (November 2020)
+## 2.0.3
 
 ### Added
 
@@ -696,7 +792,7 @@
 
 - Fixed an issue where the Waterbody Report page would crash on some locations.
 
-## 2.0.2 (September 2020)
+## 2.0.2
 
 ### Added
 
@@ -714,7 +810,7 @@
 - Fixed an issue where the basemap would revert to the default basemap when switching between full screen and normal mode.
 - Fixed an issue where previous map data continued to be displayed after the user clicks around the application.
 
-## 2.0.1 (July 2020)
+## 2.0.1
 
 ### Added
 

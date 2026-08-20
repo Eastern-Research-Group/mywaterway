@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { css } from '@emotion/react';
 import { useNavigate } from 'react-router';
 import Graphic from '@arcgis/core/Graphic';
@@ -18,8 +18,8 @@ import { useConfigFilesState } from 'contexts/ConfigFiles';
 import { useLayers } from 'contexts/Layers';
 import { LocationSearchContext } from 'contexts/locationSearch';
 // helpers
-import { fetchCheck } from 'utils/fetchUtils';
 import {
+  useDynamicPopup,
   useSharedLayers,
   useMonitoringLocationsLayers,
   useWaterbodyHighlight,
@@ -27,8 +27,6 @@ import {
 import { browserIsCompatibleWithArcGIS } from 'utils/utils';
 import {
   createWaterbodySymbol,
-  getPopupTitle,
-  getPopupContent,
   getWaterbodyCondition,
 } from 'utils/mapFunctions';
 // errors
@@ -37,6 +35,9 @@ import {
   actionMapNoData,
   esriMapLoadingFailure,
 } from 'config/errorMessages';
+// types
+import type { ReactNode } from 'react';
+import type { Feature, FetchState } from 'types';
 
 const containerStyles = css`
   display: flex;
@@ -59,10 +60,10 @@ type Props = {
   layout: 'narrow' | 'wide';
   unitIds: Array<string>;
   onLoad?: Function;
-  includePhoto?: boolean;
+  photoLinks?: FetchState<Record<string, string | null>>;  // Data keyed by `${organizationId}-${assessmentUnitIdentifier}`
 };
 
-function ActionsMap({ layout, unitIds, onLoad, includePhoto }: Props) {
+function ActionsMap({ layout, unitIds, onLoad, photoLinks }: Props) {
   const navigate = useNavigate();
 
   const { homeWidget, mapView } = useContext(LocationSearchContext);
@@ -77,6 +78,8 @@ function ActionsMap({ layout, unitIds, onLoad, includePhoto }: Props) {
 
   const { surroundingMonitoringLocationsLayer } =
     useMonitoringLocationsLayers();
+
+  const { getTemplate, getTitle } = useDynamicPopup();
 
   // Initially sets up the layers
   const [layersInitialized, setLayersInitialized] = useState(false);
@@ -120,38 +123,10 @@ function ActionsMap({ layout, unitIds, onLoad, includePhoto }: Props) {
   // Queries the Gis service and plots the waterbodies on the map
   const [noMapData, setNoMapData] = useState(null);
 
-  const getPhotoLink = useCallback(
-    async (orgId, auId) => {
-      if (!auId || !orgId) return null;
-      const url =
-        configFiles.data.services.attains.serviceUrl +
-        `assessmentUnits?organizationId=${orgId}` +
-        `&assessmentUnitIdentifier=${auId}`;
-      const results = await fetchCheck(url);
-      if (!results.items?.length) return null;
-      const documents = results.items[0]?.assessmentUnits[0]?.documents;
-      const allowedTypes = [
-        'apng',
-        'bmp',
-        'gif',
-        'jpeg',
-        'png',
-        'svg+xml',
-        'tiff',
-        'x-tiff',
-        'x-windows-bmp',
-      ].map((imageType) => `image/${imageType}`);
-      const photo = documents?.find((document) =>
-        allowedTypes.includes(document.documentFileType),
-      );
-      return photo ? photo.documentURL : null;
-    },
-    [configFiles],
-  );
-
   // Plots the assessments. Also re-plots if the layout changes
   useEffect(() => {
     if (!unitIds || !actionsWaterbodies) return;
+    if (photoLinks && ['idle', 'fetching'].includes(photoLinks.status)) return; // wait to plot until photo links are fetched
     if (fetchStatus) return; // only do a fetch if there is no status
 
     function plotAssessments(unitIds: Array<string>) {
@@ -216,64 +191,46 @@ function ActionsMap({ layout, unitIds, onLoad, includePhoto }: Props) {
             });
           }
 
-          async function createGraphic(feature: Object, type: string) {
-            const symbol = getWaterbodySymbol(feature, type);
+          async function createGraphic(graphic: Graphic, type: string) {
+            const symbol = getWaterbodySymbol(graphic, type);
 
-            const auId = feature.attributes.assessmentunitidentifier;
-            const reportingCycle = feature.attributes.reportingcycle;
-            let content;
+            const auId = graphic.attributes.assessmentunitidentifier;
+            const reportingCycle = graphic.attributes.reportingcycle;
+            let extraContent: ReactNode;
 
             // add additional attributes
             if (unitIds[auId]) {
-              feature.attributes = {
-                ...feature.attributes,
+              graphic.attributes = {
+                ...graphic.attributes,
                 layerType: 'actions',
                 fieldName: 'hmw-extra-content',
               };
 
-              content = getPopupContent({
-                feature,
-                extraContent: unitIds[auId](reportingCycle, true),
-                navigate,
-              });
-            } else if (includePhoto) {
-              const photoLink = await getPhotoLink(
-                feature.attributes.organizationid,
-                feature.attributes.assessmentunitidentifier,
-              );
+              extraContent = unitIds[auId](reportingCycle, true);
+            } else if (photoLinks?.status === 'success') {
+              const key = `${graphic.attributes.organizationid}-${graphic.attributes.assessmentunitidentifier}`;
+              const photoLink = photoLinks.data[key];
 
-              const extraContent = photoLink && (
+              extraContent = photoLink && (
                 <div css={imageContainerStyles}>
                   <img
                     css={imageStyles}
                     src={photoLink}
-                    alt={feature.attributes.assessmentunitname}
+                    alt={graphic.attributes.assessmentunitname}
                   />
                 </div>
               );
-              content = getPopupContent({
-                configFiles: configFiles.data,
-                feature,
-                extraContent,
-                navigate,
-              });
-            } else {
-              // when no content is provided just display the normal community
-              // waterbody content
-              content = getPopupContent({
-                configFiles: configFiles.data,
-                feature,
-                navigate,
-              });
             }
-
+            // when no content is provided just display the normal community
+            // waterbody content
             return new Graphic({
-              geometry: feature.geometry,
+              geometry: graphic.geometry,
               symbol,
-              attributes: feature.attributes,
+              attributes: graphic.attributes,
               popupTemplate: {
-                title: getPopupTitle(feature.attributes),
-                content,
+                title: getTitle,
+                content: (feature: Feature) =>
+                  getTemplate(feature, extraContent),
               },
             });
           }
@@ -332,10 +289,9 @@ function ActionsMap({ layout, unitIds, onLoad, includePhoto }: Props) {
     actionsWaterbodies,
     configFiles,
     fetchStatus,
-    getPhotoLink,
     navigate,
     onLoad,
-    includePhoto,
+    photoLinks,
     unitIds,
   ]);
 

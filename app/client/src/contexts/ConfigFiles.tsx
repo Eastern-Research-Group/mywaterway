@@ -12,13 +12,53 @@ type Props = {
   children: ReactNode;
 };
 
+type TribeMapping = {
+  name: string;
+  attainsId: string;
+  wqxIds: string[];
+  biaTribeCode: string;
+  epaId: number;
+  state: string;
+  stateList: string[];
+  epaRegion: number;
+};
+
+type DataPageContentType = {
+  description: string;
+  disclaimerKey?: string;
+  extraContent?: string;
+  id: string;
+  includeExit?: boolean;
+  linkHref: string;
+  linkLabel: string;
+  shortName: string;
+  siteLocation: string;
+  title: string;
+};
+
 export type ConfigFiles = {
-  attainsTribeMapping: any;
+  attainsTribeMapping: TribeMapping[];
   characteristicGroupMappings: CharacteristicGroupMappings;
   cyanMetadata: number[];
-  dataPage: any;
+  dataPage: {
+    content: DataPageContentType[];
+    footer: string;
+    footerTitle: string;
+    intro: string;
+  };
+  disclaimers: {
+    [key: string]: {
+      content: string;
+      buttonLabel?: string;
+    };
+  };
   documentOrder: any;
-  educators: any;
+  educators: {
+    title: string;
+    content: string;
+    footer: string;
+    footerTitle: string;
+  };
   eqProfileColumns: Record<string, string[]>;
   extremeWeather: ExtremeWeatherConfig;
   glossary: {
@@ -35,14 +75,18 @@ export type ConfigFiles = {
   reportStatusMapping: any;
   services: ServicesData;
   stateNationalUses: any;
+  statePage: { fishAdvisory: string };
   surveyMapping: any;
   upperContent: {
-    [key: string]: { body: string; disclaimer?: string };
+    [key: string]: { body: string; disclaimerKey?: string };
   };
   useFields: AttainsUseField[];
+  usgsSiteTypes: {
+    [siteTypeCode: string]: string;
+  };
   usgsStaParameters: any;
   waterTypeOptions: any;
-  wqxTribeMapping: any;
+  wqxTribeMapping: TribeMapping[];
 };
 
 type State =

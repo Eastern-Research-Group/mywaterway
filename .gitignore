@@ -21,6 +21,7 @@ app/cypress/downloads/
 app/cypress/screenshots/
 app/cypress/videos/
 app/combined_coverage_reports
+app/combined_results_reports
 cypress.env.json
 
 
@@ -46,4 +47,4 @@ cypress.env.json
 /app/client/build
 
 # cached content
-/app/server/app/public/data/cache
+/app/server/app/public/content/cache

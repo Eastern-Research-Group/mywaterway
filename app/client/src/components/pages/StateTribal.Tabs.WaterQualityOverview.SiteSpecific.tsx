@@ -9,12 +9,9 @@ import 'highcharts/modules/exporting';
 import 'highcharts/modules/offline-exporting';
 // components
 import { AccordionList, AccordionItem } from 'components/shared/Accordion';
-import DynamicExitDisclaimer from 'components/shared/DynamicExitDisclaimer';
 import { GlossaryTerm } from 'components/shared/GlossaryPanel';
 import LoadingSpinner from 'components/shared/LoadingSpinner';
 import { DisclaimerModal } from 'components/shared/Modal';
-// styled components
-import { errorBoxStyles, infoBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
 import { useConfigFilesState } from 'contexts/ConfigFiles';
 import { StateTribalTabsContext } from 'contexts/StateTribalTabs';
@@ -25,7 +22,6 @@ import { fonts, colors } from 'styles/index';
 import { h3Styles } from 'styles/stateTribal';
 // errors
 import {
-  fishingAdvisoryError,
   status303dShortError,
 } from 'config/errorMessages';
 
@@ -52,8 +48,13 @@ const chartFooterStyles = css`
   padding-bottom: 0;
 
   svg {
-    margin: 0 -0.875rem;
     height: 0.6875rem;
+  }
+`;
+
+const fishAdvisoryStyles = css`
+  &, * {
+    font-family: "Source Sans Pro Web", "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
   }
 `;
 
@@ -70,21 +71,6 @@ const highchartsContainerStyles = css`
     margin-left: -1.4em;
     margin-right: -1.4em;
   }
-`;
-
-const fishingAdvisoryTextStyles = css`
-  ${h3Styles}
-  display: inline-block;
-`;
-
-const modifiedErrorBoxStyles = css`
-  ${errorBoxStyles}
-  margin-bottom: 1.5em;
-`;
-
-const modifiedInfoBoxStyles = css`
-  ${infoBoxStyles}
-  margin-bottom: 1.5em;
 `;
 
 // --- components ---
@@ -107,7 +93,6 @@ function SiteSpecific({
   waterTypeData,
   completeUseList,
   useSelected,
-  fishingAdvisoryData,
 }: Props) {
   const configFiles = useConfigFilesState();
   const { currentReportingCycle, organizationData } = useContext(
@@ -466,52 +451,20 @@ function SiteSpecific({
             }
           >
             <div css={accordionContentStyles}>
-              <DisclaimerModal>
-                <p>
-                  The impairments listed below do not necessarily affect the{' '}
-                  <strong>{useSelected}</strong> Use but are present in the
-                  water and may apply to other Uses.
-                </p>
-              </DisclaimerModal>
+              <DisclaimerModal disclaimerKey="stateTribal_overview_siteSpecific" />
               <ul>{parameters}</ul>
             </div>
           </AccordionItem>
         </AccordionList>
       )}
 
-      {topic === 'fishing' && fishingAdvisoryData.status === 'fetching' && (
-        <LoadingSpinner />
+      {topic === 'fishing' && (
+        <div 
+          data-testid="hmw-fish-advisory-section"
+          css={fishAdvisoryStyles}
+          dangerouslySetInnerHTML={{__html: configFiles.data.statePage.fishAdvisory}} 
+        />
       )}
-
-      {topic === 'fishing' && fishingAdvisoryData.status === 'failure' && (
-        <div css={modifiedErrorBoxStyles}>{fishingAdvisoryError}</div>
-      )}
-
-      {topic === 'fishing' &&
-        fishingAdvisoryData.status === 'success' &&
-        fishingAdvisoryData.data.length === 0 && (
-          <div css={modifiedInfoBoxStyles}>
-            Fishing Advisory information is not available for this location.
-          </div>
-        )}
-
-      {topic === 'fishing' &&
-        fishingAdvisoryData.status === 'success' &&
-        fishingAdvisoryData.data.length !== 0 && (
-          <>
-            <h3 css={fishingAdvisoryTextStyles}>
-              Fish Consumption Advisories for{' '}
-              <a
-                href={fishingAdvisoryData.data[0].url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {activeState.label}
-              </a>{' '}
-            </h3>
-            <DynamicExitDisclaimer url={fishingAdvisoryData.data[0].url} />
-          </>
-        )}
     </>
   );
 }

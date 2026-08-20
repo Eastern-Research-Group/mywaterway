@@ -122,10 +122,10 @@ function Community() {
 
   // reset searchText and data when navigating away from '/community'
   const {
-    errorMessage,
     resetData,
     setErrorMessage,
     setLastSearchText,
+    setNoGeocodeResults,
     setSearchText,
   } = useContext(LocationSearchContext);
 
@@ -135,6 +135,7 @@ function Community() {
     return function cleanup() {
       fetchedDataDispatch({ type: 'reset' });
       resetData();
+      setNoGeocodeResults(false);
       setErrorMessage('');
       setSearchText('');
       setLastSearchText('');
@@ -144,6 +145,7 @@ function Community() {
     resetData,
     setErrorMessage,
     setLastSearchText,
+    setNoGeocodeResults,
     setSearchText,
   ]);
 
@@ -203,53 +205,59 @@ function Community() {
       <TabLinks />
       <WindowSize>
         {({ width, height }) => {
-          const layout = width < 960 ? 'narrow' : 'wide';
+          if (width < 960) {
+            // narrow screens
+            return (
+              <div css={columnsStyles} data-content="community">
+                <div css={leftColumnStyles} data-column="left">
+                  {searchMarkup}
 
-          return (
-            <div css={columnsStyles} data-content="community">
-              <div css={leftColumnStyles} data-column="left">
-                {errorMessage && (
-                  <div css={modifiedErrorBoxStyles}>
-                    <p>{errorMessage}</p>
-                  </div>
-                )}
-
-                {layout === 'narrow' && searchMarkup}
-
-                {layout === 'narrow' && (
                   <div css={rightColumnStyles} data-column="right">
                     {/* Outlet is either CommunityIntro or CommunityTabs (upper tabs) */}
                     <Outlet />
                   </div>
-                )}
-                
-                <MapVisibilityButton value={layout === 'wide'} visible={layout === 'narrow'}>
-                  {(mapShown) => (
-                    <div
-                      css={layout === 'narrow' ? mapContainerStyles : css`display: inline;`}
-                      className={mapShown ? '' : 'sr-only'}
-                    >
-                      <LocationMap
-                        windowHeight={height}
-                        layout={layout}
-                      >
-                        {layout === 'wide' && searchMarkup}
-                      </LocationMap>
-                    </div>
-                  )}
-                </MapVisibilityButton>
 
-                {layout === 'narrow' && !atCommunityIntroRoute && lowerTab}
+                  {!atCommunityIntroRoute && (
+                    <>
+                      <MapVisibilityButton>
+                        {(mapShown) => (
+                          <div
+                            css={mapContainerStyles}
+                            style={{ display: mapShown ? 'block' : 'none' }}
+                          >
+                            <LocationMap
+                              windowHeight={height}
+                              layout="narrow"
+                            />
+                          </div>
+                        )}
+                      </MapVisibilityButton>
+
+                      {lowerTab}
+                    </>
+                  )}
+                </div>
               </div>
-              
-              {layout === 'wide' && (
+            );
+          } else {
+            // wide screens
+            return (
+              <div css={columnsStyles} data-content="community">
+                <div css={leftColumnStyles} data-column="left">
+                  <LocationMap windowHeight={height} layout="wide">
+                    {searchMarkup}
+                  </LocationMap>
+                </div>
+
                 <div css={rightColumnStyles} data-column="right">
+                  {/* Outlet is either CommunityIntro or CommunityTabs (upper tabs) */}
                   <Outlet />
+
                   {!atCommunityIntroRoute && lowerTab}
                 </div>
-              )}
-            </div>
-          );
+              </div>
+            );
+          }
         }}
       </WindowSize>
     </Page>

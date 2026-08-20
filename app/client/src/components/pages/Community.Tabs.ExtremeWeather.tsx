@@ -17,6 +17,7 @@ import Select, {
   SingleValueProps,
 } from 'react-select';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
+import IconInfoCircle from '~icons/fa7-solid/info-circle';
 // components
 import { HelpTooltip } from 'components/shared/HelpTooltip';
 import LoadingSpinner from 'components/shared/LoadingSpinner';
@@ -190,7 +191,7 @@ function ExtremeWeather() {
       Object.entries(visibleLayers).forEach(([layerId, visible]) => {
         const layer = !additionalTest
           ? null
-          : mapView.map.layers.find((l: __esri.Layer) => l.id === layerId);
+          : mapView?.map?.layers.find((l: __esri.Layer) => l.id === layerId);
 
         const row = config.items.find(
           (l) =>
@@ -250,7 +251,7 @@ function ExtremeWeather() {
 
   // ensures the correct county is shown on the map
   useEffect(() => {
-    if (!countySelected) return;
+    if (!countySelected || !mapView) return;
 
     let countyGraphic: __esri.Graphic | null = null;
     providersLayer?.graphics.forEach((graphic) => {
@@ -1302,7 +1303,7 @@ function SelectionTable({
                         title={`View additional information for ${item.label}`}
                         css={modifiedIconButtonStyles}
                       >
-                        <i aria-hidden className="fas fa-info-circle"></i>
+                        <IconInfoCircle aria-hidden />
                       </button>
                     }
                   >

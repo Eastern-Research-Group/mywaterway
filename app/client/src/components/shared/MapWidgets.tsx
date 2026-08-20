@@ -328,14 +328,6 @@ const resizeHandleStyles = css`
   position: absolute;
   right: 0;
   bottom: 0;
-
-  .fa-rotate-45 {
-    transform: rotate(45deg);
-  }
-
-  .fa-rotate-315 {
-    transform: rotate(315deg);
-  }
 `;
 
 /*
@@ -375,6 +367,7 @@ function MapWidgets({
     setAddSaveDataWidgetVisible,
     setSaveAsName,
     setSaveDescription,
+    setSaveLayersList,
     widgetLayers,
   } = useAddSaveDataWidgetState();
 
@@ -780,11 +773,13 @@ function MapWidgets({
     setAddSaveDataWidgetVisible(false);
     setSaveAsName('');
     setSaveDescription('');
+    setSaveLayersList(null);
   }, [
     setActiveTabIndex,
     setAddSaveDataWidgetVisible,
     setSaveAsName,
     setSaveDescription,
+    setSaveLayersList,
   ]);
 
   // Creates actions in the LayerList to monitor layer visibility
@@ -1788,6 +1783,9 @@ function ShowSelectedUpstreamWatershed({
     if (!view) return;
     const mapClickHandler = view.on('click', async (ev) => {
       if (!selectionActive) return;
+
+      ev.stopPropagation();
+
       let res;
       try {
         res = await handleHucSelection(ev);

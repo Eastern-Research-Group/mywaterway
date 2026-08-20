@@ -1,9 +1,14 @@
 /** @jsxImportSource @emotion/react */
 
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
 import Select from 'react-select';
 import { Tabs, TabList, Tab, TabPanel, TabPanels } from '@reach/tabs';
+import IconFileAlt from '~icons/fa7-solid/file-alt';
+import IconGlobe from '~icons/fa7-solid/globe-americas';
+import IconInfoCircle from '~icons/fa7-solid/info-circle';
+import IconNewspaper from '~icons/fa7-solid/newspaper';
+import IconTint from '~icons/fa7-solid/tint';
 // components
 import { tabsStyles, tabPanelStyles } from 'components/shared/ContentTabs';
 import { AccordionList, AccordionItem } from 'components/shared/Accordion';
@@ -148,8 +153,10 @@ const topicIconStyles = css`
 const headingStyles = css`
   ${h2Styles}
   margin-top: 0 !important;
+  display: flex;
+  align-items: center;
 
-  i {
+  svg {
     margin-right: 0.3125em;
     color: #2c72b5;
   }
@@ -281,11 +288,6 @@ function WaterQualityOverview() {
 
   const [surveyData, setSurveyData] = useState(null);
 
-  const [fishingAdvisoryData, setFishingAdvisoryData] = useState({
-    status: 'fetching',
-    data: [],
-  });
-
   // user selections
   const [userSelectedWaterType, setUserSelectedWaterType] = useState('');
   const [userSelectedUse, setUserSelectedUse] = useState('');
@@ -305,7 +307,16 @@ function WaterQualityOverview() {
       // use the excludeAsssessments flag to improve performance, since we only
       // need the documents and reportStatusCode
       const url = `${configFiles.data.services.attains.serviceUrl}assessments?organizationId=${orgID}&reportingCycle=${year}&excludeAssessments=Y`;
-      fetchCheck(url, getSignal())
+      const apiKey = configFiles.data.services.attains.apiKey;
+      fetchCheck(
+        url,
+        getSignal(),
+        apiKey
+          ? {
+              'X-Api-Key': apiKey,
+            }
+          : {},
+      )
         .then((res) => {
           const orgData = res.items[0];
           setOrganizationData({ status: 'success', data: orgData ?? {} });
@@ -323,7 +334,16 @@ function WaterQualityOverview() {
   const fetchIntroText = useCallback(
     (orgID) => {
       const url = `${configFiles.data.services.attains.serviceUrl}metrics?organizationId=${orgID}`;
-      fetchCheck(url, getSignal())
+      const apiKey = configFiles.data.services.attains.apiKey;
+      fetchCheck(
+        url,
+        getSignal(),
+        apiKey
+          ? {
+              'X-Api-Key': apiKey,
+            }
+          : {},
+      )
         .then((res) => {
           // check for missing data
           if (res.length === 0) {
@@ -344,7 +364,7 @@ function WaterQualityOverview() {
   );
 
   // summary service has the different years of data for recreation/eco/fish/water/other
-  const [usesStateSummaryCalled, setUsesStateSummaryCalled] = useState(false);
+  const usesStateSummaryCalled = useRef(false);
   useEffect(() => {
     if (
       !stateAndOrganization ||
@@ -353,7 +373,7 @@ function WaterQualityOverview() {
           activeState.value !== stateAndOrganization.state)) ||
       (activeState.source === 'Tribe' &&
         activeState.attainsId !== stateAndOrganization.organizationId) ||
-      usesStateSummaryCalled
+      usesStateSummaryCalled.current
     ) {
       return;
     }
@@ -377,8 +397,17 @@ function WaterQualityOverview() {
       `${configFiles.data.services.attains.serviceUrl}usesStateSummary` +
       `?organizationId=${stateAndOrganization.organizationId}` +
       reportingCycleParam;
+    const apiKey = configFiles.data.services.attains.apiKey;
 
-    fetchCheck(url, getSignal())
+    fetchCheck(
+      url,
+      getSignal(),
+      apiKey
+        ? {
+            'X-Api-Key': apiKey,
+          }
+        : {},
+    )
       .then((res) => {
         // for states like Alaska that have no reporting cycles
         if (
@@ -443,7 +472,7 @@ function WaterQualityOverview() {
         });
       });
 
-    setUsesStateSummaryCalled(true);
+    usesStateSummaryCalled.current = true;
   }, [
     activeState,
     configFiles,
@@ -454,56 +483,16 @@ function WaterQualityOverview() {
     setCurrentSummary,
     setUsesStateSummaryServiceError,
     stateAndOrganization,
-    usesStateSummaryCalled,
   ]);
-
-  // Get fishing advisory information
-  const fetchFishingAdvisoryData = useCallback(
-    (stateCode) => {
-      setFishingAdvisoryData({ status: 'fetching', data: [] });
-
-      const { queryStringFirstPart, queryStringSecondPart, serviceUrl } =
-        configFiles.data.services.fishingInformationService;
-      const url =
-        serviceUrl +
-        queryStringFirstPart +
-        `'${stateCode}'` +
-        queryStringSecondPart;
-
-      fetchCheck(url, getSignal())
-        .then((res) => {
-          if (!res?.features?.length) {
-            setFishingAdvisoryData({ status: 'success', data: [] });
-            return;
-          }
-
-          try {
-            const url = new URL(res.features[0].attributes.STATEURL);
-            const fishingInfo = [
-              {
-                url: url.href,
-              },
-            ];
-
-            setFishingAdvisoryData({ status: 'success', data: fishingInfo });
-          } catch (ex) {
-            setFishingAdvisoryData({ status: 'success', data: [] });
-          }
-        })
-        .catch((err) => {
-          if (isAbort(err)) return;
-          console.error(err);
-          setFishingAdvisoryData({ status: 'failure', data: [] });
-        });
-    },
-    [configFiles, getSignal, setFishingAdvisoryData],
-  );
 
   // Get the survey data and survey documents
   const fetchSurveyData = useCallback(
     (orgID) => {
       const url = `${configFiles.data.services.attains.serviceUrl}surveys?organizationId=${orgID}`;
-      fetchCheck(url, getSignal())
+      const apiKey = configFiles.data.services.attains.apiKey;
+      fetchCheck(url, getSignal(), apiKey ? {
+        'X-Api-Key': apiKey,
+      } : {})
         .then((res) => {
           setSurveyLoading(false);
 
@@ -546,7 +535,16 @@ function WaterQualityOverview() {
       }
 
       const url = `${configFiles.data.services.attains.serviceUrl}states/${stateID}/organizations`;
-      fetchCheck(url, getSignal())
+      const apiKey = configFiles.data.services.attains.apiKey;
+      fetchCheck(
+        url,
+        getSignal(),
+        apiKey
+          ? {
+              'X-Api-Key': apiKey,
+            }
+          : {},
+      )
         .then((res) => {
           let orgID;
 
@@ -602,12 +600,13 @@ function WaterQualityOverview() {
       setSurveyLoading(true);
       setSurveyDocuments([]);
       setYearSelected('');
+      setUsesStateSummaryServiceError(false);
       setServiceError(false);
       setSurveyServiceError(false);
       setNoDataError(false);
       setSurveyData(null);
       setOrganizationData({ status: 'fetching', data: {} });
-      setUsesStateSummaryCalled(false);
+      usesStateSummaryCalled.current = false;
       setCurrentReportingCycle({
         status: 'fetching',
         reportingCycle: '',
@@ -615,7 +614,6 @@ function WaterQualityOverview() {
 
       setCurrentState(activeState.value);
       fetchStateOrgId(activeState.value);
-      fetchFishingAdvisoryData(activeState.value);
 
       setCurrentSummary({
         status: 'fetching',
@@ -639,8 +637,8 @@ function WaterQualityOverview() {
     setCurrentSummary,
     setIntroText,
     setOrganizationData,
+    setUsesStateSummaryServiceError,
     fetchStateOrgId,
-    fetchFishingAdvisoryData,
   ]);
 
   // fetch the stories from the provided url. This also saves the next stories
@@ -885,7 +883,7 @@ function WaterQualityOverview() {
     tabs.push({
       id: 'cultural',
       title: 'Cultural',
-      icon: <i className="fas fa-globe-americas fa-align-center" />,
+      icon: <IconGlobe height="2.5em" width="2.5em" />,
     });
   }
 
@@ -925,8 +923,10 @@ function WaterQualityOverview() {
   return (
     <div css={containerStyles}>
       <h2 css={headingStyles}>
-        <i className="fas fa-tint" aria-hidden="true" />
-        <strong>{activeState.label}</strong> Water Quality
+        <IconTint aria-hidden="true" />
+        <span>
+          <strong>{activeState.label}</strong> Water Quality
+        </span>
       </h2>
 
       <h3 css={h3Styles}>Choose a Topic:</h3>
@@ -1049,7 +1049,6 @@ function WaterQualityOverview() {
                   useSelected={useSelected}
                   waterType={waterType}
                   waterTypeData={waterTypeData}
-                  fishingAdvisoryData={fishingAdvisoryData}
                 />
 
                 <div
@@ -1099,16 +1098,12 @@ function WaterQualityOverview() {
       <AccordionList css={activeState.source !== 'Tribe' && accordionsStyles}>
         <AccordionItem
           highlightContent={false}
-          icon={
-            <i
-              css={accordionIconStyles}
-              className="fas fa-file-alt"
-              aria-hidden="true"
-            />
-          }
+          icon={<IconFileAlt css={accordionIconStyles} aria-hidden="true" />}
           title={
             <h2 css={headingStyles}>
-              <strong>{activeState.label}</strong> Documents
+              <span>
+                <strong>{activeState.label}</strong> Documents
+              </span>
             </h2>
           }
         >
@@ -1129,15 +1124,13 @@ function WaterQualityOverview() {
           <AccordionItem
             highlightContent={false}
             icon={
-              <i
-                css={accordionIconStyles}
-                className="fas fa-newspaper"
-                aria-hidden="true"
-              />
+              <IconNewspaper css={accordionIconStyles} aria-hidden="true" />
             }
             title={
               <h2 css={headingStyles}>
-                <strong>{activeState.label}</strong> Water Stories
+                <span>
+                  <strong>{activeState.label}</strong> Water Stories
+                </span>
               </h2>
             }
           >
@@ -1151,16 +1144,12 @@ function WaterQualityOverview() {
         )}
         <AccordionItem
           highlightContent={false}
-          icon={
-            <i
-              css={accordionIconStyles}
-              className="fas fa-info-circle"
-              aria-hidden="true"
-            />
-          }
+          icon={<IconInfoCircle css={accordionIconStyles} aria-hidden="true" />}
           title={
             <h2 css={headingStyles}>
-              More Information for <strong>{activeState.label}</strong>
+              <span>
+                More Information for <strong>{activeState.label}</strong>
+              </span>
             </h2>
           }
         >

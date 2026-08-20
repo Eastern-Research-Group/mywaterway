@@ -16,6 +16,10 @@ import {
 } from 'react';
 import { useParams } from 'react-router';
 import Select from 'react-select';
+import IconArrowDown from '~icons/fa7-solid/arrow-down';
+import IconArrowUp from '~icons/fa7-solid/arrow-up';
+import IconBookOpen from '~icons/fa7-solid/book-open';
+import IconFilter from '~icons/fa7-solid/filter';
 // components
 import { AccordionList, AccordionItem } from 'components/shared/Accordion';
 import { BoxContent, FlexRow } from 'components/shared/BoxContent';
@@ -206,7 +210,13 @@ const containerStyles = css`
 `;
 
 const disclaimerModalStyles = css`
+  p {
+    margin-top: 0;
+  }
+
   li {
+    font-size: 0.875rem;
+    line-height: 1.375;
     padding-bottom: 0.5em;
   }
 
@@ -308,17 +318,16 @@ const legendContainerStyles = css`
   margin-top: 1em;
 `;
 
+const loadingIconStyles = css`
+  margin: 0 -0.375rem 0 -0.875rem;
+  height: 1rem;
+`;
+
 const locationHeadingStyles = css`
   ${boxHeadingStyles}
 
   & > small {
     display: block;
-  }
-
-  /* loading icon */
-  svg {
-    margin: 0 -0.375rem 0 -0.875rem;
-    height: 1rem;
   }
 `;
 
@@ -1219,7 +1228,7 @@ function CharacteristicChartSection({
             type="button"
             onClick={() => shiftDown(charcName)}
           >
-            <i aria-hidden className="fas fa-arrow-down" />
+            <IconArrowDown aria-hidden />
           </button>
           <button
             aria-label="Shift chart up"
@@ -1228,7 +1237,7 @@ function CharacteristicChartSection({
             type="button"
             onClick={() => shiftUp(charcName)}
           >
-            <i aria-hidden className="fas fa-arrow-up" />
+            <IconArrowUp aria-hidden />
           </button>
           <HelpTooltip label="Adjust the slider handles to filter the data displayed on the chart by the selected year range, and use the drop-down inputs to filter the data by the corresponding fields" />
         </span>
@@ -1677,38 +1686,14 @@ function ChartContainer({
         ) : (
           <div />
         )}
-        {lineVisible ? (
-          <DisclaimerModal>
-            <div css={disclaimerModalStyles}>
-              <p>
-                When multiple samples or measurements are available for the same
-                day for a single characteristic, the line shown is drawn through
-                the average of the results. Multiple samples or measurements for
-                a single characteristic may be available for the same day if:
-                <ul>
-                  <li>
-                    Multiple were taken over time that day (e.g. in the morning,
-                    afternoon, and at night).
-                  </li>
-                  <li>
-                    Multiple were taken at the same relative time but at varying
-                    depths (e.g. the surface, middle or bottom of a lake).
-                  </li>
-                  <li>
-                    Quality control samples or measurements were also taken.
-                  </li>
-                </ul>
-                Quality control data, such as blanks or replicates identified
-                via the <i>Activity Type Code</i>, are not included in this
-                chart but will still be available in the data download.
-                Therefore, the averaging is only performed across depth or time
-                within a single day, and for visualization purposes only.
-              </p>
-            </div>
-          </DisclaimerModal>
-        ) : (
-          <div />
-        )}
+        <DisclaimerModal
+          contentStyles={disclaimerModalStyles}
+          disclaimerKey={
+            lineVisible
+              ? 'monitoringReport_lineGraph'
+              : 'monitoringReport_scatterPlot'
+          }
+        />
       </div>
     </div>
   );
@@ -2039,11 +2024,7 @@ function DownloadSection({ charcs, charcsStatus, site, siteStatus }) {
           <div>
             <p>
               <a rel="noopener noreferrer" target="_blank" href={portalUrl}>
-                <i
-                  css={iconStyles}
-                  className="fas fa-filter"
-                  aria-hidden="true"
-                />
+                <IconFilter css={iconStyles} aria-hidden="true" />
                 Advanced Filtering
               </a>
               &nbsp;&nbsp;
@@ -2057,11 +2038,7 @@ function DownloadSection({ charcs, charcsStatus, site, siteStatus }) {
                 target="_blank"
                 href="https://www.waterqualitydata.us/portal_userguide/"
               >
-                <i
-                  css={iconStyles}
-                  className="fas fa-book-open"
-                  aria-hidden="true"
-                />
+                <IconBookOpen css={iconStyles} aria-hidden="true" />
                 Water Quality Portal User Guide
               </a>
               &nbsp;&nbsp;
@@ -2144,13 +2121,14 @@ function InformationSection({ siteId, site, siteStatus }) {
           <div css={locationRowStyles}>
             <strong>Location Name:</strong>
             <span>
-              {siteStatus === 'pending' && <LoadingSpinner />}
+              {siteStatus === 'pending' && <LoadingSpinner css={loadingIconStyles} />}
               {siteStatus === 'success' && site.locationName}
             </span>
           </div>
           <div css={locationRowStyles}>
             <strong>
-              <GlossaryTerm term="Monitoring Site ID">Site ID</GlossaryTerm>:{' '}
+              <GlossaryTerm term="Monitoring Site ID">Site ID</GlossaryTerm>
+              :{' '}
             </strong>
             <span>{siteId}</span>
           </div>

@@ -1,9 +1,12 @@
 /** @jsxImportSource @emotion/react */
 
 import { css } from '@emotion/react';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import Select from 'react-select';
+import IconDoubleAngleRight from '~icons/fa7-solid/angles-right';
+import IconChartLine from '~icons/fa7-solid/chart-line';
+import IconWater from '~icons/fa7-solid/water';
 // components
 import Page from 'components/shared/Page';
 import TabLinks from 'components/shared/TabLinks';
@@ -40,6 +43,7 @@ import {
   stateGeneralError,
   stateNoDataError,
   usesStateSummaryServiceInvalidResponse,
+  webServiceErrorMessage,
 } from 'config/errorMessages';
 
 const allSources = ['All', 'State', 'Tribe'];
@@ -68,6 +72,12 @@ const formStyles = css`
   margin-bottom: 1em;
 `;
 
+const headingStyles = css`
+  ${h2Styles}
+  display: flex;
+  align-items: center;
+`;
+
 const selectStyles = css`
   flex: 1;
   font-size: 0.9375em;
@@ -79,6 +89,10 @@ const buttonStyles = css`
   margin-bottom: 0;
   font-size: 0.9375em;
   padding: 0.375rem 0.75rem;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
 `;
 
 const modifiedErrorBoxStyles = css`
@@ -156,7 +170,6 @@ function StateTribal() {
     setActiveState,
     setErrorType,
     setIntroText,
-    setUsesStateSummaryServiceError,
     usesStateSummaryServiceError,
   } = useContext(StateTribalTabsContext);
 
@@ -184,15 +197,11 @@ function StateTribal() {
   }, [navigate, setErrorType]);
 
   // get tribes from the tribeMapping data
-  const [tribes, setTribes] = useState({ status: 'fetching', data: [] });
-  useEffect(() => {
-    if (organizations.status === 'failure') {
-      setTribes({ status: 'failure', data: [] });
-      return;
-    }
-    if (organizations.status !== 'success') {
-      return;
-    }
+  const tribes = useMemo(() => {
+    if (organizations.status === 'failure')
+      return { status: 'failure', data: [] };
+    if (organizations.status !== 'success')
+      return { status: 'fetching', data: [] };
 
     const tribeMapping = Object.values(
       [
@@ -216,8 +225,7 @@ function StateTribal() {
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
 
-    const tempTribes = [];
-    tribeMapping.forEach((tribe) => {
+    const data = tribeMapping.map((tribe) => {
       const { attainsId } = tribe;
       const tribeAttains = attainsId
         ? organizations.data.find(
@@ -227,27 +235,36 @@ function StateTribal() {
           )
         : null;
 
-      tempTribes.push({
+      return {
         ...tribe,
         attainsId: tribeAttains ? attainsId : null,
         value: tribe.attainsId ?? tribe.wqxIds[0],
         label: tribe.name,
-        source: 'Tribe',
-      });
+        source: 'Tribe' as const,
+      };
     });
 
-    setTribes({ status: 'success', data: tempTribes });
+    return { status: 'success', data };
   }, [configFiles, organizations]);
 
   // query attains for the list of states
   const [states, setStates] = useState({ status: 'fetching', data: [] });
-  const [statesInitialized, setStatesInitialized] = useState(false);
+  const statesInitialized = useRef(false);
   useEffect(() => {
-    if (statesInitialized) return;
+    if (statesInitialized.current) return;
 
-    setStatesInitialized(true);
+    statesInitialized.current = true;
 
-    fetchCheck(`${configFiles.data.services.attains.serviceUrl}states`)
+    const apiKey = configFiles.data.services.attains.apiKey;
+    fetchCheck(
+      `${configFiles.data.services.attains.serviceUrl}states`,
+      null,
+      apiKey
+        ? {
+            'X-Api-Key': apiKey,
+          }
+        : {},
+    )
       .then((res) => {
         setStates({
           status: 'success',
@@ -257,7 +274,7 @@ function StateTribal() {
         });
       })
       .catch((_err) => setStates({ status: 'failure', data: [] }));
-  }, [configFiles, statesInitialized]);
+  }, [configFiles]);
 
   // reset active state if on state intro page
   useEffect(() => {
@@ -274,13 +291,12 @@ function StateTribal() {
   // selectedState used for the HTML select menu, so we don't immediately
   // update activeState every time the user changes the selected state
   const [selectedSource, setSelectedSource] = useState('All');
-  const [selectOptions, setSelectOptions] = useState([]);
   const [selectedStateTribe, setSelectedStateTribe] = useState(
     activeState.value ? activeState : null,
   );
 
-  // updates the selectOptions based on the selectedSource
-  useEffect(() => {
+  // derives the selectOptions based on the selectedSource
+  const selectOptions = useMemo(() => {
     const options = [];
     if (selectedSource === 'All') {
       options.push({
@@ -294,17 +310,14 @@ function StateTribal() {
     }
     if (selectedSource === 'State') options.push(...states.data);
     if (selectedSource === 'Tribe') options.push(...tribes.data);
-
-    setSelectOptions(options);
+    return options;
   }, [selectedSource, states, tribes]);
 
   // update selectedState whenever activeState changes
   // (e.g. when a user navigates directly to '/state/DC/advanced-search')
   useEffect(() => {
-    setUsesStateSummaryServiceError(false);
-
     if (activeState.value) setSelectedStateTribe(activeState);
-  }, [activeState, setUsesStateSummaryServiceError]);
+  }, [activeState]);
 
   // get the state intro and metrics data
   const stateIntro = introText.status === 'success' ? introText.data : null;
@@ -386,7 +399,6 @@ function StateTribal() {
 
   const handleSubmit = (selection) => {
     if (!selection) return;
-    setActiveState(selection);
 
     if (selection.source === 'State') {
       navigate(`/state/${selection.value}/water-quality-overview`);
@@ -431,6 +443,12 @@ function StateTribal() {
               Invalid URL path. Please select a state, territory or tribe from
               the dropdown below.
             </p>
+          </div>
+        )}
+
+        {errorType === 'service-error' && (
+          <div css={modifiedErrorBoxStyles}>
+            <p>{webServiceErrorMessage}</p>
           </div>
         )}
 
@@ -568,138 +586,125 @@ function StateTribal() {
                 onClick={() => handleSubmit(selectedStateTribe)}
                 css={buttonStyles}
               >
-                <i className="fas fa-angle-double-right" aria-hidden="true" />{' '}
-                Go
+                <IconDoubleAngleRight aria-hidden="true" /> Go
               </button>
             </div>
           </>
         )}
 
-        {usesStateSummaryServiceError ? (
+        {usesStateSummaryServiceError && (
           <div css={modifiedErrorBoxStyles}>
             {usesStateSummaryServiceInvalidResponse(
               activeState.source,
               activeState.label,
             )}
           </div>
-        ) : (
-          <div>
-            {activeState.value !== '' && (
+        )}
+
+        {!usesStateSummaryServiceError && activeState.value !== '' && (
+          <>
+            {introText.status === 'fetching' && <LoadingSpinner />}
+            {introText.status === 'failure' && (
+              <div css={modifiedErrorBoxStyles}>
+                <p>{stateGeneralError(activeState.source)}</p>
+              </div>
+            )}
+            {introText.status === 'success' && (
               <>
-                {introText.status === 'fetching' && <LoadingSpinner />}
-                {introText.status === 'failure' && (
+                {!stateIntro ? (
                   <div css={modifiedErrorBoxStyles}>
-                    <p>{stateGeneralError(activeState.source)}</p>
+                    <p>{stateNoDataError(activeState.label)}</p>
                   </div>
-                )}
-                {introText.status === 'success' && (
+                ) : (
                   <>
-                    {!stateIntro ? (
-                      <div css={modifiedErrorBoxStyles}>
-                        <p>{stateNoDataError(activeState.label)}</p>
-                      </div>
-                    ) : (
+                    {stateIntro.organizationMetrics.length > 0 && (
                       <>
-                        {stateIntro.organizationMetrics.length > 0 && (
-                          <>
-                            <h2 css={h2Styles}>
-                              <i
-                                className="fas fa-chart-line"
-                                aria-hidden="true"
-                              />
-                              <strong>{activeState.label}</strong> by the
-                              Numbers
-                            </h2>
+                        <h2 css={headingStyles}>
+                          <IconChartLine aria-hidden="true" />
+                          <span>
+                            <strong>{activeState.label}</strong> by the
+                            Numbers
+                          </span>
+                        </h2>
 
-                            <div css={keyMetricsStyles}>
-                              {stateIntro.organizationMetrics.map((metric) => {
-                                if (!metric?.value || !metric.label) {
-                                  return null;
-                                }
+                        <div css={keyMetricsStyles}>
+                          {stateIntro.organizationMetrics.map((metric) => {
+                            if (!metric?.value || !metric.label) {
+                              return null;
+                            }
 
-                                let value = Number(metric.value);
-                                if (!value) {
-                                  // just in case the service has a non-numeric string in the future
-                                  value = metric.value;
-                                } else if (value <= 1) {
-                                  // numbers <=1 convert to percentages
-                                  value = (value * 100).toLocaleString() + '%';
-                                } else {
-                                  value = value.toLocaleString();
-                                }
+                            let value = Number(metric.value);
+                            if (!value) {
+                              // just in case the service has a non-numeric string in the future
+                              value = metric.value;
+                            } else if (value <= 1) {
+                              // numbers <=1 convert to percentages
+                              value = (value * 100).toLocaleString() + '%';
+                            } else {
+                              value = value.toLocaleString();
+                            }
 
-                                return (
-                                  <div
-                                    css={keyMetricStyles}
-                                    key={`${metric.label}-${metric.value}`}
-                                  >
-                                    <span css={keyMetricNumberStyles}>
-                                      {value}
-                                    </span>
-                                    <p css={keyMetricLabelStyles}>
-                                      {metric.label}
-                                      <br />
-                                      <em>{metric.unit}</em>
-                                    </p>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            <p css={byTheNumbersExplanationStyles}>
-                              Waters not assessed do not show up in summaries
-                              below.
-                            </p>
-                          </>
-                        )}
-
-                        {stateIntro.description && (
-                          <>
-                            <h2 css={h2Styles}>
-                              <i aria-hidden="true" className="fas fa-water" />
-                              About <strong>{activeState.label}</strong>
-                            </h2>
-                            <div css={modifiedIntroBoxStyles}>
-                              <p>
-                                <ShowLessMore
-                                  text={stateIntro.description}
-                                  charLimit={450}
-                                />
-                              </p>
-                            </div>
-                          </>
-                        )}
-
-                        <DisclaimerModal css={disclaimerStyles}>
-                          <p>
-                            The condition of a waterbody is dynamic and can
-                            change at any time, and the information in How’s My
-                            Waterway should only be used for general reference.
-                            If available, refer to local, state, or tribal
-                            real-time water quality reports.
-                          </p>
-                          <p>
-                            Furthermore, users of this application should not
-                            rely on information relating to environmental laws
-                            and regulations posted on this application.
-                            Application users are solely responsible for
-                            ensuring that they are in compliance with all
-                            relevant environmental laws and regulations. In
-                            addition, EPA cannot attest to the accuracy of data
-                            provided by organizations outside of the federal
-                            government.
-                          </p>
-                        </DisclaimerModal>
+                            return (
+                              <div
+                                css={keyMetricStyles}
+                                key={`${metric.label}-${metric.value}`}
+                              >
+                                <span css={keyMetricNumberStyles}>
+                                  {value}
+                                </span>
+                                <p css={keyMetricLabelStyles}>
+                                  {metric.label}
+                                  <br />
+                                  <em>{metric.unit}</em>
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <p css={byTheNumbersExplanationStyles}>
+                          Waters not assessed do not show up in summaries
+                          below.
+                        </p>
                       </>
                     )}
+
+                    {stateIntro.description && (
+                      <>
+                        <h2 css={headingStyles}>
+                          <IconWater aria-hidden="true" />
+                          <span>
+                            About <strong>{activeState.label}</strong>
+                          </span>
+                        </h2>
+                        <div css={modifiedIntroBoxStyles}>
+                          <p>
+                            <ShowLessMore
+                              text={stateIntro.description}
+                              charLimit={450}
+                            />
+                          </p>
+                        </div>
+                      </>
+                    )}
+
+                    <DisclaimerModal
+                      buttonStyles={disclaimerStyles}
+                      disclaimerKey="stateTribal"
+                    />
                   </>
                 )}
               </>
             )}
-
-            {/* Outlet is either StateIntro or StateTabs */}
-            <Outlet context={{ tribes, states }} />
-          </div>
+          </>
         )}
+
+        {/* Outlet is either StateIntro or StateTabs. Always rendered so its
+            effects run even when the service error overlay is shown — this
+            allows the error to be cleared when the user navigates to a new
+            state/tribe without needing to unmount/remount the Outlet. */}
+        <div css={usesStateSummaryServiceError ? { display: 'none' } : undefined}>
+          <Outlet context={{ tribes, states }} />
+        </div>
       </div>
     </Page>
   );

@@ -25,8 +25,8 @@
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
 import '@testing-library/cypress/add-commands';
-import { Options } from 'cypress-image-snapshot';
-import { addMatchImageSnapshotCommand } from 'cypress-image-snapshot/command';
+import type { CypressImageSnapshotOptions } from '@simonsmith/cypress-image-snapshot/types';
+import { addMatchImageSnapshotCommand } from '@simonsmith/cypress-image-snapshot/command';
 
 addMatchImageSnapshotCommand();
 
@@ -39,7 +39,10 @@ declare global {
        */
       isInsideViewport(): Chainable<Element>;
       login(): Chainable<Element>;
-      matchSnapshot(name?: string, options?: Options): Chainable<Element>;
+      matchSnapshot(
+        name?: string,
+        options?: CypressImageSnapshotOptions,
+      ): Chainable<Element>;
       mockGeolocation(
         shouldFail: boolean,
         latitude?: number,
@@ -124,12 +127,10 @@ Cypress.Commands.add(
     longitude: number = -77.0369,
   ) => {
     cy.window().then(($window) => {
-      cy.stub(
-        $window.navigator.geolocation,
-        'getCurrentPosition',
-        (resolve, reject) => {
-          if (shouldFail) return reject(Error('1')); // 1: rejected, 2: unable, 3: timeout
-          return resolve({ coords: { latitude, longitude } });
+      cy.stub($window.navigator.geolocation, 'getCurrentPosition').callsFake(
+        (successCallback, errorCallback) => {
+          if (shouldFail) return errorCallback({ code: 1 }); // 1: rejected, 2: unable, 3: timeout
+          return successCallback({ coords: { latitude, longitude } });
         },
       );
     });
@@ -186,7 +187,7 @@ Cypress.Commands.add(
   {
     prevSubject: 'element',
   },
-  (subject, name: string, options: Options) => {
+  (subject, name: string, options: CypressImageSnapshotOptions) => {
     cy.wrap(subject).matchImageSnapshot(name, {
       comparisonMethod: 'ssim',
       failureThresholdType: 'percent',
@@ -217,8 +218,10 @@ Cypress.Commands.add(
  * from the session storage into the cypress.env.json file.
  */
 Cypress.Commands.add('login', () => {
-  sessionStorage.setItem(
-    'esriJSAPIOAuth',
-    JSON.stringify({ '/': Cypress.env()['/'] }),
-  );
+  cy.env(['/']).then((envData) => {
+    sessionStorage.setItem(
+      'esriJSAPIOAuth',
+      JSON.stringify({ '/': envData['/'] }),
+    );
+  });
 });

@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { css } from '@emotion/react';
 import * as Dialog from '@radix-ui/react-dialog';
+import IconQuestionCircle from '~icons/fa7-solid/question-circle';
+import IconTimes from '~icons/fa7-solid/times';
+// contexts
+import { useConfigFilesState } from 'contexts/ConfigFiles';
 // types
 import type { ReactNode } from 'react';
 // styles
@@ -94,7 +98,7 @@ const contentStyles = (
   }
 `;
 
-const disclaimerButtonStyles = css`
+const disclaimerButtonStyles = (additionalStyles?: SerializedStyles) => css`
   background-color: ${colors.grayd};
   border: 0;
   border-radius: 3px;
@@ -114,6 +118,8 @@ const disclaimerButtonStyles = css`
     background-color: ${colors.grayc} !important;
     color: inherit !important;
   }
+
+  ${additionalStyles}
 `;
 
 const helpIconStyles = css`
@@ -144,8 +150,8 @@ type Props = {
   isLoading?: boolean;
   label: string;
   maxWidth?: string;
-  onConfirm?: Function;
-  onClose?: Function;
+  onConfirm?: () => void;
+  onClose?: () => void;
   triggerElm: ReactNode;
 };
 
@@ -181,7 +187,7 @@ export default function Modal({
               title={closeTitle ?? 'Close'}
               onClick={close}
             >
-              <i className="fas fa-times" aria-hidden="true" />
+              <IconTimes aria-hidden="true" />
             </button>
 
             {children}
@@ -234,16 +240,29 @@ export default function Modal({
 }
 
 type DisclaimerProps = {
-  children: ReactNode;
-  css?: SerializedStyles;
+  buttonStyles?: SerializedStyles;
+  contentStyles?: SerializedStyles;
+  disclaimerKey: string;
   infoIcon?: boolean;
 };
 
 export function DisclaimerModal({
-  children,
+  buttonStyles,
+  contentStyles,
+  disclaimerKey,
   infoIcon = false,
   ...props
 }: Readonly<DisclaimerProps>) {
+  const {
+    data: { disclaimers },
+  } = useConfigFilesState();
+  const disclaimer = disclaimers[disclaimerKey];
+
+  if (!disclaimer) {
+    console.warn(`Disclaimer with key "${disclaimerKey}" not found.`);
+    return null;
+  }
+
   return (
     <Modal
       closeTitle="Close disclaimer"
@@ -251,24 +270,23 @@ export function DisclaimerModal({
       triggerElm={
         infoIcon ? (
           <button aria-label="Disclaimer" css={iconButtonStyles}>
-            <i
-              aria-hidden
-              css={helpIconStyles}
-              className="fas fa-question-circle"
-            ></i>
+            <IconQuestionCircle aria-hidden css={helpIconStyles} />
           </button>
         ) : (
           <button
-            css={disclaimerButtonStyles}
+            css={disclaimerButtonStyles(buttonStyles)}
             // spread props so button’s styles (e.g. position) can be further set when used
             {...props}
           >
-            Disclaimer
+            {disclaimer.buttonLabel || 'Disclaimer'}
           </button>
         )
       }
     >
-      {children}
+      <div
+        css={contentStyles}
+        dangerouslySetInnerHTML={{ __html: disclaimer.content }}
+      />
     </Modal>
   );
 }

@@ -1,16 +1,23 @@
 /** @jsxImportSource @emotion/react */
 
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { Node } from 'react';
 import { css } from '@emotion/react';
 import StickyBox from 'react-sticky-box';
 import { useNavigate } from 'react-router';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import Field from '@arcgis/core/layers/support/Field';
-import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
 import Graphic from '@arcgis/core/Graphic';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import GroupLayer from '@arcgis/core/layers/GroupLayer';
+import * as intersectsOperator from '@arcgis/core/geometry/operators/intersectsOperator.js';
 import * as locator from '@arcgis/core/rest/locator';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import Point from '@arcgis/core/geometry/Point';
@@ -135,7 +142,6 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     setStatesData,
     setGrts,
     setGrtsStories,
-    setFishingInfo,
     setHucBoundaries,
     setAtHucBoundaries,
     mapView,
@@ -152,6 +158,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     setWaterbodyCountMismatch,
     resetData,
     setNoDataAvailable,
+    setNoGeocodeResults,
   } = useContext(LocationSearchContext);
 
   const {
@@ -175,7 +182,9 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
 
   useCyanWaterbodiesLayers();
   useDischargersLayers();
-  useMonitoringLocationsLayers({ filter: (hucBoundaries?.geometry as __esri.Polygon) ?? null });
+  useMonitoringLocationsLayers({
+    filter: (hucBoundaries?.geometry as __esri.Polygon) ?? null,
+  });
   useStreamgageLayers();
 
   function matchStateCodeToAssessment(
@@ -406,8 +415,19 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
           const url =
             `${configFiles.data.services.attains.serviceUrl}` +
             `assessments?organizationId=${orgId}&reportingCycle=${reportingCycle}&assessmentUnitIdentifier=${chunk}`;
+          const apiKey = configFiles.data.services.attains.apiKey;
 
-          requests.push(fetchCheck(url));
+          requests.push(
+            fetchCheck(
+              url,
+              null,
+              apiKey
+                ? {
+                    'X-Api-Key': apiKey,
+                  }
+                : {},
+            ),
+          );
         });
       });
 
@@ -494,8 +514,11 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
         setOrphanFeatures({ features: [], status: 'fetching' });
 
         // fetch the ATTAINS Domains service Parameter Names so we can populate the Waterbody Parameters later on
+        const apiKey = configFiles.data.services.attains.apiKey;
         fetchCheck(
           `${configFiles.data.services.attains.serviceUrl}domains?domainName=ParameterName`,
+          null,
+          apiKey ? { 'X-Api-Key': apiKey } : {},
         )
           .then((res) => {
             if (!res || res.length === 0) {
@@ -514,8 +537,19 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
               const url =
                 `${configFiles.data.services.attains.serviceUrl}` +
                 `assessmentUnits?assessmentUnitIdentifier=${chunk}`;
+              const apiKey = configFiles.data.services.attains.apiKey;
 
-              requests.push(fetchCheck(url));
+              requests.push(
+                fetchCheck(
+                  url,
+                  null,
+                  apiKey
+                    ? {
+                        'X-Api-Key': configFiles.data.services.attains.apiKey,
+                      }
+                    : {},
+                ),
+              );
             });
 
             Promise.all(requests)
@@ -735,7 +769,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
           const features =
             geometryType === 'point'
               ? res.features
-              : await cropGeometryToHuc(
+              : cropGeometryToHuc(
                   res.features,
                   boundaries.features[0].geometry,
                 );
@@ -778,6 +812,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     [
       cropGeometryToHuc,
       handleMapServiceError,
+      popupTemplate,
       setLayer,
       setResetHandler,
       updateErroredLayers,
@@ -888,9 +923,11 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
   const queryAttainsPlans = useCallback(
     (huc12Param) => {
       // get the plans for the selected huc
+      const apiKey = configFiles.data.services.attains.apiKey;
       fetchCheck(
         `${configFiles.data.services.attains.serviceUrl}plans?huc=${huc12Param}&summarize=Y`,
         null,
+        apiKey ? { 'X-Api-Key': apiKey } : {},
         120000,
       )
         .then((res) => {
@@ -915,49 +952,6 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
       setMapLoading(false);
     }
   }, [mapServiceFailure]);
-
-  const getFishingLinkData = useCallback(
-    (states) => {
-      setFishingInfo({ status: 'fetching', data: [] });
-
-      // Turn the returned string "VA,MA,AL" into an array [VA, MA, AL]
-      const statesList = states.split(',');
-
-      // Map the array to a format for querying and join it as a string 'VA','MA','AL'
-      // Service returns lowercase state codes for some locations so .toUpperCase() them
-      const stateQueryString = statesList
-        .map((stateCode) => `'${stateCode.toUpperCase()}'`)
-        .join();
-
-      const { queryStringFirstPart, queryStringSecondPart, serviceUrl } =
-        configFiles.data.services.fishingInformationService;
-      const url =
-        serviceUrl +
-        queryStringFirstPart +
-        stateQueryString +
-        queryStringSecondPart;
-
-      fetchCheck(url)
-        .then((res) => {
-          if (!res?.features || res.features.length <= 0) {
-            setFishingInfo({ status: 'success', data: [] });
-            return;
-          }
-
-          const fishingInfo = res.features.map((feature) => ({
-            url: feature.attributes.STATEURL,
-            stateCode: feature.attributes.STATE,
-          }));
-
-          setFishingInfo({ status: 'success', data: fishingInfo });
-        })
-        .catch((err) => {
-          console.error(err);
-          setFishingInfo({ status: 'failure', data: [] });
-        });
-    },
-    [configFiles, setFishingInfo],
-  );
 
   const getWsioHealthIndexData = useCallback(
     (huc12Param) => {
@@ -1173,9 +1167,6 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
       // boundaries data, also has attributes for watershed
       setWatershed(boundaries.features[0].attributes);
 
-      // pass all of the states that the HUC12 is in
-      getFishingLinkData(boundaries.features[0].attributes.states);
-
       // get wsio health index data for the current huc
       getWsioHealthIndexData(huc12Param);
 
@@ -1185,12 +1176,18 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
       // get Protected Areas data for current huc boundaries
       getProtectedAreas(boundaries);
 
+      const attainsApiKey = configFiles.data.services.attains.apiKey;
+
       // call states service for converting statecodes to state names
       // don't re-fetch the states service if it's already populated, it doesn't vary by location
       if (statesData.status !== 'success') {
         setStatesData({ status: 'fetching', data: [] });
 
-        fetchCheck(`${configFiles.data.services.attains.serviceUrl}states`)
+        fetchCheck(
+          `${configFiles.data.services.attains.serviceUrl}states`,
+          null,
+          attainsApiKey ? { 'X-Api-Key': attainsApiKey } : {},
+        )
           .then((res) => {
             setStatesData({ status: 'success', data: res.data });
           })
@@ -1203,6 +1200,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
       fetchCheck(
         `${configFiles.data.services.attains.serviceUrl}huc12summary?huc=${huc12Param}`,
         getSignal(),
+        attainsApiKey ? { 'X-Api-Key': attainsApiKey } : {},
       ).then(
         (res) => handleMapServices(res, boundaries),
         handleMapServiceError,
@@ -1211,7 +1209,6 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     [
       boundariesLayer,
       configFiles,
-      getFishingLinkData,
       getProtectedAreas,
       getSignal,
       getTemplate,
@@ -1358,7 +1355,8 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
               // check if location intersects
               let visible = false;
               if (
-                geometryEngine.intersects(location, feature.geometry) &&
+                feature.geometry &&
+                intersectsOperator.execute(location, feature.geometry) &&
                 feature.attributes
               ) {
                 const stateCode = feature.attributes.STATE_FIPS;
@@ -1468,6 +1466,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
           if (candidates.length === 0 || !location?.attributes) {
             const newAddress = coordinatesPart ? searchPart : searchText;
             setAddress(newAddress); // preserve the user's search so it is displayed
+            setNoGeocodeResults(true);
             handleNoDataAvailable(noDataAvailableError);
             return;
           }
@@ -1579,6 +1578,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
       setCountyBoundaries,
       setDrinkingWater,
       setFIPS,
+      setNoGeocodeResults,
       handleNoDataAvailable,
       providersLayer,
     ],
@@ -1640,6 +1640,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     resetData();
     resetLayers();
     setMapLoading(true);
+    setNoGeocodeResults(false);
     setHucResponse(null);
     setErrorMessage('');
     setLastSearchText(searchText);
@@ -1654,6 +1655,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
     setLastSearchText,
     queryGeocodeServer,
     setErrorMessage,
+    setNoGeocodeResults,
   ]);
 
   // reset map when searchText is cleared (when navigating away from '/community')
@@ -1807,9 +1809,21 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
 
   // calculate height of div holding searchText
   const [searchTextHeight, setSearchTextHeight] = useState(0);
-  const measuredRef = useCallback((node) => {
-    if (!node) return;
-    setSearchTextHeight(node.getBoundingClientRect().height);
+  const searchTextRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!searchTextRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const footer = entries.pop();
+      if (footer) setSearchTextHeight(footer.contentRect.height);
+    });
+
+    resizeObserver.observe(searchTextRef.current);
+
+    return function cleaup() {
+      resizeObserver.disconnect();
+    };
   }, []);
 
   // Used for shutting off the loading spinner after the waterbodyLayer is
@@ -1837,7 +1851,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
       offsetBottom={layout === 'wide' ? mapPadding : 0}
     >
       {/* for wide screens, LocationMap's children is searchText */}
-      <div ref={measuredRef}>{children}</div>
+      <div ref={searchTextRef}>{children}</div>
 
       <div
         css={containerStyles}

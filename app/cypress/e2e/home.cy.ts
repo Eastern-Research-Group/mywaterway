@@ -67,6 +67,53 @@ describe('Homepage search', () => {
     cy.findByText('Go').click();
     cy.findByText('Invalid search. Please try a new search.').should('exist');
   });
+
+  it('Searching for a monitoring location correctly routes to the Monitoring Report page', () => {
+    const siteId = 'HBMI_WQX-0.5CBR';
+
+    cy.window().then((win) => {
+      cy.stub(win, 'open').as('windowOpen');
+    });
+
+    cy.findByPlaceholderText('Search by address', { exact: false }).type(siteId);
+    cy.findByRole('menuitem', { name: (name) => name.includes(siteId) }).click();
+
+    cy.get('@windowOpen').should('have.been.called');
+    cy.get('@windowOpen').should('have.been.calledWithMatch', /\/monitoring-report/);
+  });
+
+  it('Searching for a waterbody correctly routes to the Waterbody Report page', () => {
+    const waterbodyId = 'DCAKL00L_00';
+
+    cy.window().then((win) => {
+      cy.stub(win, 'open').as('windowOpen');
+    });
+
+    cy.location('href').then((beforeUrl) => {
+      cy.findByPlaceholderText('Search by address', { exact: false }).type(waterbodyId);
+      cy.findByRole('menuitem', { name: (name) => name.includes(waterbodyId) }).click();
+      cy.location('href').should((afterUrl) => {
+        expect(afterUrl).to.equal(beforeUrl);
+      });
+    });
+
+    cy.get('@windowOpen').should('have.been.called');
+    cy.get('@windowOpen').should('have.been.calledWithMatch', /\/waterbody-report/);
+  });
+
+  it('Searching for a tribal location correctly routes to the Tribal page', () => {
+    const tribeName = 'Red Lake Band of Chippewa Indians, Minnesota';
+
+    cy.window().then((win) => {
+      cy.stub(win, 'open').as('windowOpen');
+    });
+
+    cy.findByPlaceholderText('Search by address', { exact: false }).type(tribeName);
+    cy.findByRole('menuitem', { name: (name) => name.includes(tribeName) }).click();
+
+    cy.get('@windowOpen').should('have.been.called');
+    cy.get('@windowOpen').should('have.been.calledWithMatch', /\/tribe\/100000237/);
+  });
 });
 
 describe('Homepage disclaimer and glossary', () => {
