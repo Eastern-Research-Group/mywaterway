@@ -5,7 +5,6 @@ import '@arcgis/map-components/components/arcgis-expand';
 import '@arcgis/map-components/components/arcgis-home';
 import '@arcgis/map-components/components/arcgis-layer-list';
 import '@arcgis/map-components/components/arcgis-legend';
-import '@arcgis/map-components/components/arcgis-placement';
 import '@arcgis/map-components/components/arcgis-scale-bar';
 import '@arcgis/map-components/components/arcgis-zoom';
 import Polygon from '@arcgis/core/geometry/Polygon';
@@ -18,7 +17,7 @@ import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 import Viewpoint from '@arcgis/core/Viewpoint';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
 import * as webMercatorUtils from '@arcgis/core/geometry/support/webMercatorUtils';
-import { CalciteIcon } from '@esri/calcite-components-react';
+import '@esri/calcite-components/components/calcite-icon';
 import { css } from '@emotion/react';
 import React, {
   Fragment,
@@ -76,6 +75,7 @@ import type {
 } from 'pdf-lib';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type {
+  MapSlot,
   RndDraggableState,
   ServicesData,
   WatershedAttributes,
@@ -709,13 +709,7 @@ function MapWidgets({
       basemapHandle.remove();
       zoomHandle.remove();
     };
-  }, [
-    additionalLegendInfo,
-    basemap,
-    setBasemap,
-    view,
-    displayEsriLegend
-  ]);
+  }, [additionalLegendInfo, basemap, setBasemap, view, displayEsriLegend]);
 
   // watch for location changes and disable/enable the upstream widget accordingly
   // widget should only be displayed on Tribal page or valid Community page location
@@ -843,132 +837,127 @@ function MapWidgets({
 
   return (
     <Fragment>
-      <arcgis-placement position="top-left">
-        <arcgis-expand
-          autoCollapse={true}
-          closeOnEsc={true}
-          collapseTooltip="Close Legend"
-          expanded={false}
-          expandIcon="legend"
-          expandTooltip="Open Legend"
-          mode="floating"
-          style={{ marginBottom: '10px' }}
-        >
-          <arcgis-placement>
-            <LegendWidget
-              legendRoot={legendRoot}
-              setDisplayEsriLegend={setDisplayEsriLegend}
-            />
-          </arcgis-placement>
-        </arcgis-expand>
-
-        <arcgis-home ref={homeWidgetRef} />
-        <arcgis-zoom />
-      </arcgis-placement>
-
-      <arcgis-placement position="top-right">
-        <arcgis-expand
-          autoCollapse={true}
-          closeOnEsc={true}
-          collapseTooltip="Close Basemaps and Layers"
-          expanded={false}
-          expandIcon="layers"
-          expandTooltip="Open Basemaps and Layers"
-          mode="floating"
-          style={{ marginBottom: '10px' }}
-        >
-          <arcgis-placement>
-            <div className="hmw-map-toggle">
-              <h2>Basemaps:</h2>
-              <arcgis-basemap-gallery source={basemapSource} />
-              <hr />
-              <h2>Layers:</h2>
-              <arcgis-layer-list
-                data-testid="hmw-map-layers"
-                listItemCreatedFunction={defineActions}
-              />
-            </div>
-          </arcgis-placement>
-        </arcgis-expand>
-
-        <SurroundingsWidget />
-
-        <ShowAddSaveDataWidget
-          addSaveDataWidgetVisible={addSaveDataWidgetVisible}
-          setAddSaveDataWidgetVisible={setAddSaveDataWidgetVisible}
+      <arcgis-expand
+        autoCollapse={true}
+        closeOnEscDisabled={false}
+        collapseTooltip="Close Legend"
+        expanded={false}
+        expandIcon="legend"
+        expandTooltip="Open Legend"
+        mode="floating"
+        slot="top-left"
+        style={{ marginBottom: '10px' }}
+      >
+        <LegendWidget
+          legendRoot={legendRoot}
+          setDisplayEsriLegend={setDisplayEsriLegend}
         />
+      </arcgis-expand>
 
-        <arcgis-expand
-          autoCollapse={true}
-          closeOnEsc={true}
-          collapseTooltip="Close Printable Map Widget"
-          expanded={false}
-          expandIcon="print"
-          expandTooltip="Open Printable Map Widget"
-          mode="floating"
-          style={{ margin: '10px 0' }}
-        >
-          <arcgis-placement>
-            <DownloadWidget services={services} view={view} />
-          </arcgis-placement>
-        </arcgis-expand>
+      <arcgis-home ref={homeWidgetRef} slot="top-left" />
+      <arcgis-zoom slot="top-left" />
 
-        {pathname.includes('/community') && (
-          <ShowCurrentUpstreamWatershed
-            abortSignal={getSignal()}
-            getCurrentExtent={getCurrentExtent}
-            getHuc12={getHuc12}
-            getTemplate={getTemplate}
-            getUpstreamExtent={getUpstreamExtent}
-            getUpstreamWidgetDisabled={getUpstreamWidgetDisabled}
-            getWatershed={getWatershed}
-            services={services}
-            setErrorMessage={setErrorMessage}
-            setUpstreamExtent={setUpstreamExtent}
-            setUpstreamLayerErrored={setUpstreamLayerErrored}
-            setUpstreamWatershedResponse={setUpstreamWatershedResponse}
-            setUpstreamWidgetDisabled={setUpstreamWidgetDisabled}
-            updateVisibleLayers={updateVisibleLayers}
-            upstreamLayer={upstreamLayer}
-            upstreamLayerErrored={upstreamLayerErrored}
-            view={view}
+      <arcgis-expand
+        autoCollapse={true}
+        closeOnEscDisabled={false}
+        collapseTooltip="Close Basemaps and Layers"
+        expanded={false}
+        expandIcon="layers"
+        expandTooltip="Open Basemaps and Layers"
+        mode="floating"
+        slot="top-right"
+        style={{ marginBottom: '10px' }}
+      >
+        <div className="hmw-map-toggle">
+          <h2>Basemaps:</h2>
+          <arcgis-basemap-gallery source={basemapSource} />
+          <hr />
+          <h2>Layers:</h2>
+          <arcgis-layer-list
+            data-testid="hmw-map-layers"
+            listItemCreatedFunction={defineActions}
           />
-        )}
-        {pathname.includes('/tribe') && (
-          <ShowSelectedUpstreamWatershed
-            abortSignal={getSignal()}
-            getCurrentExtent={getCurrentExtent}
-            getHuc12={getHuc12}
-            getTemplate={getTemplate}
-            getUpstreamExtent={getUpstreamExtent}
-            getUpstreamWidgetDisabled={getUpstreamWidgetDisabled}
-            getWatershed={getWatershed}
-            map={map}
-            mapRef={mapRef}
-            services={services}
-            setErrorMessage={setErrorMessage}
-            setUpstreamExtent={setUpstreamExtent}
-            setUpstreamLayerErrored={setUpstreamLayerErrored}
-            setUpstreamWatershedResponse={setUpstreamWatershedResponse}
-            setUpstreamWidgetDisabled={setUpstreamWidgetDisabled}
-            setCurrentExtent={setCurrentExtent}
-            updateVisibleLayers={updateVisibleLayers}
-            upstreamLayer={upstreamLayer}
-            upstreamLayerErrored={upstreamLayerErrored}
-            view={view}
-          />
-        )}
-      </arcgis-placement>
+        </div>
+      </arcgis-expand>
 
-      <arcgis-scale-bar position="bottom-left" />
+      <SurroundingsWidget slot="top-right" />
 
-      <arcgis-placement position="bottom-right">
-        <ExpandCollapse
-          fullscreenActive={fullscreenActive}
-          setFullscreenActive={setFullscreenActive}
-          mapViewSetter={setMapView}
+      <ShowAddSaveDataWidget
+        addSaveDataWidgetVisible={addSaveDataWidgetVisible}
+        setAddSaveDataWidgetVisible={setAddSaveDataWidgetVisible}
+        slot="top-right"
+      />
+
+      <arcgis-expand
+        autoCollapse={true}
+        closeOnEscDisabled={false}
+        collapseTooltip="Close Printable Map Widget"
+        expanded={false}
+        expandIcon="print"
+        expandTooltip="Open Printable Map Widget"
+        mode="floating"
+        slot="top-right"
+        style={{ marginBottom: '10px 0' }}
+      >
+        <DownloadWidget services={services} view={view} />
+      </arcgis-expand>
+
+      {pathname.includes('/community') && (
+        <ShowCurrentUpstreamWatershed
+          abortSignal={getSignal()}
+          getCurrentExtent={getCurrentExtent}
+          getHuc12={getHuc12}
+          getTemplate={getTemplate}
+          getUpstreamExtent={getUpstreamExtent}
+          getUpstreamWidgetDisabled={getUpstreamWidgetDisabled}
+          getWatershed={getWatershed}
+          services={services}
+          setErrorMessage={setErrorMessage}
+          setUpstreamExtent={setUpstreamExtent}
+          setUpstreamLayerErrored={setUpstreamLayerErrored}
+          setUpstreamWatershedResponse={setUpstreamWatershedResponse}
+          setUpstreamWidgetDisabled={setUpstreamWidgetDisabled}
+          slot="top-right"
+          updateVisibleLayers={updateVisibleLayers}
+          upstreamLayer={upstreamLayer}
+          upstreamLayerErrored={upstreamLayerErrored}
+          view={view}
         />
-      </arcgis-placement>
+      )}
+      {pathname.includes('/tribe') && (
+        <ShowSelectedUpstreamWatershed
+          abortSignal={getSignal()}
+          getCurrentExtent={getCurrentExtent}
+          getHuc12={getHuc12}
+          getTemplate={getTemplate}
+          getUpstreamExtent={getUpstreamExtent}
+          getUpstreamWidgetDisabled={getUpstreamWidgetDisabled}
+          getWatershed={getWatershed}
+          map={map}
+          mapRef={mapRef}
+          services={services}
+          setErrorMessage={setErrorMessage}
+          setUpstreamExtent={setUpstreamExtent}
+          setUpstreamLayerErrored={setUpstreamLayerErrored}
+          setUpstreamWatershedResponse={setUpstreamWatershedResponse}
+          setUpstreamWidgetDisabled={setUpstreamWidgetDisabled}
+          setCurrentExtent={setCurrentExtent}
+          slot="top-right"
+          updateVisibleLayers={updateVisibleLayers}
+          upstreamLayer={upstreamLayer}
+          upstreamLayerErrored={upstreamLayerErrored}
+          view={view}
+        />
+      )}
+
+      <arcgis-scale-bar slot="bottom-left" />
+
+      <ExpandCollapse
+        fullscreenActive={fullscreenActive}
+        setFullscreenActive={setFullscreenActive}
+        mapViewSetter={setMapView}
+        slot="bottom-right"
+      />
 
       <div
         style={{
@@ -1128,9 +1117,11 @@ function LegendWidget({
 function ShowAddSaveDataWidget({
   addSaveDataWidgetVisible,
   setAddSaveDataWidgetVisible,
+  slot,
 }: Readonly<{
   addSaveDataWidgetVisible: boolean;
   setAddSaveDataWidgetVisible: Dispatch<SetStateAction<boolean>>;
+  slot: MapSlot;
 }>) {
   const [hover, setHover] = useState(false);
 
@@ -1168,9 +1159,10 @@ function ShowAddSaveDataWidget({
       onClick={clickHandler}
       onKeyDown={clickHandler}
       role="button"
+      slot={slot}
       tabIndex={0}
     >
-      <CalciteIcon
+      <calcite-icon
         icon={addSaveDataWidgetVisible ? 'chevrons-right' : 'plus-square'}
         scale="s"
       />
@@ -1181,6 +1173,8 @@ function ShowAddSaveDataWidget({
 const divStyle = (disabled: boolean, hover: boolean) => css`
   align-items: center;
   background-color: ${!disabled && hover ? '#F0F0F0' : 'white'};
+  /* matches the shadow Esri applies to .esri-component.esri-widget */
+  box-shadow: 0 1px 2px rgb(0 0 0 / 30%);
   cursor: ${disabled ? 'default' : 'pointer'};
   display: flex;
   height: 32px;
@@ -1197,12 +1191,14 @@ type ExpandeCollapseProps = {
   fullscreenActive: boolean;
   setFullscreenActive: Function;
   mapViewSetter: Function;
+  slot: MapSlot;
 };
 
 function ExpandCollapse({
   fullscreenActive,
   setFullscreenActive,
   mapViewSetter,
+  slot,
 }: Readonly<ExpandeCollapseProps>) {
   const [hover, setHover] = useState(false);
 
@@ -1229,6 +1225,7 @@ function ExpandCollapse({
 
   return (
     <div
+      slot={slot}
       title={
         fullscreenActive
           ? 'Exit Fullscreen Map View'
@@ -1244,7 +1241,7 @@ function ExpandCollapse({
       role="button"
       tabIndex={0}
     >
-      <CalciteIcon
+      <calcite-icon
         icon={fullscreenActive ? 'zoom-in-fixed' : 'zoom-out-fixed'}
         scale="s"
       />
@@ -1490,7 +1487,7 @@ function ShowUpstreamWatershed({
             ${!upstreamVisible && 'transform: rotate(-45deg);'}
           `}
         >
-          <CalciteIcon
+          <calcite-icon
             icon={upstreamVisible ? 'chevrons-right' : 'arrow-bold-up'}
             scale="s"
           />
@@ -1520,6 +1517,7 @@ type ShowCurrentUpstreamWatershedProps = Omit<
     SetStateAction<{ status: Status; data: __esri.FeatureSet | null }>
   >;
   setUpstreamWidgetDisabled: Dispatch<SetStateAction<boolean>>;
+  slot: MapSlot;
   updateVisibleLayers: (
     updates?: Partial<LayersState['visible']>,
     merge?: boolean,
@@ -1544,6 +1542,7 @@ function ShowCurrentUpstreamWatershed({
   updateVisibleLayers,
   setUpstreamWatershedResponse,
   setUpstreamWidgetDisabled,
+  slot,
   upstreamLayerErrored,
   view,
 }: ShowCurrentUpstreamWatershedProps) {
@@ -1599,12 +1598,14 @@ function ShowCurrentUpstreamWatershed({
     ],
   );
   return (
-    <ShowUpstreamWatershed
-      getUpstreamWidgetDisabled={getUpstreamWidgetDisabled}
-      onClick={handleClick}
-      upstreamLayer={upstreamLayer}
-      upstreamLoading={upstreamLoading}
-    />
+    <div slot={slot}>
+      <ShowUpstreamWatershed
+        getUpstreamWidgetDisabled={getUpstreamWidgetDisabled}
+        onClick={handleClick}
+        upstreamLayer={upstreamLayer}
+        upstreamLoading={upstreamLoading}
+      />
+    </div>
   );
 }
 
@@ -1634,6 +1635,7 @@ function ShowSelectedUpstreamWatershed({
   map,
   mapRef,
   setCurrentExtent,
+  slot,
   upstreamLayerErrored,
 }: ShowSelectedUpstreamWatershedProps) {
   const { upstreamWidgetDisabled } = useContext(LocationSearchContext);
@@ -1878,6 +1880,7 @@ function ShowSelectedUpstreamWatershed({
 
   return (
     <div
+      slot={slot}
       style={{
         cursor: upstreamWidgetDisabled ? 'default' : 'pointer',
         filter: selectionActive

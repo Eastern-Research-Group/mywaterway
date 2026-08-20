@@ -3,9 +3,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { css, keyframes } from '@emotion/react';
 import { createPortal } from 'react-dom';
-import "@esri/calcite-components/dist/components/calcite-action";
-import "@esri/calcite-components/dist/components/calcite-icon";
-import { CalciteAction, CalciteIcon } from '@esri/calcite-components-react';
+import '@esri/calcite-components/components/calcite-action';
+import '@esri/calcite-components/components/calcite-icon';
 // components
 import LoadingSpinner from 'components/shared/LoadingSpinner';
 // contexts
@@ -30,15 +29,18 @@ import type {
   MutableRefObject,
   ReactNode,
 } from 'react';
+import type { MapSlot } from 'types';
 
 /*
 ## Components
 */
 
 export default function SurroundingsWidget({
-  triggerVisible = true
-} : {
+  triggerVisible = true,
+  slot,
+}: {
   triggerVisible?: boolean;
+  slot: MapSlot;
 }) {
   const { layers, visible: visibleLayers } = useLayersState();
   const { togglers, disabled, updating, visible } = useSurroundingsState();
@@ -61,6 +63,7 @@ export default function SurroundingsWidget({
     <SurroundingsWidgetInner
       layers={includedLayers}
       layersUpdating={updating}
+      slot={slot}
       surroundingsVisible={visible}
       toggles={togglers}
       togglesDisabled={disabled}
@@ -79,7 +82,7 @@ function SurroundingsWidgetInner(props: Readonly<SurroundingsWidgetProps>) {
     [contentVisible],
   );
 
-  const { triggerVisible, ...rest } = props;
+  const { slot, triggerVisible, ...rest } = props;
   const { layers, layersUpdating, surroundingsVisible, togglesDisabled } =
     props;
 
@@ -97,6 +100,7 @@ function SurroundingsWidgetInner(props: Readonly<SurroundingsWidgetProps>) {
         disabled={isEmpty(layers)}
         forwardedRef={triggerRef}
         onClick={toggleContentVisibility}
+        slot={slot}
         updating={Object.entries(layersUpdating).some(
           ([id, isUpdating]) =>
             isUpdating === true &&
@@ -187,7 +191,7 @@ function SurroundingsWidgetButton({
           </span>
           <div css={divActionStyle}>
             {(hover || !visible) && (
-              <CalciteAction
+              <calcite-action
                 icon={visible ? 'view-visible' : 'view-hide'}
                 scale="s"
                 text="Visibility"
@@ -210,13 +214,15 @@ function SurroundingsWidgetTrigger({
   disabled,
   forwardedRef,
   onClick,
+  slot,
   updating,
   visible,
 }: Readonly<SurroundingsWidgetTriggerProps>) {
   const [hover, setHover] = useState(false);
 
   let title = 'Open Surrounding Features';
-  let icon = 'globe';
+  // literal union so it stays assignable to calcite-icon's `IconName` prop
+  let icon: 'globe' | 'chevrons-right' = 'globe';
   if (contentVisible) {
     icon = 'chevrons-right';
     title = 'Close Surrounding Features';
@@ -238,9 +244,10 @@ function SurroundingsWidgetTrigger({
       onMouseOut={() => setHover(false)}
       ref={forwardedRef}
       role="button"
+      slot={slot}
       tabIndex={0}
     >
-      {updating ? <LoadingSpinner /> : <CalciteIcon icon={icon} scale="s" />}
+      {updating ? <LoadingSpinner /> : <calcite-icon icon={icon} scale="s" />}
     </div>
   );
 }
@@ -252,6 +259,8 @@ function SurroundingsWidgetTrigger({
 const divStyle = (disabled: boolean, hover: boolean) => css`
   align-items: center;
   background-color: ${!disabled && hover ? '#F0F0F0' : 'white'};
+  /* matches the shadow Esri applies to .esri-component.esri-widget */
+  box-shadow: 0 1px 2px rgb(0 0 0 / 30%);
   cursor: ${disabled ? 'default' : 'pointer'};
   display: flex;
   height: 32px;
@@ -396,20 +405,21 @@ type SurroundingsWidgetTriggerProps = {
   disabled: boolean;
   forwardedRef: MutableRefObject<HTMLDivElement | null>;
   onClick: (ev: MouseEvent | KeyboardEvent) => void;
+  slot: MapSlot;
   updating: boolean;
   visible: boolean;
 };
 
 type SurroundingsWidgetButtonProps = Omit<
   SurroundingsWidgetProps,
-  'triggerVisible'
+  'slot' | 'triggerVisible'
 > & {
   id: SurroundingFeaturesLayerId;
 };
 
 type SurroundingsWidgetContentProps = Omit<
   SurroundingsWidgetProps,
-  'triggerVisible'
+  'slot' | 'triggerVisible'
 > & {
   visible: boolean;
 };
@@ -417,6 +427,7 @@ type SurroundingsWidgetContentProps = Omit<
 type SurroundingsWidgetProps = {
   layers: Partial<Pick<LayersState['layers'], SurroundingFeaturesLayerId>>;
   layersUpdating: Partial<{ [B in SurroundingFeaturesLayerId]: boolean }>;
+  slot: MapSlot;
   surroundingsVisible: SurroundingsState['visible'];
   toggles: SurroundingsState['togglers'];
   togglesDisabled: SurroundingsState['disabled'];

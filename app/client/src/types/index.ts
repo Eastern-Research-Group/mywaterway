@@ -376,6 +376,17 @@ export type InfoText = {
   [key: string]: string;
 };
 
+export type MapSlot =
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'top-start'
+  | 'top-end'
+  | 'bottom-start'
+  | 'bottom-end'
+  | 'popup';
+
 export interface MonitoringFeatureUpdate {
   characteristicsByGroup: { [group: string]: string[] };
   totalMeasurements: number;
@@ -537,7 +548,7 @@ export interface RndDraggableState {
 }
 
 export interface ServicesData {
-  attains: { apiKey: string, serviceUrl: string; serviceUrlDev: string };
+  attains: { apiKey: string; serviceUrl: string; serviceUrlDev: string };
   basemaps: {
     default: string;
     lightGrayCanvas: string;

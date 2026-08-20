@@ -27,7 +27,7 @@ import { defaultErrorBoundaryMessage } from 'config/errorMessages';
 // styles
 import { fonts } from 'styles';
 import '@arcgis/core/assets/esri/themes/light/main.css';
-import '@esri/calcite-components/dist/components/calcite-icon';
+import '@esri/calcite-components/components/calcite-icon';
 import 'styles/mapStyles.css';
 
 smoothscroll.polyfill();

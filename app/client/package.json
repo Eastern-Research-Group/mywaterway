@@ -68,12 +68,12 @@
     "vite-tsconfig-paths": "6.1.1"
   },
   "dependencies": {
-    "@arcgis/core": "4.34.8",
+    "@arcgis/core": "5.1.19",
     "@arcgis/map-components-react": "5.1.19",
     "@emotion/babel-plugin": "11.13.5",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
-    "@esri/calcite-components-react": "5.0.2",
+    "@esri/calcite-components": "5.1.2",
     "@iconify-json/fa7-regular": "1.2.3",
     "@iconify-json/fa7-solid": "1.2.4",
     "@mui/material": "9.0.0",
