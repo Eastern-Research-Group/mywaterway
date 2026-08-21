@@ -80,7 +80,7 @@ describe('Plan Summary (Actions) page', () => {
 
   it('Attains actions service failure', () => {
     cy.intercept(
-      'https://attains.epa.gov/attains-public/api/actions?ActionIdentifier=40594&organizationIdentifier=DOEE',
+      'https://api.epa.gov/attains/actions?ActionIdentifier=40594&organizationIdentifier=DOEE',
       {
         statusCode: 500,
         body: {},

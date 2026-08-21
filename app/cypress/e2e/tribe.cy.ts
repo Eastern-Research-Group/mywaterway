@@ -213,7 +213,7 @@ describe('Tribe page Water Overview', () => {
     cy.findByText(linkText).should(
       'have.attr',
       'href',
-      `https://attains.epa.gov/attains-public/api/documents/cycles/19665/225170`,
+      `https://api.epa.gov/attains/documents/cycles/19665/225170`,
     );
     cy.findByText(linkText).should('have.attr', 'target', '_blank');
     cy.findByText(linkText).should('have.attr', 'rel', 'noopener noreferrer');
