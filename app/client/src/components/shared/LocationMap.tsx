@@ -183,7 +183,7 @@ function LocationMap({ layout = 'narrow', windowHeight, children }: Props) {
   useCyanWaterbodiesLayers();
   useDischargersLayers();
   useMonitoringLocationsLayers({
-    filter: (hucBoundaries?.geometry as __esri.Polygon) ?? null,
+    filter: (hucBoundaries?.geometry as Polygon) ?? null,
   });
   useStreamgageLayers();
 

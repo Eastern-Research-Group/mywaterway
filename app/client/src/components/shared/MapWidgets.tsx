@@ -63,6 +63,18 @@ import { GetTemplateType, useAbort, useDynamicPopup } from 'utils/hooks';
 // icons
 import resizeIcon from 'images/resize.png';
 // types
+import type MapView from "@arcgis/core/views/MapView";
+import type { ClickEvent } from "@arcgis/core/views/input/types";
+import type FeatureLayer from "@arcgis/core/layers/FeatureLayer";
+import type Extent from "@arcgis/core/geometry/Extent";
+import type Map from "@arcgis/core/Map";
+import type FeatureSet from "@arcgis/core/rest/support/FeatureSet";
+import type GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
+import type ListItem from "@arcgis/core/widgets/LayerList/ListItem";
+import type Layer from "@arcgis/core/layers/Layer";
+import type GroupLayer from "@arcgis/core/layers/GroupLayer";
+import type Popup from "@arcgis/core/widgets/Popup";
+import type { ResourceHandle } from "@arcgis/core/core/Handles";
 import type PrintTemplateType from '@arcgis/core/rest/support/PrintTemplate';
 import type PrintVMType from '@arcgis/core/widgets/Print/PrintViewModel';
 import type { LayersState } from 'contexts/Layers';
@@ -238,7 +250,7 @@ const orderedLayers = [
 ];
 
 function updateLegend(
-  view: __esri.MapView,
+  view: MapView,
   displayEsriLegend: boolean,
   hmwLegendRoot: Root | null,
   additionalLegendInfo: Object,
@@ -247,7 +259,7 @@ function updateLegend(
   if (!view?.map?.layers) return;
 
   // build an array of layers that are visible based on the ordering above
-  const visibleLayers: __esri.Layer[] = [];
+  const visibleLayers: Layer[] = [];
   orderedLayers.forEach((layerId) => {
     // get the esri layer from the map view
     let layer = view.map.findLayerById(layerId);
@@ -340,17 +352,17 @@ type CurrentAlignment =
   | 'top-center'
   | 'top-left'
   | 'top-right';
-interface PopupExt extends __esri.Popup {
+interface PopupExt extends Popup {
   currentAlignment: CurrentAlignment;
   featureMenuOpen: boolean;
 }
 
 type Props = {
   // map and view props auto passed from parent Map component by react-arcgis
-  map: __esri.Map;
+  map: Map;
   mapRef: MutableRefObject<HTMLDivElement | null>;
-  view: __esri.MapView;
-  layers: Array<__esri.Layer> | null;
+  view: MapView;
+  layers: Array<Layer> | null;
   onHomeWidgetRendered?: (homeWidget: HTMLArcgisHomeElement) => void;
 };
 
@@ -373,7 +385,7 @@ function MapWidgets({
 
   const pathname = window.location.pathname;
   const { getSignal } = useAbort();
-  const watchHandles = useMemo<IHandle[]>(() => [], []);
+  const watchHandles = useMemo<ResourceHandle[]>(() => [], []);
   useEffect(() => {
     return function cleanup() {
       watchHandles.forEach((handle) => handle.remove());
@@ -468,12 +480,12 @@ function MapWidgets({
           (view.popup as PopupExt).currentAlignment,
         );
 
-        function getSortIndex(graphic: __esri.Graphic) {
-          const parentId = (graphic?.layer?.parent as __esri.GroupLayer)?.id;
+        function getSortIndex(graphic: Graphic) {
+          const parentId = (graphic?.layer?.parent as GroupLayer)?.id;
           return parentId === 'allWaterbodiesLayer' ? 1 : 0;
         }
 
-        const newFeatures: __esri.Graphic[] = [];
+        const newFeatures: Graphic[] = [];
         const idsAdded: string[] = [];
         [...features]
           .sort((a, b) => getSortIndex(a) - getSortIndex(b))
@@ -519,7 +531,7 @@ function MapWidgets({
     map.addMany(widgetLayers.map((layer) => layer.layer));
 
     // gets a layer type value used for sorting
-    function getLayerType(layer: __esri.Layer) {
+    function getLayerType(layer: Layer) {
       // if the layer is in orderedLayers, then classify it as an hmw
       // layer
       if (orderedLayers.indexOf(layer.id) > -1) return 'hmw';
@@ -564,7 +576,7 @@ function MapWidgets({
     // otherLayers
     // imageryLayers (bottom)
     const sortBy = ['other', 'imagery', 'feature', 'graphics', 'hmw'];
-    map.layers.sort((a: __esri.Layer, b: __esri.Layer) => {
+    map.layers.sort((a: Layer, b: Layer) => {
       return sortBy.indexOf(getLayerType(a)) - sortBy.indexOf(getLayerType(b));
     });
   }, [layers, map, widgetLayers]);
@@ -778,7 +790,7 @@ function MapWidgets({
 
   // Creates actions in the LayerList to monitor layer visibility
   const uniqueParentItems: string[] = [];
-  function defineActions(event: { item: __esri.ListItem }) {
+  function defineActions(event: { item: ListItem }) {
     const item = event.item;
     if (!item.parent) {
       uniqueParentItems.push(item.title);
@@ -1251,28 +1263,28 @@ function ExpandCollapse({
 
 function retrieveUpstreamWatershed(
   abortSignal: AbortSignal,
-  getCurrentExtent: () => __esri.Extent,
+  getCurrentExtent: () => Extent,
   getHuc12: () => string,
   getTemplate: GetTemplateType,
-  getUpstreamExtent: () => __esri.Extent,
-  upstreamLayer: __esri.GraphicsLayer | null,
+  getUpstreamExtent: () => Extent,
+  upstreamLayer: GraphicsLayer | null,
   getUpstreamWidgetDisabled: () => boolean,
   getWatershed: () => WatershedAttributes,
   lastHuc12: string,
   services: ServicesData,
   setErrorMessage: Dispatch<SetStateAction<string>>,
   setLastHuc12: Dispatch<SetStateAction<string>>,
-  setUpstreamExtent: Dispatch<SetStateAction<__esri.Viewpoint>>,
+  setUpstreamExtent: Dispatch<SetStateAction<Viewpoint>>,
   setUpstreamLayerErrored: (isErrored: boolean) => void,
   updateVisibleLayers: (
     updates?: Partial<LayersState['visible']>,
     merge?: boolean,
   ) => void,
   setUpstreamWatershedResponse: Dispatch<
-    SetStateAction<{ status: Status; data: __esri.FeatureSet | null }>
+    SetStateAction<{ status: Status; data: FeatureSet | null }>
   >,
   setUpstreamWidgetDisabled: Dispatch<SetStateAction<boolean>>,
-  view: __esri.MapView | null,
+  view: MapView | null,
   setUpstreamLoading: Dispatch<SetStateAction<boolean>>,
   upstreamLayerErrored: boolean,
   huc12 = null,
@@ -1427,7 +1439,7 @@ interface ShowUpstreamWatershedProps {
   getUpstreamWidgetDisabled: () => boolean;
   onClick: (ev: React.MouseEvent | React.KeyboardEvent) => void;
   selectionActive?: boolean;
-  upstreamLayer: __esri.GraphicsLayer | null;
+  upstreamLayer: GraphicsLayer | null;
   upstreamLoading: boolean;
 }
 
@@ -1445,7 +1457,7 @@ function ShowUpstreamWatershed({
   // This useEffect/watcher is here to ensure the correct title and icon
   // are being shown. Without this the icon/title don't change until
   // the user moves the mouse off of the button.
-  const [watcher, setWatcher] = useState<IHandle | null>(null);
+  const [watcher, setWatcher] = useState<ResourceHandle | null>(null);
   const [upstreamVisible, setUpstreamVisible] = useState(false);
   useEffect(() => {
     if (!upstreamLayer || watcher) return;
@@ -1502,19 +1514,19 @@ type ShowCurrentUpstreamWatershedProps = Omit<
   'onClick' | 'selectionActive' | 'upstreamLoading'
 > & {
   abortSignal: AbortSignal;
-  getCurrentExtent: () => __esri.Extent;
+  getCurrentExtent: () => Extent;
   getHuc12: () => string;
   getTemplate: GetTemplateType;
-  getUpstreamExtent: () => __esri.Extent;
-  upstreamLayer: __esri.GraphicsLayer | null;
+  getUpstreamExtent: () => Extent;
+  upstreamLayer: GraphicsLayer | null;
   getUpstreamWidgetDisabled: () => boolean;
   getWatershed: () => WatershedAttributes;
   services: ServicesData;
   setErrorMessage: Dispatch<SetStateAction<string>>;
-  setUpstreamExtent: Dispatch<SetStateAction<__esri.Viewpoint>>;
+  setUpstreamExtent: Dispatch<SetStateAction<Viewpoint>>;
   setUpstreamLayerErrored: (isErrored: boolean) => void;
   setUpstreamWatershedResponse: Dispatch<
-    SetStateAction<{ status: Status; data: __esri.FeatureSet | null }>
+    SetStateAction<{ status: Status; data: FeatureSet | null }>
   >;
   setUpstreamWidgetDisabled: Dispatch<SetStateAction<boolean>>;
   slot: MapSlot;
@@ -1523,7 +1535,7 @@ type ShowCurrentUpstreamWatershedProps = Omit<
     merge?: boolean,
   ) => void;
   upstreamLayerErrored: boolean;
-  view: __esri.MapView | null;
+  view: MapView | null;
 };
 
 function ShowCurrentUpstreamWatershed({
@@ -1610,9 +1622,9 @@ function ShowCurrentUpstreamWatershed({
 }
 
 type ShowSelectedUpstreamWatershedProps = ShowCurrentUpstreamWatershedProps & {
-  map: __esri.Map;
+  map: Map;
   mapRef: MutableRefObject<HTMLDivElement | null>;
-  setCurrentExtent: Dispatch<SetStateAction<__esri.Extent>>;
+  setCurrentExtent: Dispatch<SetStateAction<Extent>>;
 };
 
 function ShowSelectedUpstreamWatershed({
@@ -1644,14 +1656,14 @@ function ShowSelectedUpstreamWatershed({
 
   // Store the watersheds layer instance for later access
   const [watershedsLayer, setWatershedsLayer] =
-    useState<__esri.FeatureLayer | null>(null);
+    useState<FeatureLayer | null>(null);
 
   useEffect(() => {
     if (!map) return;
 
     const newWatershedsLayer = map.findLayerById(
       'watershedsLayer',
-    ) as __esri.FeatureLayer | null;
+    ) as FeatureLayer | null;
     setWatershedsLayer(newWatershedsLayer);
     newWatershedsLayer && setWatershedsVisible(newWatershedsLayer.visible);
   }, [map]);
@@ -1690,7 +1702,7 @@ function ShowSelectedUpstreamWatershed({
   const [upstreamLoading, setUpstreamLoading] = useState(false);
 
   const handleHucSelection = useCallback(
-    (ev: __esri.ViewClickEvent) => {
+    (ev: ClickEvent) => {
       setSelectionActive(false);
 
       if (!view) return;
@@ -1965,7 +1977,7 @@ export async function generateAndDownloadPdf({
   northArrowVisible: boolean;
   scale: number;
   services: ServicesData;
-  view: __esri.MapView;
+  view: MapView;
   includeLegend: boolean;
 }) {
   const {
@@ -2777,7 +2789,7 @@ type LayoutOptionType =
 
 type DownloadWidgetProps = {
   services: ServicesData;
-  view: __esri.MapView;
+  view: MapView;
 };
 
 function DownloadWidget({ services, view }: Readonly<DownloadWidgetProps>) {

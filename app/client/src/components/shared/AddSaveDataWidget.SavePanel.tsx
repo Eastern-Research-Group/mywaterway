@@ -39,6 +39,10 @@ import {
   ParameterToggleObject,
 } from 'types/index';
 import { LayerType, ServiceMetaDataType } from 'types/arcGisOnline';
+import type Layer from "@arcgis/core/layers/Layer";
+import type FeatureSet from "@arcgis/core/rest/support/FeatureSet";
+import type MapView from "@arcgis/core/views/MapView";
+import type { ResourceHandle } from "@arcgis/core/core/Handles";
 
 type PublishType = {
   status:
@@ -262,7 +266,7 @@ function SavePanel({ visible }: Readonly<Props>) {
   const effluentToggleObject = useContext(LocationSearchContext)
     .effluentToggleObject as EffluentToggleObject | null;
   const mapView = useContext(LocationSearchContext)
-    .mapView as __esri.MapView | null;
+    .mapView as MapView | null;
   const monitoringPeriodOfRecordStatus = useContext(LocationSearchContext)
     .monitoringPeriodOfRecordStatus as FetchStatus;
   const monitoringGroups = useContext(LocationSearchContext)
@@ -276,10 +280,10 @@ function SavePanel({ visible }: Readonly<Props>) {
   const upstreamWatershedResponse = useContext(LocationSearchContext)
     .upstreamWatershedResponse as {
     status: Status;
-    data: __esri.FeatureSet | null;
+    data: FeatureSet | null;
   };
-  const [oAuthInfo, setOAuthInfo] = useState<__esri.OAuthInfo | null>(null);
-  const [userPortal, setUserPortal] = useState<__esri.Portal | null>(null);
+  const [oAuthInfo, setOAuthInfo] = useState<OAuthInfo | null>(null);
+  const [userPortal, setUserPortal] = useState<Portal | null>(null);
 
   const [saveLayerFilter, setSaveLayerFilter] = useState(
     layerFilterOptions[0].value,
@@ -307,9 +311,9 @@ function SavePanel({ visible }: Readonly<Props>) {
   useEffect(() => {
     if (!mapView || layerWatcherInitialized) return;
 
-    const layerWatchers: { [id: string]: IHandle } = {};
+    const layerWatchers: { [id: string]: ResourceHandle } = {};
 
-    function watchLayerVisibility(layer: __esri.Layer) {
+    function watchLayerVisibility(layer: Layer) {
       const visibilityWatcher = reactiveUtils.watch(
         () => layer.visible,
         () => {
@@ -329,7 +333,7 @@ function SavePanel({ visible }: Readonly<Props>) {
       layerWatchers[layer.id] = visibilityWatcher;
     }
 
-    function watchLayerLoaded(layer: __esri.Layer) {
+    function watchLayerLoaded(layer: Layer) {
       const loadedWatcher = reactiveUtils.watch(
         () => layer.loaded,
         () => {
@@ -466,7 +470,7 @@ function SavePanel({ visible }: Readonly<Props>) {
   }
 
   async function runPublish(
-    portal: __esri.Portal,
+    portal: Portal,
     serviceMetaData: ServiceMetaDataType,
     layersToPublish: LayerType[],
   ) {

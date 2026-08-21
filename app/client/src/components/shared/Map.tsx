@@ -12,6 +12,8 @@ import { useFullscreenState, FullscreenProvider } from 'contexts/Fullscreen';
 import { initialExtent, LocationSearchContext } from 'contexts/locationSearch';
 import { useLayers } from 'contexts/Layers';
 // types
+import type arcgisCoreMap from "@arcgis/core/Map";
+import type Layer from "@arcgis/core/layers/Layer";
 import type { LayerId } from 'contexts/Layers';
 import type { ReactNode } from 'react';
 // utils
@@ -19,7 +21,7 @@ import { basemapFromPortalItem } from 'utils/mapFunctions';
 
 type Props = {
   children?: ReactNode;
-  layers: __esri.Layer[] | null;
+  layers: Layer[] | null;
   startingExtent?: Object | null;
 };
 
@@ -41,7 +43,7 @@ function Map({
 
   const { visibleLayers } = useLayers();
 
-  const [map, setMap] = useState<__esri.Map | null>(null);
+  const [map, setMap] = useState<arcgisCoreMap | null>(null);
 
   useEffect(() => {
     return function cleanup() {

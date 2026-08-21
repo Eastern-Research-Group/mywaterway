@@ -4,6 +4,9 @@ import Viewpoint from '@arcgis/core/Viewpoint';
 import React, { Component, createContext } from 'react';
 // types
 import type Basemap from '@arcgis/core/Basemap';
+import type Graphic from "@arcgis/core/Graphic";
+import type FeatureSet from "@arcgis/core/rest/support/FeatureSet";
+import type MapView from "@arcgis/core/views/MapView";
 import type { ReactNode } from 'react';
 import type {
   DischargerPermitComponents,
@@ -75,11 +78,11 @@ type State = {
   drinkingWater: Object;
   cipSummary: { status: Status; data: Huc12SummaryData };
   nonprofits: Object;
-  mapView: __esri.MapView | null;
+  mapView: MapView | null;
   basemap: Basemap | null;
   homeWidget: Object;
   upstreamWidgetDisabled: boolean;
-  hucBoundaries: __esri.Graphic | null;
+  hucBoundaries: Graphic | null;
   atHucBoundaries: boolean;
   countyBoundaries: Object;
   waterbodyData: Array<Object>;
@@ -88,7 +91,7 @@ type State = {
   pointsData: Array<Object>;
   orphanFeatures: Array<Object>;
   waterbodyCountMismatch: boolean;
-  upstreamWatershedResponse: { status: Status; data: __esri.FeatureSet | null };
+  upstreamWatershedResponse: { status: Status; data: FeatureSet | null };
   errorMessage: string;
   noGeocodeResults: boolean;
   summaryLayerMaxRecordCount?: number;
@@ -190,7 +193,7 @@ export class LocationSearchProvider extends Component<Props, State> {
     setNonprofits: (nonprofits: Object) => {
       this.setState({ nonprofits });
     },
-    setHucBoundaries: (hucBoundaries: __esri.Graphic | null) => {
+    setHucBoundaries: (hucBoundaries: Graphic | null) => {
       this.setState({ hucBoundaries });
     },
     setCurrentExtent: (currentExtent) => {
