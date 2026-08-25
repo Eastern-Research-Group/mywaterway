@@ -124,7 +124,7 @@ describe('State page routes', () => {
 
     // test page when metrics service fails
     cy.intercept(
-      'https://attains.epa.gov/attains-public/api/metrics?organizationId=AKDECWQ',
+      'https://api.epa.gov/attains/metrics?organizationId=AKDECWQ',
       {
         statusCode: 500,
         body: {},
@@ -322,7 +322,7 @@ describe('State page Water Overview tab', () => {
     cy.findByText(firstTableLinkText).should(
       'have.attr',
       'href',
-      `https://attains.epa.gov/attains-public/api/documents/cycles/18564/223234`,
+      `https://api.epa.gov/attains/documents/cycles/18564/223234`,
     );
     cy.findByText(firstTableLinkText).should('have.attr', 'target', '_blank');
     cy.findByText(firstTableLinkText).should(
@@ -335,7 +335,7 @@ describe('State page Water Overview tab', () => {
     cy.findByText(secondTableLinkText).should(
       'have.attr',
       'href',
-      `https://attains.epa.gov/attains-public/api/documents/surveys/AKDECWQ/2015/136021`,
+      `https://api.epa.gov/attains/documents/surveys/AKDECWQ/2015/136021`,
     );
     cy.findByText(secondTableLinkText).should('have.attr', 'target', '_blank');
     cy.findByText(secondTableLinkText).should(
@@ -475,7 +475,7 @@ describe('State page service failure tests', () => {
   it(`Documents fail to load due to attains assessments service failure`, () => {
     // test documents failure to load
     cy.intercept(
-      'https://attains.epa.gov/attains-public/api/assessments?organizationId=AKDECWQ&reportingCycle=2024&excludeAssessments=Y',
+      'https://api.epa.gov/attains/assessments?organizationId=AKDECWQ&reportingCycle=2024&excludeAssessments=Y',
       {
         statusCode: 500,
         body: {},
@@ -523,7 +523,7 @@ describe('State page service failure tests', () => {
 
   it('UsesStateSummary service failure', () => {
     cy.intercept(
-      'https://attains.epa.gov/attains-public/api/usesStateSummary?organizationId=AKDECWQ&reportingCycle=2024',
+      'https://api.epa.gov/attains/usesStateSummary?organizationId=AKDECWQ&reportingCycle=2024',
       {
         statusCode: 500,
         body: {},
@@ -538,7 +538,7 @@ describe('State page service failure tests', () => {
 
   it('Surveys service failure', () => {
     cy.intercept(
-      'https://attains.epa.gov/attains-public/api/surveys?organizationId=AKDECWQ',
+      'https://api.epa.gov/attains/surveys?organizationId=AKDECWQ',
       {
         statusCode: 500,
         body: {},
@@ -553,7 +553,7 @@ describe('State page service failure tests', () => {
 
   it('Organizations service failure', () => {
     cy.intercept(
-      'https://attains.epa.gov/attains-public/api/states/AK/organizations',
+      'https://api.epa.gov/attains/states/AK/organizations',
       {
         statusCode: 500,
         body: {},
@@ -568,7 +568,7 @@ describe('State page service failure tests', () => {
 
   it('Organizations no data for state', () => {
     cy.intercept(
-      'https://attains.epa.gov/attains-public/api/states/AK/organizations',
+      'https://api.epa.gov/attains/states/AK/organizations',
       {
         statusCode: 200,
         body: {
