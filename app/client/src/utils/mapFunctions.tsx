@@ -1,5 +1,7 @@
 import { ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
+import createCache from '@emotion/cache';
+import { CacheProvider, Global } from '@emotion/react';
 import Basemap from '@arcgis/core/Basemap';
 import Color from '@arcgis/core/Color';
 import Graphic from '@arcgis/core/Graphic';
@@ -10,40 +12,41 @@ import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import Popup from '@arcgis/core/widgets/Popup';
 // components
-import { GlossaryTerm } from 'components/shared/GlossaryPanel';
+import { GlossaryTerm, termStyles } from 'components/shared/GlossaryPanel';
 import { MapPopup } from 'components/shared/WaterbodyInfo';
 import { colors } from 'styles';
 // contexts
 import { ConfigFiles } from 'contexts/ConfigFiles';
 // utilities
 import { fetchCheck } from 'utils/fetchUtils';
+import { adoptGlobalStyles } from 'utils/popupStyles';
 import {
   getSelectedCommunityTab,
   titleCase,
   titleCaseWithExceptions,
 } from 'utils/utils';
 // types
-import type Symbol from "@arcgis/core/symbols/Symbol";
-import type GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
-import type Layer from "@arcgis/core/layers/Layer";
-import type HighlightOptions from "@arcgis/core/views/support/HighlightOptions";
-import type Geometry from "@arcgis/core/geometry/Geometry";
-import type Field from "@arcgis/core/layers/support/Field";
-import type MapView from "@arcgis/core/views/MapView";
-import type UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
-import type Renderer from "@arcgis/core/renderers/Renderer";
-import type TileLayer from "@arcgis/core/layers/TileLayer";
-import type Polyline from "@arcgis/core/geometry/Polyline";
-import type Polygon from "@arcgis/core/geometry/Polygon";
-import type Multipoint from "@arcgis/core/geometry/Multipoint";
-import type MediaLayer from "@arcgis/core/layers/MediaLayer";
-import type MapImageLayer from "@arcgis/core/layers/MapImageLayer";
-import type LayerView from "@arcgis/core/views/layers/LayerView";
-import type GraphicsLayerView from "@arcgis/core/views/layers/GraphicsLayerView";
-import type FeatureLayerView from "@arcgis/core/views/layers/FeatureLayerView";
-import type GroupLayer from "@arcgis/core/layers/GroupLayer";
-import type FeatureLayer from "@arcgis/core/layers/FeatureLayer";
-import type ClassBreaksRenderer from "@arcgis/core/renderers/ClassBreaksRenderer";
+import type Symbol from '@arcgis/core/symbols/Symbol';
+import type GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
+import type Layer from '@arcgis/core/layers/Layer';
+import type HighlightOptions from '@arcgis/core/views/support/HighlightOptions';
+import type Geometry from '@arcgis/core/geometry/Geometry';
+import type Field from '@arcgis/core/layers/support/Field';
+import type MapView from '@arcgis/core/views/MapView';
+import type UniqueValueRenderer from '@arcgis/core/renderers/UniqueValueRenderer';
+import type Renderer from '@arcgis/core/renderers/Renderer';
+import type TileLayer from '@arcgis/core/layers/TileLayer';
+import type Polyline from '@arcgis/core/geometry/Polyline';
+import type Polygon from '@arcgis/core/geometry/Polygon';
+import type Multipoint from '@arcgis/core/geometry/Multipoint';
+import type MediaLayer from '@arcgis/core/layers/MediaLayer';
+import type MapImageLayer from '@arcgis/core/layers/MapImageLayer';
+import type LayerView from '@arcgis/core/views/layers/LayerView';
+import type GraphicsLayerView from '@arcgis/core/views/layers/GraphicsLayerView';
+import type FeatureLayerView from '@arcgis/core/views/layers/FeatureLayerView';
+import type GroupLayer from '@arcgis/core/layers/GroupLayer';
+import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import type ClassBreaksRenderer from '@arcgis/core/renderers/ClassBreaksRenderer';
 import type { NavigateFunction } from 'react-router';
 import type {
   AttainsImpairmentField,
@@ -504,15 +507,11 @@ export function isClassBreaksRenderer(
   return (renderer as ClassBreaksRenderer).type === 'class-breaks';
 }
 
-export function isFeatureLayer(
-  layer: Layer | null,
-): layer is FeatureLayer {
+export function isFeatureLayer(layer: Layer | null): layer is FeatureLayer {
   return layer !== null && (layer as FeatureLayer).type === 'feature';
 }
 
-export function isGraphicsLayer(
-  layer: Layer,
-): layer is GraphicsLayer {
+export function isGraphicsLayer(layer: Layer): layer is GraphicsLayer {
   return (layer as GraphicsLayer).type === 'graphics';
 }
 
@@ -531,9 +530,7 @@ export function isHighlightLayerView(
   );
 }
 
-export function isMapImageLayer(
-  layer: Layer,
-): layer is MapImageLayer {
+export function isMapImageLayer(layer: Layer): layer is MapImageLayer {
   return (layer as MapImageLayer).type === 'map-image';
 }
 
@@ -541,9 +538,7 @@ export function isMediaLayer(layer: Layer): layer is MediaLayer {
   return (layer as MediaLayer).type === 'media';
 }
 
-export function isMultipoint(
-  geometry: Geometry,
-): geometry is Multipoint {
+export function isMultipoint(geometry: Geometry): geometry is Multipoint {
   return (geometry as Multipoint).type === 'multipoint';
 }
 
@@ -551,15 +546,11 @@ export function isPoint(geometry: Geometry): geometry is Point {
   return (geometry as Point).type === 'point';
 }
 
-export function isPolygon(
-  geometry: Geometry,
-): geometry is Polygon {
+export function isPolygon(geometry: Geometry): geometry is Polygon {
   return geometry.type === 'polygon';
 }
 
-export function isPolyline(
-  geometry: Geometry,
-): geometry is Polyline {
+export function isPolyline(geometry: Geometry): geometry is Polyline {
   return (geometry as Polyline).type === 'polyline';
 }
 
@@ -800,6 +791,55 @@ export function getPopupTitle(attributes: PopupAttributes | null) {
   return title;
 }
 
+// Emotion puts its <style> tags in document.head, which a shadow root cannot see.
+// Resolve the root off the node itself. One cache per root.
+const emotionCaches = new WeakMap<Node, ReturnType<typeof createCache>>();
+
+function getShadowCache(node: Node) {
+  const root = node.getRootNode();
+  if (!(root instanceof ShadowRoot)) return null;
+
+  let cache = emotionCaches.get(root);
+  if (!cache) {
+    cache = createCache({ key: 'hmw-popup', container: root });
+    emotionCaches.set(root, cache);
+  }
+  return cache;
+}
+
+// A custom element gives us a connectedCallback to hook, so the cache is resolved against the real shadow root.
+class HmwPopupContent extends HTMLElement {
+  content: ReactNode = null;
+  private reactRoot: ReturnType<typeof createRoot> | null = null;
+
+  connectedCallback() {
+    // esri can move the node; only render the first time it connects
+    if (this.reactRoot) return;
+
+    const root = this.getRootNode();
+    if (root instanceof ShadowRoot) adoptGlobalStyles(root);
+
+    this.reactRoot = createRoot(this);
+
+    const cache = getShadowCache(this);
+    this.reactRoot.render(
+      cache ? (
+        <CacheProvider value={cache}>
+          {/* the copy in document.head does not reach this root */}
+          <Global styles={termStyles} />
+          {this.content}
+        </CacheProvider>
+      ) : (
+        this.content
+      ),
+    );
+  }
+}
+
+if (!customElements.get('hmw-popup-content')) {
+  customElements.define('hmw-popup-content', HmwPopupContent);
+}
+
 export function getPopupContent({
   feature,
   fieldName,
@@ -944,9 +984,11 @@ export function getPopupContent({
     />
   );
 
-  // wrap the content for esri
-  const contentContainer = document.createElement('div') as HTMLElement;
-  createRoot(contentContainer).render(content);
+  // wrap the content for esri -- rendered on connect, see HmwPopupContent
+  const contentContainer = document.createElement(
+    'hmw-popup-content',
+  ) as HmwPopupContent;
+  contentContainer.content = content;
 
   // return an esri popup item
   return contentContainer;

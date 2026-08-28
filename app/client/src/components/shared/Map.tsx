@@ -12,12 +12,13 @@ import { useFullscreenState, FullscreenProvider } from 'contexts/Fullscreen';
 import { initialExtent, LocationSearchContext } from 'contexts/locationSearch';
 import { useLayers } from 'contexts/Layers';
 // types
-import type arcgisCoreMap from "@arcgis/core/Map";
-import type Layer from "@arcgis/core/layers/Layer";
+import type arcgisCoreMap from '@arcgis/core/Map';
+import type Layer from '@arcgis/core/layers/Layer';
 import type { LayerId } from 'contexts/Layers';
 import type { ReactNode } from 'react';
 // utils
 import { basemapFromPortalItem } from 'utils/mapFunctions';
+import { adoptMapStyles } from 'utils/popupStyles';
 
 type Props = {
   children?: ReactNode;
@@ -49,7 +50,7 @@ function Map({
     return function cleanup() {
       setMap(null);
       setMapView(null);
-    }
+    };
   }, [setMap, setMapView]);
 
   useEffect(() => {
@@ -67,17 +68,13 @@ function Map({
   useEffect(() => {
     if (basemapInitialized) return;
 
-    const mapBasemap = 
-      basemapFromPortalItem(basemap?.portalItem?.id ?? services.basemaps.default);
+    const mapBasemap = basemapFromPortalItem(
+      basemap?.portalItem?.id ?? services.basemaps.default,
+    );
     if (basemap !== mapBasemap) setBasemap(mapBasemap);
 
     setBasemapInitialized(true);
-  }, [
-    basemap,
-    basemapInitialized,
-    services,
-    setBasemap
-  ]);
+  }, [basemap, basemapInitialized, services, setBasemap]);
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -112,7 +109,7 @@ function Map({
         }}
         ref={mapContainerRef}
       >
-        <arcgis-map 
+        <arcgis-map
           basemap={basemap}
           id="hmw-map-container"
           css={{
@@ -123,6 +120,11 @@ function Map({
             setMap(event.target.map);
             setMapView(event.target.view);
 
+            // The view lives in <arcgis-map>'s shadow root.
+            // Styles for esri's own markup have to be adopted into it
+            const viewRoot = event.target.view.container?.getRootNode();
+            if (viewRoot instanceof ShadowRoot) adoptMapStyles(viewRoot);
+
             // TODO highlightOptions was deprecated, need to switch it out
             event.target.view.highlightOptions = highlightOptions;
             event.target.view.popupEnabled = false;
@@ -131,7 +133,7 @@ function Map({
             else
               event.target.extent = (startingExtent as any) ?? initialExtent();
           }}
-        >          
+        >
           {map && mapView && (
             <>
               <MapWidgets

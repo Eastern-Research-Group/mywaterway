@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
 
 import '@arcgis/map-components/components/arcgis-basemap-gallery';
+import { ArcgisBasemapGalleryItem } from '@arcgis/map-components/components/arcgis-basemap-gallery-item';
 import '@arcgis/map-components/components/arcgis-expand';
 import '@arcgis/map-components/components/arcgis-home';
 import '@arcgis/map-components/components/arcgis-layer-list';
@@ -63,18 +64,18 @@ import { GetTemplateType, useAbort, useDynamicPopup } from 'utils/hooks';
 // icons
 import resizeIcon from 'images/resize.png';
 // types
-import type MapView from "@arcgis/core/views/MapView";
-import type { ClickEvent } from "@arcgis/core/views/input/types";
-import type FeatureLayer from "@arcgis/core/layers/FeatureLayer";
-import type Extent from "@arcgis/core/geometry/Extent";
-import type Map from "@arcgis/core/Map";
-import type FeatureSet from "@arcgis/core/rest/support/FeatureSet";
-import type GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
-import type ListItem from "@arcgis/core/widgets/LayerList/ListItem";
-import type Layer from "@arcgis/core/layers/Layer";
-import type GroupLayer from "@arcgis/core/layers/GroupLayer";
-import type Popup from "@arcgis/core/widgets/Popup";
-import type { ResourceHandle } from "@arcgis/core/core/Handles";
+import type MapView from '@arcgis/core/views/MapView';
+import type { ClickEvent } from '@arcgis/core/views/input/types';
+import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import type Extent from '@arcgis/core/geometry/Extent';
+import type Map from '@arcgis/core/Map';
+import type FeatureSet from '@arcgis/core/rest/support/FeatureSet';
+import type GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
+import type ListItem from '@arcgis/core/widgets/LayerList/ListItem';
+import type Layer from '@arcgis/core/layers/Layer';
+import type GroupLayer from '@arcgis/core/layers/GroupLayer';
+import type Popup from '@arcgis/core/widgets/Popup';
+import type { ResourceHandle } from '@arcgis/core/core/Handles';
 import type PrintTemplateType from '@arcgis/core/rest/support/PrintTemplate';
 import type PrintVMType from '@arcgis/core/widgets/Print/PrintViewModel';
 import type { LayersState } from 'contexts/Layers';
@@ -98,6 +99,22 @@ import { fonts } from 'styles';
 /*
 ## Styles
 */
+
+// Appended to elementStyles so it is adopted after the component's own sheet in
+// every item's shadow root.
+const thumbnailStyles = new CSSStyleSheet();
+thumbnailStyles.replaceSync(`
+  .item-thumbnail {
+    aspect-ratio: auto;
+    height: 31px;
+    width: 64px;
+    min-width: 64px;
+  }
+`);
+ArcgisBasemapGalleryItem.elementStyles = [
+  ...ArcgisBasemapGalleryItem.elementStyles,
+  thumbnailStyles,
+];
 
 const instructionContainerStyles = (isVisible: boolean) => css`
   display: ${isVisible ? 'flex' : 'none'};
@@ -314,6 +331,13 @@ function updateLegend(
 }
 
 // colors the popup pointer according to position and number of features
+//
+// TODO(HMW-917): broken since the web components migration. The popup renders
+// inside the <arcgis-map> shadow root, so this document-level query always
+// returns an empty collection and the function is a silent no-op. The
+// .blue-popup-pointer rules in mapStyles.css are dead for the same reason, so
+// fix both together. Reaching the pointer needs the map element's shadowRoot,
+// and the class it toggles has to be styled from inside that root too.
 function updatePopupPointerStyles(
   features: Graphic[],
   currentAlignment: CurrentAlignment,
@@ -962,7 +986,7 @@ function MapWidgets({
         />
       )}
 
-      <arcgis-scale-bar slot="bottom-left" />
+      <arcgis-scale-bar slot="bottom-left" unit="dual" />
 
       <ExpandCollapse
         fullscreenActive={fullscreenActive}
@@ -1084,6 +1108,13 @@ function LegendWidget({
     if (observerInitialized || !esriLegendRef?.current) return;
 
     // Create an observer instance linked to the callback function
+    //
+    // TODO(HMW-917): broken since the web components migration. .esri-legend__message
+    // now renders inside the <arcgis-legend> shadow root, so this query never
+    // matches and displayEsriLegend is always true. The "no legend" case no
+    // longer hides anything. A MutationObserver also will not see into a shadow
+    // root from outside; this needs to observe the component's shadowRoot, or
+    // better, be driven off <arcgis-legend> state instead of scraped markup.
     const observer = new MutationObserver((_mutationsList, _observerParam) => {
       const esriMessages = esriLegendRef.current
         ? esriLegendRef.current.querySelectorAll('.esri-legend__message')
@@ -1655,8 +1686,9 @@ function ShowSelectedUpstreamWatershed({
   const [watershedsVisible, setWatershedsVisible] = useState(false);
 
   // Store the watersheds layer instance for later access
-  const [watershedsLayer, setWatershedsLayer] =
-    useState<FeatureLayer | null>(null);
+  const [watershedsLayer, setWatershedsLayer] = useState<FeatureLayer | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!map) return;

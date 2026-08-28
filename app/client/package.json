@@ -71,6 +71,7 @@
     "@arcgis/core": "5.1.19",
     "@arcgis/map-components-react": "5.1.19",
     "@emotion/babel-plugin": "11.13.5",
+    "@emotion/cache": "11.14.0",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@esri/calcite-components": "5.1.2",
