@@ -44,7 +44,6 @@ arcgis-layer-list {
 }
 
 arcgis-legend {
-  min-height: auto;
   max-height: none;
   max-width: 240px;
 }

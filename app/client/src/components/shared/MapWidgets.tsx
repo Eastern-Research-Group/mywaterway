@@ -1052,25 +1052,31 @@ function LegendWidget({
 
   return (
     <Fragment>
-      <div ref={panelHmwLegend} />
+      {/*
+        <arcgis-expand> caps the height of each slotted child and scrolls it on its own,
+        so put both legends in one element.
+      */}
+      <div className="hmw-map-legend">
+        <div ref={panelHmwLegend} />
 
-      {/* inside <arcgis-expand> this finds the view on its own */}
-      <arcgis-legend
-        layerInfos={[]}
-        onarcgisReady={(event) => {
-          const legend = event.target;
-          esriLegendWatcher.current?.remove();
+        {/* inside <arcgis-expand> this finds the view on its own */}
+        <arcgis-legend
+          layerInfos={[]}
+          onarcgisReady={(event) => {
+            const legend = event.target;
+            esriLegendWatcher.current?.remove();
 
-          // Counting the layers the legend was handed, rather than asking
-          // whether it drew anything, keeps this from toggling as those
-          // legends load.
-          esriLegendWatcher.current = reactiveUtils.watch(
-            () => legend.activeLayerInfos.length > 0,
-            (hasLayers) => setDisplayEsriLegend(hasLayers),
-            { initial: true },
-          );
-        }}
-      />
+            // Counting the layers the legend was handed, rather than asking
+            // whether it drew anything, keeps this from toggling as those
+            // legends load.
+            esriLegendWatcher.current = reactiveUtils.watch(
+              () => legend.activeLayerInfos.length > 0,
+              (hasLayers) => setDisplayEsriLegend(hasLayers),
+              { initial: true },
+            );
+          }}
+        />
+      </div>
 
       {/*
         Portaled out of the panel, because <arcgis-expand> renders its slot in a
@@ -1918,6 +1924,12 @@ type PdfLegendItem = {
 const leftMargin = 10;
 const topMargin = 10;
 
+// html-to-image rasterizes at the display's devicePixelRatio unless told
+// otherwise, which would tie the printed size of a legend symbol to the screen
+// it was exported from. Pinned, so it does not, and left above 1 to keep the
+// symbols sharp in print.
+const symbolPixelRatio = 2;
+
 function handleError(error: unknown) {
   if (error instanceof Error || typeof error === 'object') {
     return (error as any)?.message;
@@ -1926,6 +1938,33 @@ function handleError(error: unknown) {
   } else {
     return 'Unknown error. Check developer tools console.';
   }
+}
+
+/**
+ * querySelectorAll stops at every shadow boundary, and arcgis-legend opens a
+ * new root for each layer and each of its sublayers.
+ *
+ * @param root Node to search under
+ * @param selector Selector to match
+ * @returns The outermost match of each branch. A layer block nests another for
+ *   each sublayer, and returning both would count the inner one's rows twice.
+ */
+function queryShadowAll(root: ParentNode, selector: string) {
+  const matches: Element[] = [];
+
+  const walk = (node: ParentNode) => {
+    for (const child of node.children) {
+      if (child.matches(selector)) {
+        matches.push(child);
+        continue;
+      }
+      walk(child);
+      if (child.shadowRoot) walk(child.shadowRoot);
+    }
+  };
+  walk(root);
+
+  return matches;
 }
 
 export async function generateAndDownloadPdf({
@@ -2062,10 +2101,10 @@ export async function generateAndDownloadPdf({
     // skip adding text if the png was generated from a div
     const symbols = !symbolClass
       ? null
-      : element.getElementsByClassName(symbolClass);
+      : queryShadowAll(element, `.${symbolClass}`);
     if (!symbolClass || (symbols && symbols.length > 0)) {
       // get captions
-      const textItems = element.getElementsByClassName(textClass);
+      const textItems = queryShadowAll(element, `.${textClass}`);
 
       for (let textItem of textItems) {
         const text = textItem.textContent;
@@ -2122,20 +2161,16 @@ export async function generateAndDownloadPdf({
     // loop through layers of esri legend items
     const legendElm = document.getElementById('non-visible-legend');
     if (!legendElm) return;
-    const legendServices = legendElm.querySelectorAll(
-      '.esri-legend__service:not(.esri-legend__group-layer-child)',
-    );
+    const legendServices = queryShadowAll(legendElm, '.layers > .layer');
     for (const legendService of legendServices) {
       let hasHighestLevel = false;
-      const groups = Array.from(
-        legendService.getElementsByClassName('esri-legend__group-layer-child'),
-      );
+      const groups = queryShadowAll(legendService, '.layer-child');
       if (groups.length === 0) groups.push(legendService);
       else {
         await addLegendItem({
           legendItems,
           element: legendService,
-          textClass: 'esri-legend__service-label',
+          textClass: 'esri-widget__heading',
           type: 'h1',
         });
         hasHighestLevel = true;
@@ -2146,31 +2181,31 @@ export async function generateAndDownloadPdf({
         await addLegendItem({
           legendItems,
           element: group,
-          textClass: 'esri-legend__service-label',
+          textClass: 'esri-widget__heading',
           type: hasHighestLevel ? 'h2' : 'h1',
         });
 
         // get layer level content
-        const layers = group.getElementsByClassName('esri-legend__layer');
+        const layers = queryShadowAll(group, '.layer-table');
         for (const layer of layers) {
           // get captions
           await addLegendItem({
             legendItems,
             element: layer,
-            textClass: 'esri-legend__layer-caption',
+            textClass: 'layer-caption',
             type: hasHighestLevel ? 'h3' : 'h2',
             firstOnly: false,
           });
 
           // get row level content
-          const rows = layer.getElementsByClassName('esri-legend__layer-row');
+          const rows = queryShadowAll(layer, '.layer-row');
           for (const row of rows) {
             // get the text
             await addLegendItem({
               legendItems,
               element: row,
-              symbolClass: 'esri-legend__symbol',
-              textClass: 'esri-legend__layer-cell--info',
+              symbolClass: 'symbol',
+              textClass: 'layer-cell-info',
               type: 'item',
             });
           }
@@ -2319,11 +2354,13 @@ export async function generateAndDownloadPdf({
    *
    * @param doc PDFDocument adding to
    * @param image Image to embed in PDF
+   * @param maxWidth Widest the image may be drawn
    * @returns The pdfImage, scaled height and scaled width
    */
   async function embedImage(
     doc: PDFDocumentType,
-    image?: PdfLegendImage | null,
+    image: PdfLegendImage | null | undefined,
+    maxWidth: number,
   ) {
     if (!image)
       return { pdfImage: null, imageScaledHeight: 0, imageScaledWidth: 0 };
@@ -2337,7 +2374,15 @@ export async function generateAndDownloadPdf({
 
       // embed, scale and draw the image
       const pdfImage = await doc.embedPng(image.code);
-      const dimensions = pdfImage.scale(imageScaleFactor);
+
+      // Some services publish a legend as one wide swatch with its labels drawn
+      // in. Left at the usual factor those run into the next column.
+      const dimensions = pdfImage.scale(
+        Math.min(
+          imageScaleFactor / symbolPixelRatio,
+          maxWidth / pdfImage.width,
+        ),
+      );
 
       return {
         pdfImage,
@@ -2364,14 +2409,26 @@ export async function generateAndDownloadPdf({
   async function getImage(parentElement: Element, searchClass: string) {
     const htmltoimage = await import('html-to-image');
     // get the symbol
-    const symbols = parentElement.getElementsByClassName(searchClass);
+    const symbols = queryShadowAll(parentElement, `.${searchClass}`);
     const symbol = (
       symbols.length > 0 ? symbols[0] : parentElement
     ) as HTMLElement;
+
+    // An <img> that has not loaded measures 0 wide, and html-to-image sizes its
+    // canvas from that, so toPng hands back "data:," and embedPng rejects it.
+    await Promise.all(
+      [symbol, ...queryShadowAll(symbol, 'img')]
+        .filter((el): el is HTMLImageElement => el instanceof HTMLImageElement)
+        .map((img) => img.decode().catch(() => {})),
+    );
+
     // set div to visible to avoid blank image
     const lastVisibility = symbol.style.visibility;
     symbol.style.visibility = 'visible';
-    const img = await htmltoimage.toPng(symbol, { skipFonts: true });
+    const img = await htmltoimage.toPng(symbol, {
+      pixelRatio: symbolPixelRatio,
+      skipFonts: true,
+    });
     symbol.style.visibility = lastVisibility;
     return {
       code: img,
@@ -2524,12 +2581,23 @@ export async function generateAndDownloadPdf({
         ? helveticaBoldFont
         : helveticaFont;
 
+      const indent = leftMargin * numberOfIndents;
+
       // set x starting position
-      let x = horizontalPosition + pageMargin + leftMargin * numberOfIndents;
+      let x = horizontalPosition + pageMargin + indent;
 
       // get image dimensions after scaling
       const { pdfImage, imageScaledHeight, imageScaledWidth } =
-        await embedImage(doc, image);
+        await embedImage(doc, image, columnWidth - indent);
+
+      // the text is drawn a leftMargin to the right of the image, so the column
+      // has that much less room for it
+      const textWidth = Math.max(
+        columnWidth -
+          indent -
+          (imageScaledWidth ? leftMargin + imageScaledWidth : 0),
+        0,
+      );
 
       // wrap text and calculate height of text
       const { multiLineText, textHeight } = getMultilineText({
@@ -2539,7 +2607,7 @@ export async function generateAndDownloadPdf({
         bounds: {
           x,
           y: verticalPosition - topMargin,
-          width: columnWidth - imageScaledWidth - leftMargin * numberOfIndents,
+          width: textWidth,
           height,
         },
       });
