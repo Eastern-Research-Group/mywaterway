@@ -6,6 +6,7 @@ import '@arcgis/map-components/components/arcgis-expand';
 import '@arcgis/map-components/components/arcgis-home';
 import '@arcgis/map-components/components/arcgis-layer-list';
 import '@arcgis/map-components/components/arcgis-legend';
+import { LegendClassicView } from '@arcgis/map-components/components/arcgis-legend-classic-view';
 import '@arcgis/map-components/components/arcgis-scale-bar';
 import '@arcgis/map-components/components/arcgis-zoom';
 import Polygon from '@arcgis/core/geometry/Polygon';
@@ -114,6 +115,19 @@ thumbnailStyles.replaceSync(`
 ArcgisBasemapGalleryItem.elementStyles = [
   ...ArcgisBasemapGalleryItem.elementStyles,
   thumbnailStyles,
+];
+
+// We show our own message, so hide the message the legend
+// falls back to when it has nothing to draw.
+const noLegendStyles = new CSSStyleSheet();
+noLegendStyles.replaceSync(`
+  .no-legend {
+    display: none;
+  }
+`);
+LegendClassicView.elementStyles = [
+  ...LegendClassicView.elementStyles,
+  noLegendStyles,
 ];
 
 const instructionContainerStyles = (isVisible: boolean) => css`
@@ -269,10 +283,10 @@ const orderedLayers = [
 function updateLegend(
   view: MapView,
   displayEsriLegend: boolean,
-  hmwLegendRoot: Root | null,
+  hmwLegendRoots: Root[],
   additionalLegendInfo: Object,
 ) {
-  if (!hmwLegendRoot) return;
+  if (!hmwLegendRoots.length) return;
   if (!view?.map?.layers) return;
 
   // build an array of layers that are visible based on the ordering above
@@ -320,43 +334,16 @@ function updateLegend(
     }
   });
 
-  hmwLegendRoot.render(
+  // One copy for the panel and one off-screen for the PDF export, see LegendWidget
+  const legend = (
     <MapLegend
       view={view}
       displayEsriLegend={displayEsriLegend}
       visibleLayers={visibleLayers}
       additionalLegendInfo={additionalLegendInfo}
-    />,
+    />
   );
-}
-
-// colors the popup pointer according to position and number of features
-//
-// TODO(HMW-917): broken since the web components migration. The popup renders
-// inside the <arcgis-map> shadow root, so this document-level query always
-// returns an empty collection and the function is a silent no-op. The
-// .blue-popup-pointer rules in mapStyles.css are dead for the same reason, so
-// fix both together. Reaching the pointer needs the map element's shadowRoot,
-// and the class it toggles has to be styled from inside that root too.
-function updatePopupPointerStyles(
-  features: Graphic[],
-  currentAlignment: CurrentAlignment,
-) {
-  const pointers = document.getElementsByClassName(
-    'esri-popup__pointer-direction',
-  );
-
-  for (let pointer of pointers) {
-    let isPointerTop = [
-      'bottom-center',
-      'bottom-left',
-      'bottom-right',
-    ].includes(currentAlignment);
-
-    if (features.length <= 1 && !isPointerTop)
-      pointer.classList.remove('blue-popup-pointer');
-    else pointer.classList.add('blue-popup-pointer');
-  }
+  hmwLegendRoots.forEach((root) => root.render(legend));
 }
 
 const resizeHandleStyles = css`
@@ -369,15 +356,7 @@ const resizeHandleStyles = css`
 /*
 ## Components
 */
-type CurrentAlignment =
-  | 'bottom-center'
-  | 'bottom-left'
-  | 'bottom-right'
-  | 'top-center'
-  | 'top-left'
-  | 'top-right';
 interface PopupExt extends Popup {
-  currentAlignment: CurrentAlignment;
   featureMenuOpen: boolean;
 }
 
@@ -455,16 +434,6 @@ function MapWidgets({
 
   useEffect(() => {
     if (!view?.popup) return;
-    // adjust popup pointer styles according to
-    const popupAlignementWatcher = reactiveUtils.watch(
-      () => (view.popup as PopupExt).currentAlignment,
-      () => {
-        updatePopupPointerStyles(
-          view.popup.features,
-          (view.popup as PopupExt).currentAlignment,
-        );
-      },
-    );
 
     // revert calcite styles when feature list menu is opened
     const popupFeatureMenuWatcher = reactiveUtils.watch(
@@ -498,11 +467,6 @@ function MapWidgets({
       () => {
         const features = view.popup.features;
         if (features.length === 0) return;
-
-        updatePopupPointerStyles(
-          features,
-          (view.popup as PopupExt).currentAlignment,
-        );
 
         function getSortIndex(graphic: Graphic) {
           const parentId = (graphic?.layer?.parent as GroupLayer)?.id;
@@ -540,7 +504,6 @@ function MapWidgets({
     );
 
     return function cleanup() {
-      popupAlignementWatcher.remove();
       popupFeatureMenuWatcher.remove();
       popupWatcher.remove();
     };
@@ -631,7 +594,7 @@ function MapWidgets({
     updateVisibleLayers({ [toggledLayer.layerId]: toggledLayer.visible });
   }, [toggledLayer, lastToggledLayer, updateVisibleLayers]);
 
-  const legendRoot = useRef<Root | null>(null);
+  const legendRoots = useRef<Root[]>([]);
   const [displayEsriLegend, setDisplayEsriLegend] = useState(false);
 
   // Creates and adds the add/save data widget to the map
@@ -727,7 +690,7 @@ function MapWidgets({
         updateLegend(
           view,
           displayEsriLegend,
-          legendRoot.current,
+          legendRoots.current,
           additionalLegendInfoNonState,
         );
       },
@@ -780,7 +743,7 @@ function MapWidgets({
     updateLegend(
       view,
       displayEsriLegend,
-      legendRoot.current,
+      legendRoots.current,
       additionalLegendInfo,
     );
   }, [
@@ -821,7 +784,7 @@ function MapWidgets({
       updateLegend(
         item.view,
         displayEsriLegend,
-        legendRoot.current,
+        legendRoots.current,
         additionalLegendInfoNonState,
       );
 
@@ -832,7 +795,7 @@ function MapWidgets({
             updateLegend(
               view,
               displayEsriLegend,
-              legendRoot.current,
+              legendRoots.current,
               additionalLegendInfoNonState,
             );
             const dict = {
@@ -885,8 +848,9 @@ function MapWidgets({
         style={{ marginBottom: '10px' }}
       >
         <LegendWidget
-          legendRoot={legendRoot}
+          legendRoots={legendRoots}
           setDisplayEsriLegend={setDisplayEsriLegend}
+          view={view}
         />
       </arcgis-expand>
 
@@ -1055,104 +1019,77 @@ function MapWidgets({
   );
 }
 
+// Builds the legend twice, once for the expand panel and once for the PDF
+// export to read.
 function LegendWidget({
-  legendRoot,
+  legendRoots,
   setDisplayEsriLegend,
+  view,
 }: {
-  legendRoot: React.RefObject<Root | null>;
+  legendRoots: MutableRefObject<Root[]>;
   setDisplayEsriLegend: React.Dispatch<React.SetStateAction<boolean>>;
+  view: MapView;
 }) {
-  const syncedNode = useRef<HTMLDivElement | null>(null);
-  const legendNode = useRef<HTMLDivElement | null>(null);
-  const hmwLegendTemp = useRef<HTMLDivElement | null>(null);
-  const esriLegendRef = useRef<HTMLDivElement | null>(null);
-
-  // Creates and adds the legend widget to the map
-  const [initialized, setInitialized] = useState(false);
-  useEffect(() => {
-    if (initialized || !syncedNode?.current || !legendNode?.current) return;
-
-    document.body.appendChild(legendNode.current);
-
-    const syncContent = () => {
-      if (!syncedNode?.current) return;
-      syncedNode.current.innerHTML = legendNode?.current?.innerHTML ?? '';
-    };
-    syncContent();
-
-    // Observe changes to the source div and update the synced div
-    const observer = new MutationObserver(syncContent);
-    observer.observe(legendNode.current, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    setInitialized(true);
-  }, [initialized, legendNode, syncedNode]);
+  const panelHmwLegend = useRef<HTMLDivElement | null>(null);
+  const offscreenHmwLegend = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (legendRoot?.current || !hmwLegendTemp?.current) return;
-    legendRoot.current = createRoot(hmwLegendTemp.current);
-  }, [hmwLegendTemp, legendRoot]);
+    if (legendRoots.current.length) return;
+    if (!panelHmwLegend.current || !offscreenHmwLegend.current) return;
 
-  const observers = useMemo<MutationObserver[]>(() => [], []);
+    legendRoots.current = [
+      createRoot(panelHmwLegend.current),
+      createRoot(offscreenHmwLegend.current),
+    ];
+  }, [legendRoots]);
+
+  const esriLegendWatcher = useRef<ResourceHandle | null>(null);
   useEffect(() => {
     return function cleanup() {
-      observers.forEach((observer) => observer.disconnect());
+      esriLegendWatcher.current?.remove();
     };
-  }, [observers]);
-
-  const [observerInitialized, setObserverInitialized] = useState(false);
-  useEffect(() => {
-    if (observerInitialized || !esriLegendRef?.current) return;
-
-    // Create an observer instance linked to the callback function
-    //
-    // TODO(HMW-917): broken since the web components migration. .esri-legend__message
-    // now renders inside the <arcgis-legend> shadow root, so this query never
-    // matches and displayEsriLegend is always true. The "no legend" case no
-    // longer hides anything. A MutationObserver also will not see into a shadow
-    // root from outside; this needs to observe the component's shadowRoot, or
-    // better, be driven off <arcgis-legend> state instead of scraped markup.
-    const observer = new MutationObserver((_mutationsList, _observerParam) => {
-      const esriMessages = esriLegendRef.current
-        ? esriLegendRef.current.querySelectorAll('.esri-legend__message')
-        : [];
-
-      setDisplayEsriLegend(esriMessages.length === 0);
-    });
-
-    // Start observing the target node for configured mutations
-    observer.observe(esriLegendRef?.current, {
-      childList: true,
-      characterData: true,
-      subtree: true,
-    });
-
-    observers.push(observer);
-
-    setObserverInitialized(true);
-  }, [observerInitialized, observers, setDisplayEsriLegend]);
+  }, []);
 
   return (
     <Fragment>
-      <div ref={syncedNode} id="esri-legend-sync-div" />
+      <div ref={panelHmwLegend} />
 
-      <div
-        aria-hidden={true}
-        className="map-legend sr-only"
-        id="non-visible-legend"
-        ref={legendNode}
-      >
-        <div ref={hmwLegendTemp} />
-        <arcgis-legend layerInfos={[]} />
+      {/* inside <arcgis-expand> this finds the view on its own */}
+      <arcgis-legend
+        layerInfos={[]}
+        onarcgisReady={(event) => {
+          const legend = event.target;
+          esriLegendWatcher.current?.remove();
+
+          // Counting the layers the legend was handed, rather than asking
+          // whether it drew anything, keeps this from toggling as those
+          // legends load.
+          esriLegendWatcher.current = reactiveUtils.watch(
+            () => legend.activeLayerInfos.length > 0,
+            (hasLayers) => setDisplayEsriLegend(hasLayers),
+            { initial: true },
+          );
+        }}
+      />
+
+      {/*
+        Portaled out of the panel, because <arcgis-expand> renders its slot in a
+        calcite-popover that is display: none while collapsed. The PDF export
+        measures and rasterizes these nodes, so they have to keep their layout;
+        sr-only leaves it intact.
+      */}
+      {createPortal(
         <div
-          id="esri-legend-container"
-          ref={esriLegendRef}
-          style={{ maxWidth: '240px' }}
-        />
-      </div>
+          aria-hidden={true}
+          className="map-legend sr-only"
+          id="non-visible-legend"
+        >
+          <div ref={offscreenHmwLegend} />
+          {/* set the view, since there is no ancestor out here to find it on */}
+          <arcgis-legend layerInfos={[]} view={view} />
+        </div>,
+        document.body,
+      )}
     </Fragment>
   );
 }

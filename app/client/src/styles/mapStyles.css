@@ -43,13 +43,12 @@ arcgis-layer-list {
   width: 225px;
 }
 
-/* ported from .esri-legend -- !important no longer needed on the host */
 arcgis-legend {
   min-height: auto;
   max-height: none;
+  max-width: 240px;
 }
 
-/* ported from .esri-scale-bar */
 arcgis-scale-bar {
   z-index: 0;
 }
@@ -71,11 +70,8 @@ arcgis-scale-bar,
 }
 
 /*
- * Zebra striping for <arcgis-feature-fields>' own attribute table, which is the
- * only thing these two tokens reach. Our popup content is custom markup and is
- * striped by the hmw-popup-content rules below, not by these. Esri applies the
- * alt token to tr:nth-child(odd), so the values are the reverse of what the
- * original `.esri-popup tr:nth-child(even)` shaded.
+ * Zebra striping for <arcgis-feature-fields>' own attribute table.
+ * Our popup content is custom markup and is striped by the hmw-popup-content rules below.
  */
 arcgis-map {
   --arcgis-table-row-background-color: #f0f5f9;
@@ -88,7 +84,7 @@ arcgis-map {
 
 /*
  * We apply .esri-widget ourselves (see MapWidgets.tsx). It no longer reaches
- * anything inside a component -- the token block above handles that.
+ * anything inside a component, the token block above handles that.
  */
 .esri-widget {
   font-family: 'Source Sans Pro Web', 'Helvetica Neue', 'Helvetica', 'Roboto',
@@ -126,35 +122,28 @@ arcgis-map {
  *
  * <hmw-popup-content> is our wrapper around the React popup content (see
  * mapFunctions.tsx). These rules reach it only because utils/popupStyles.ts
- * adopts this file into the shadow root the wrapper lands in -- the element
- * never appears in the document, where this file is also loaded.
+ * adopts this file into the shadow root the wrapper lands in.
  * ------------------------------------------------------------------------ */
 
 /*
  * Do not set font-size here. The em units in the popup content are relative to
- * a 14px base, which .esri-widget used to supply and <arcgis-feature-content>
- * now supplies via font-size: var(--calcite-font-size) -- the same 14px.
+ * a 14px base, which <arcgis-feature-content> now supplies via font-size: var(--calcite-font-size).
  */
 hmw-popup-content {
   display: block;
 }
 
-/* ported from .esri-feature p */
 hmw-popup-content p {
   margin: 0; /* override esri's default margin */
   margin-bottom: 0.5rem;
 }
 
-/* ported from .esri-feature a */
 hmw-popup-content a {
   color: #0071bc;
 }
 
 /*
- * Ported from .esri-popup th, .esri-popup td and .esri-popup span.row-cell.
- * The .table variants are needed to outrank bootstrap's `.table td, .table th`
- * padding: the old .esri-popup selectors tied it on specificity and won on
- * source order, but a tag-only selector loses to it outright.
+ * The .table variants are needed to outrank bootstrap's `.table td, .table th` padding.
  */
 hmw-popup-content th,
 hmw-popup-content td,
@@ -164,7 +153,6 @@ hmw-popup-content .table td {
   padding: 0.35rem;
 }
 
-/* ported from .esri-popup tr:nth-child(even) / .esri-popup .row-cell */
 hmw-popup-content tr:nth-child(even),
 hmw-popup-content .row-cell:nth-of-type(4n + 3),
 hmw-popup-content .row-cell:nth-of-type(4n + 3) + * {
@@ -225,19 +213,6 @@ hmw-popup-content .row-cell:nth-of-type(4n + 3) + * {
 }
 
 /*
- * TODO(HMW-917): internals of <arcgis-legend>. .esri-legend-hidden is not
- * applied anywhere in our source either -- confirm it is obsolete and drop it.
- * See also the broken .esri-legend__message query in MapWidgets.tsx.
- */
-.esri-legend-hidden {
-  display: none;
-}
-
-.esri-legend__message {
-  display: none;
-}
-
-/*
  * TODO(HMW-917): internals of <arcgis-print>. We do not mount an
  * <arcgis-print> component anywhere, so this is doubly dead.
  */
@@ -255,13 +230,10 @@ hmw-popup-content .row-cell:nth-of-type(4n + 3) + * {
 /* --------------------------------------------------------------------------
  * Esri's own markup in the <arcgis-map> shadow root
  *
- * The popup header, action bar and pointer are Esri's, not ours, and render in
- * the map's shadow root. adoptMapStyles() (utils/popupStyles.ts) adopts this
- * file into that root on view ready, so these selectors match again -- they do
- * nothing in the document, where this file is also loaded.
- *
- * Note the two roots: our popup content lands further down, inside
- * <arcgis-feature-content>, and is styled by the section above.
+ * The popup header, action bar and pointer render in the map's shadow root.
+ * adoptMapStyles() (utils/popupStyles.ts) adopts this file into that root
+ * on view ready, so these selectors match again. They do nothing in the
+ * document, where this file is also loaded.
  * ------------------------------------------------------------------------ */
 
 /* attribution renders in this root too */
@@ -283,9 +255,8 @@ hmw-popup-content .row-cell:nth-of-type(4n + 3) + * {
  * These actions are appearance="transparent", which paints from
  * --calcite-action-background-color.
  *
- * Not calcite-flow: these tokens inherit into everything it contains, which
- * turns the feature-picker list blue too. Scoping to .esri-popup__main-container
- * keeps them off the calcite-actions in the layer list, legend and gallery.
+ * Scoping to .esri-popup__main-container keeps them off the calcite-actions
+ * in the layer list, legend and gallery.
  */
 .esri-popup__main-container calcite-action,
 .esri-popup__main-container calcite-action-bar {
@@ -312,7 +283,7 @@ hmw-popup-content .row-cell:nth-of-type(4n + 3) + * {
 }
 
 /*
- * The title row -- feature name and dock button. calcite-flow-item maps the
+ * The title row (feature name and dock button). calcite-flow-item maps the
  * --calcite-panel-* tokens from its own --calcite-flow-* family, so these are
  * the ones that reach the header. Scoped to the content item, which leaves the
  * feature-picker item alone.
@@ -345,20 +316,9 @@ hmw-popup-content .row-cell:nth-of-type(4n + 3) + * {
   color: white;
 }
 
-/*
- * The alignment selectors match again. The .blue-popup-pointer one still will
- * not: TODO(HMW-917) that class is added by updatePopupPointerStyles() in
- * MapWidgets.tsx, which queries the light DOM for a node in this root and so
- * never finds it.
- */
 .esri-popup--aligned-bottom-center .esri-popup__pointer-direction,
 .esri-popup--aligned-bottom-left .esri-popup__pointer-direction,
 .esri-popup--aligned-bottom-right .esri-popup__pointer-direction,
-.esri-popup__pointer-direction.blue-popup-pointer,
 .esri-popup:has(.esri-features__footer) .esri-popup__pointer-direction {
-  background-color: #0674ba;
-}
-
-.esri-popup__pointer-direction.blue-popup-pointer {
   background-color: #0674ba;
 }
