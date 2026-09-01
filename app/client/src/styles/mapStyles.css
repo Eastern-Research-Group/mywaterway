@@ -63,8 +63,9 @@ arcgis-legend,
 arcgis-map,
 arcgis-scale-bar,
 .esri-widget {
-  --calcite-font-family: 'Source Sans Pro Web', 'Helvetica Neue', 'Helvetica',
-    'Roboto', 'Arial', sans-serif;
+  --calcite-font-family:
+    'Source Sans Pro Web', 'Helvetica Neue', 'Helvetica', 'Roboto', 'Arial',
+    sans-serif;
   --calcite-color-text-1: #4a4a4a;
 }
 
@@ -86,12 +87,30 @@ arcgis-map {
  * anything inside a component, the token block above handles that.
  */
 .esri-widget {
-  font-family: 'Source Sans Pro Web', 'Helvetica Neue', 'Helvetica', 'Roboto',
-    'Arial', sans-serif;
+  font-family:
+    'Source Sans Pro Web', 'Helvetica Neue', 'Helvetica', 'Roboto', 'Arial',
+    sans-serif;
 }
 
 .esri-widget--panel-height-only {
   width: 225px !important;
+}
+
+/*
+ * The mapped water legend is our markup, borrowing the class names of the
+ * widget arcgis-legend replaced.
+ */
+.esri-legend__symbol {
+  margin: unset;
+}
+
+.esri-legend__layer-cell--info:empty {
+  display: none;
+}
+
+.hmw-map-legend {
+  font-size: 0.875rem;
+  min-width: max-content;
 }
 
 .hmw-map-toggle {
@@ -102,8 +121,9 @@ arcgis-map {
 .hmw-map-toggle h2 {
   margin: 0 10px;
   padding: 0;
-  font-family: 'Source Sans Pro Web', 'Helvetica Neue', 'Helvetica', 'Roboto',
-    'Arial', sans-serif;
+  font-family:
+    'Source Sans Pro Web', 'Helvetica Neue', 'Helvetica', 'Roboto', 'Arial',
+    sans-serif;
   font-size: 1.25em;
 }
 
@@ -156,74 +176,6 @@ hmw-popup-content tr:nth-child(even),
 hmw-popup-content .row-cell:nth-of-type(4n + 3),
 hmw-popup-content .row-cell:nth-of-type(4n + 3) + * {
   background-color: #f0f5f9;
-}
-
-/* --------------------------------------------------------------------------
- * TODO(HMW-917): the rules below no longer match anything.
- *
- * Each targets an .esri-* class that now lives inside a component's shadow
- * root. They are kept so the intent is not lost while we work out
- * replacements, but they are dead as written -- deleting them today would
- * change nothing on screen.
- *
- * There is no supported hook for most of these (no ::part(), no custom
- * property). The options per rule are: find a calcite token that covers it,
- * restyle the surrounding light-DOM element instead, accept the component's
- * default, or -- last resort -- inject a stylesheet into the shadow root.
- * ------------------------------------------------------------------------ */
-
-/*
- * TODO(HMW-917): internals of <arcgis-expand>. The expand content is our own
- * markup (.hmw-map-toggle), so some of this may just be unnecessary now --
- * check the panel still scrolls and caps its height before deleting.
- */
-.esri-expand__content--expanded {
-  overflow: auto;
-  background-color: white;
-}
-
-@media screen {
-  .esri-expand__content-container {
-    max-height: 540px;
-    overflow: auto;
-  }
-}
-
-/*
- * TODO(HMW-917): .esri-view-height-* was set on the view root, which is now
- * inside the <arcgis-map> shadow root, so these fail on two counts. A
- * container query on the expand content is the likely replacement.
- */
-.esri-view-height-xsmall .esri-expand__popover-content {
-  max-height: 240px;
-}
-
-.esri-view-height-small .esri-expand__popover-content {
-  max-height: 420px;
-}
-
-/* TODO(HMW-917): internals of <arcgis-legend>. */
-.esri-legend__symbol {
-  margin: unset;
-}
-
-.esri-legend__layer-cell--info:empty {
-  display: none;
-}
-
-/*
- * TODO(HMW-917): internals of <arcgis-print>. We do not mount an
- * <arcgis-print> component anywhere, so this is doubly dead.
- */
-.esri-print__header-title {
-  font-size: 1.25em;
-  font-weight: 500;
-  line-height: 1.2;
-}
-
-/* TODO(HMW-917): internals of <arcgis-scale-bar>. */
-.esri-scale-bar__label {
-  overflow: auto;
 }
 
 /* --------------------------------------------------------------------------

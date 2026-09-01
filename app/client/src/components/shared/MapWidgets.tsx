@@ -1087,7 +1087,7 @@ function LegendWidget({
       {createPortal(
         <div
           aria-hidden={true}
-          className="map-legend sr-only"
+          className="hmw-map-legend sr-only"
           id="non-visible-legend"
         >
           <div ref={offscreenHmwLegend} />
@@ -2071,40 +2071,42 @@ export async function generateAndDownloadPdf({
 
   /**
    * Gets the symbol and text for the provided combination of
-   * element, symbolClass and textClass.
+   * element, symbolSelector and textSelector.
    *
    * @param legendItems Array to add legend item to
    * @param element Element to search in
-   * @param symbolClass Class for selecting the symbol part
-   * @param textClass Class for selecting the text part
+   * @param symbolSelector Selector for the symbol part
+   * @param textSelector Selector for the text part
    * @param type Type of legend item (h1, h2, h3 or item)
    * @param firstOnly Only include the first text item
    */
   async function addLegendItem({
     legendItems,
     element,
-    symbolClass,
-    textClass,
+    symbolSelector,
+    textSelector,
     type,
     firstOnly = true,
   }: {
     legendItems: PdfLegendItem[];
     element: Element;
-    symbolClass?: string;
-    textClass: string;
+    symbolSelector?: string;
+    textSelector: string;
     type: PdfLegendItemType;
     firstOnly?: boolean;
   }) {
-    const image = !symbolClass ? null : await getImage(element, symbolClass);
+    const image = !symbolSelector
+      ? null
+      : await getImage(element, symbolSelector);
     let itemsAdded = 0;
 
     // skip adding text if the png was generated from a div
-    const symbols = !symbolClass
+    const symbols = !symbolSelector
       ? null
-      : queryShadowAll(element, `.${symbolClass}`);
-    if (!symbolClass || (symbols && symbols.length > 0)) {
+      : queryShadowAll(element, symbolSelector);
+    if (!symbolSelector || (symbols && symbols.length > 0)) {
       // get captions
-      const textItems = queryShadowAll(element, `.${textClass}`);
+      const textItems = queryShadowAll(element, textSelector);
 
       for (let textItem of textItems) {
         const text = textItem.textContent;
@@ -2145,12 +2147,29 @@ export async function generateAndDownloadPdf({
       await addLegendItem({
         legendItems,
         element: item,
-        symbolClass: 'hmw-legend__symbol',
-        textClass: 'hmw-legend__info',
+        symbolSelector: '.hmw-legend__symbol',
+        textSelector: '.hmw-legend__info',
         type: 'imageItem',
       });
     }
   }
+
+  /*
+   * Two shapes end up under #non-visible-legend, so every selector below pairs
+   * them: our own markup for the mapped water legend, which borrows the class
+   * names of the widget arcgis-legend replaced (see MapLegend.tsx), and the
+   * component's own markup for everything else.
+   */
+  const legendSelectors = {
+    service: '.esri-legend__service, .layers > .layer',
+    group: '.esri-legend__group-layer-child, .layer-child',
+    title: '.esri-legend__service-label, .esri-widget__heading',
+    layer: '.esri-legend__layer, .layer-table',
+    caption: '.esri-legend__layer-caption, .layer-caption',
+    row: '.esri-legend__layer-row, .layer-row',
+    symbol: '.esri-legend__symbol, .symbol',
+    info: '.esri-legend__layer-cell--info, .layer-cell-info',
+  };
 
   /**
    * Parses the dom and adds the Esri portion of the legend to the
@@ -2161,16 +2180,16 @@ export async function generateAndDownloadPdf({
     // loop through layers of esri legend items
     const legendElm = document.getElementById('non-visible-legend');
     if (!legendElm) return;
-    const legendServices = queryShadowAll(legendElm, '.layers > .layer');
+    const legendServices = queryShadowAll(legendElm, legendSelectors.service);
     for (const legendService of legendServices) {
       let hasHighestLevel = false;
-      const groups = queryShadowAll(legendService, '.layer-child');
+      const groups = queryShadowAll(legendService, legendSelectors.group);
       if (groups.length === 0) groups.push(legendService);
       else {
         await addLegendItem({
           legendItems,
           element: legendService,
-          textClass: 'esri-widget__heading',
+          textSelector: legendSelectors.title,
           type: 'h1',
         });
         hasHighestLevel = true;
@@ -2181,31 +2200,31 @@ export async function generateAndDownloadPdf({
         await addLegendItem({
           legendItems,
           element: group,
-          textClass: 'esri-widget__heading',
+          textSelector: legendSelectors.title,
           type: hasHighestLevel ? 'h2' : 'h1',
         });
 
         // get layer level content
-        const layers = queryShadowAll(group, '.layer-table');
+        const layers = queryShadowAll(group, legendSelectors.layer);
         for (const layer of layers) {
           // get captions
           await addLegendItem({
             legendItems,
             element: layer,
-            textClass: 'layer-caption',
+            textSelector: legendSelectors.caption,
             type: hasHighestLevel ? 'h3' : 'h2',
             firstOnly: false,
           });
 
           // get row level content
-          const rows = queryShadowAll(layer, '.layer-row');
+          const rows = queryShadowAll(layer, legendSelectors.row);
           for (const row of rows) {
             // get the text
             await addLegendItem({
               legendItems,
               element: row,
-              symbolClass: 'symbol',
-              textClass: 'layer-cell-info',
+              symbolSelector: legendSelectors.symbol,
+              textSelector: legendSelectors.info,
               type: 'item',
             });
           }
@@ -2403,13 +2422,13 @@ export async function generateAndDownloadPdf({
    * Gets a symbol and converts it to a base64 PNG.
    *
    * @param parentElement Element to find symbol in.
-   * @param searchClass Class of symbol being searched for.
+   * @param searchSelector Selector for the symbol being searched for.
    * @returns code as base64 PNG and height/width of image.
    */
-  async function getImage(parentElement: Element, searchClass: string) {
+  async function getImage(parentElement: Element, searchSelector: string) {
     const htmltoimage = await import('html-to-image');
     // get the symbol
-    const symbols = queryShadowAll(parentElement, `.${searchClass}`);
+    const symbols = queryShadowAll(parentElement, searchSelector);
     const symbol = (
       symbols.length > 0 ? symbols[0] : parentElement
     ) as HTMLElement;
