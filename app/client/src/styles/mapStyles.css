@@ -162,11 +162,12 @@ hmw-popup-content a {
 }
 
 /*
- * The .table variants are needed to outrank bootstrap's `.table td, .table th` padding.
+ * The .table variants are needed to outrank bootstrap's `.table td, .table th` padding,
+ * and .row-cell is repeated to outrank the padding BoxContent sets on its container.
  */
 hmw-popup-content th,
 hmw-popup-content td,
-hmw-popup-content span.row-cell,
+hmw-popup-content span.row-cell.row-cell,
 hmw-popup-content .table th,
 hmw-popup-content .table td {
   padding: 0.35rem;
