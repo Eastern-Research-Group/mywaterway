@@ -27,6 +27,15 @@ function toSheet(css: string) {
   return sheet;
 }
 
+/*
+ * adoptedStyleSheets cascade after emotion's popup styles, so adopting these
+ * unlayered would flip every tie they lose in the document. Unlayered rules beat
+ * layered ones.
+ */
+function layered(css: string) {
+  return toSheet(`@layer global { ${css} }`);
+}
+
 // one sheet object, adopted by both roots -- parsed once either way
 function mapStylesSheet() {
   mapSheet ??= toSheet(mapStyles);
@@ -65,7 +74,7 @@ function globalSheets() {
   const built = [
     ...[bootstrap, overrides]
       .filter((css): css is string => Boolean(css))
-      .map(toSheet),
+      .map(layered),
     mapStylesSheet(),
   ];
 
