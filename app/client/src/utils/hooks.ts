@@ -1246,12 +1246,22 @@ function useSharedLayers({
   function getMappedWaterLayer() {
     const mappedWaterLayer = new MapImageLayer({
       id: 'mappedWaterLayer',
-      // sublayers have minScale of 288896,
-      // but this doesn't match the actual behavior
-      minScale: 144448,
+      // Pin to 96; on hi-dpi screens the higher dpi inflates the server's
+      // recomputed scale past the service's minScale, returning an empty image.
+      dpi: 96,
       url: configFiles.data.services.mappedWater,
       title: 'All Mapped Water (NHD)',
-      sublayers: [{ id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }],
+      sublayers: [
+        { id: 4 },
+        { id: 5 },
+        { id: 6 },
+        { id: 7 },
+        { id: 8 },
+        { id: 9 },
+        { id: 10 },
+        { id: 11 },
+        { id: 12 },
+      ],
       legendEnabled: false,
       listMode: 'hide-children',
       visible: false,

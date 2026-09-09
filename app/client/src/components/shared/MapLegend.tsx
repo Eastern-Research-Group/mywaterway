@@ -707,12 +707,22 @@ function MapLegendContent({ view, layer, additionalLegendInfo }: CardProps) {
       );
     }
 
-    const subLegends = {};
+    // The service splits each feature type (Flowline, Area, Waterbody) into
+    // small and large scale sublayers that share most of their symbols, so
+    // merge them into one list per feature type, keyed by label to dedupe.
+    const subLegends: { [name: string]: Map<string, Object> } = {};
     additionalLegendInfo.data['mappedWaterLayer']?.layers
       ?.filter((sublayer) => sublayerIds.includes(sublayer.layerId))
-      .forEach(
-        (sublayer) => (subLegends[sublayer.layerName] = sublayer.legend),
-      );
+      .forEach((sublayer) => {
+        const name = sublayer.layerName.split(' - ')[0].trim();
+        if (!subLegends[name]) subLegends[name] = new Map();
+
+        sublayer.legend.forEach((item) => {
+          if (!subLegends[name].has(item.label)) {
+            subLegends[name].set(item.label, item);
+          }
+        });
+      });
 
     if (!Object.keys(subLegends).length) {
       return (
@@ -743,7 +753,7 @@ function MapLegendContent({ view, layer, additionalLegendInfo }: CardProps) {
             </div>
 
             <ul css={[nestedUl, { marginBottom: '0.5rem' }]}>
-              {legend.map((item) => {
+              {[...legend.values()].map((item) => {
                 return (
                   <li className="esri-legend__layer-row" key={item.label}>
                     <div css={legendItemStyles}>
