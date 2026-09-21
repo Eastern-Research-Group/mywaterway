@@ -1246,6 +1246,7 @@ function useSharedLayers({
   function getMappedWaterLayer() {
     const mappedWaterLayer = new MapImageLayer({
       id: 'mappedWaterLayer',
+      minScale: 100_000,
       url: configFiles.data.services.mappedWater,
       title: 'All Mapped Water (NHD)',
       sublayers: [
