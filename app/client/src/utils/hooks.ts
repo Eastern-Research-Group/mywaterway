@@ -1246,12 +1246,15 @@ function useSharedLayers({
   function getMappedWaterLayer() {
     const mappedWaterLayer = new MapImageLayer({
       id: 'mappedWaterLayer',
-      // sublayers have minScale of 288896,
-      // but this doesn't match the actual behavior
-      minScale: 144448,
+      minScale: 100_000,
       url: configFiles.data.services.mappedWater,
       title: 'All Mapped Water (NHD)',
-      sublayers: [{ id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }],
+      sublayers: [
+        { id: 3 },
+        { id: 4 },
+        { id: 8 },
+        { id: 9 },
+      ],
       legendEnabled: false,
       listMode: 'hide-children',
       visible: false,
