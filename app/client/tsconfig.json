@@ -19,7 +19,12 @@
     "sourceMap": true,
     "strict": true,
     "target": "es2020",
-    "types": ["vite/client", "unplugin-icons/types/react"]
+    "types": [
+      "vite/client",
+      "unplugin-icons/types/react",
+      "@arcgis/map-components",
+      "@esri/calcite-components/types/react"
+    ]
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]

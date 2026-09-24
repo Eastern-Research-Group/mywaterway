@@ -101,7 +101,7 @@ describe('Community page map legend', () => {
     cy.wait(2000);
 
     cy.findByTitle('Open Basemaps and Layers').click();
-    cy.get('.hmw-map-layers').within(() => {
+    cy.findByTestId('hmw-map-layers').within(() => {
       cy.get('calcite-list-item')
         .shadow()
         .contains('div', 'All Mapped Water (NHD)')
