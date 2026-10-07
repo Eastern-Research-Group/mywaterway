@@ -329,7 +329,7 @@ describe('Add & Save Data Widget', () => {
 
   it('Test that save panel switches align with currently visible layers', () => {
     cy.findByTitle('Open Basemaps and Layers').click({ force: true });
-    cy.get('.hmw-map-layers').within(() => {
+    cy.findByTestId('hmw-map-layers').within(() => {
       // toggle on a layer
       cy.get('calcite-list-item')
         .shadow()
