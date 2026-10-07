@@ -396,8 +396,8 @@ function MapWidgets({
   }, [watchHandles]);
 
   const {
-    basemap,
-    setBasemap,
+    basemapId,
+    setBasemapId,
     homeWidget,
     setHomeWidget,
     setUpstreamWidgetDisabled,
@@ -566,14 +566,25 @@ function MapWidgets({
     map.layers.sort((a: Layer, b: Layer) => {
       return sortBy.indexOf(getLayerType(a)) - sortBy.indexOf(getLayerType(b));
     });
+
+    return function cleanup() {
+      // These layers are shared through context and outlive this map. When
+      // <arcgis-map> unmounts it destroys the view, and view.destroy()
+      // destroys the map and everything still on it.
+      map.removeAll();
+    };
   }, [layers, map, widgetLayers]);
 
   const homeWidgetRef = useRef<HTMLArcgisHomeElement | null>(null);
   useEffect(() => {
-    if (homeWidget) return;
-    if (homeWidgetRef?.current) onHomeWidgetRendered(homeWidgetRef.current);
-    setHomeWidget(homeWidgetRef?.current ?? null);
-  }, [homeWidget, homeWidgetRef, onHomeWidgetRendered, setHomeWidget]);
+    const newHomeWidget = homeWidgetRef.current;
+    if (!newHomeWidget || newHomeWidget === homeWidget) return;
+
+    if (homeWidget?.viewpoint) newHomeWidget.viewpoint = homeWidget.viewpoint;
+    else onHomeWidgetRendered(newHomeWidget);
+
+    setHomeWidget(newHomeWidget);
+  }, [homeWidget, onHomeWidgetRendered, setHomeWidget]);
 
   // Keeps the layer visiblity in sync with the layer list widget visibilities
   const [toggledLayer, setToggledLayer] = useState({
@@ -696,19 +707,18 @@ function MapWidgets({
       },
     );
 
-    // when basemap changes, update the basemap in context for persistent basemaps
-    // across fullscreen and mobile/desktop layout changes
+    // when basemap changes, record the portal item in context for persistent
+    // basemaps across fullscreen and mobile/desktop layout changes
     const basemapHandle = view.map.allLayers.on('change', function (_ev) {
-      if (view.map.basemap !== basemap) {
-        setBasemap(view.map.basemap);
-      }
+      const id = view.map.basemap?.portalItem?.id;
+      if (id && id !== basemapId) setBasemapId(id);
     });
 
     return function cleanup() {
       basemapHandle.remove();
       zoomHandle.remove();
     };
-  }, [additionalLegendInfo, basemap, setBasemap, view, displayEsriLegend]);
+  }, [additionalLegendInfo, basemapId, setBasemapId, view, displayEsriLegend]);
 
   // watch for location changes and disable/enable the upstream widget accordingly
   // widget should only be displayed on Tribal page or valid Community page location
@@ -776,11 +786,9 @@ function MapWidgets({
   ]);
 
   // Creates actions in the LayerList to monitor layer visibility
-  const uniqueParentItems: string[] = [];
   function defineActions(event: { item: ListItem }) {
     const item = event.item;
     if (!item.parent) {
-      uniqueParentItems.push(item.title);
       updateLegend(
         item.view,
         displayEsriLegend,
@@ -825,12 +833,24 @@ function MapWidgets({
     }),
   );
 
-  if (!addSaveDataWidgetInitialized) return null;
+  // Measured so the widget is laid out again when a hidden map is shown and goes back to a non-zero width.
+  const [mapWidth, setMapWidth] = useState(0);
+  useEffect(() => {
+    if (!mapRef.current) return;
 
-  const mapWidth = document
-    .getElementById('hmw-map-container')
-    ?.getBoundingClientRect().width;
-  if (!mapWidth) return null;
+    const resizeObserver = new ResizeObserver((entries) => {
+      const map = entries.pop();
+      if (map) setMapWidth(map.contentRect.width);
+    });
+
+    resizeObserver.observe(mapRef.current);
+
+    return function cleanup() {
+      resizeObserver.disconnect();
+    };
+  }, [mapRef]);
+
+  if (!addSaveDataWidgetInitialized) return null;
 
   const viewportWidth = window.innerWidth;
 
@@ -959,62 +979,65 @@ function MapWidgets({
         slot="bottom-right"
       />
 
-      <div
-        style={{
-          display: addSaveDataWidgetVisible ? 'block' : 'none',
-          position: 'absolute',
-          top: '0',
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-        }}
-      >
-        {viewportWidth < 960 ? (
-          <div
-            id="add-save-data-widget"
-            className={addSaveDataWidgetVisible ? '' : 'hidden'}
-            role="region"
-            style={{
-              backgroundColor: 'white',
-              pointerEvents: 'all',
-              height: '410px',
-              width: `${mapWidth}px`,
-              position: 'absolute',
-              bottom: 0,
-            }}
-            tabIndex={0}
-          >
-            <AddSaveDataWidget />
-          </div>
-        ) : (
-          <Rnd
-            id="add-save-data-widget"
-            className={addSaveDataWidgetVisible ? '' : 'hidden'}
-            style={{ backgroundColor: 'white', pointerEvents: 'all' }}
-            ref={rnd}
-            default={{
-              x: (mapWidth - 400 - 60) / 2,
-              y: 7.5,
-              width: '400px',
-              height: '410px',
-            }}
-            minWidth="275px"
-            minHeight="410px"
-            bounds="parent"
-            enableResizing={{
-              bottomRight: true,
-            }}
-            dragHandleClassName="drag-handle"
-            role="region"
-            tabIndex={0}
-          >
-            <AddSaveDataWidget />
-            <div css={resizeHandleStyles}>
-              <img src={resizeIcon} alt="Resize Handle"></img>
+      {/* Rnd reads mapWidth once, on mount, so wait for a real measurement */}
+      {mapWidth > 0 && (
+        <div
+          style={{
+            display: addSaveDataWidgetVisible ? 'block' : 'none',
+            position: 'absolute',
+            top: '0',
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+          }}
+        >
+          {viewportWidth < 960 ? (
+            <div
+              id="add-save-data-widget"
+              className={addSaveDataWidgetVisible ? '' : 'hidden'}
+              role="region"
+              style={{
+                backgroundColor: 'white',
+                pointerEvents: 'all',
+                height: '410px',
+                width: `${mapWidth}px`,
+                position: 'absolute',
+                bottom: 0,
+              }}
+              tabIndex={0}
+            >
+              <AddSaveDataWidget />
             </div>
-          </Rnd>
-        )}
-      </div>
+          ) : (
+            <Rnd
+              id="add-save-data-widget"
+              className={addSaveDataWidgetVisible ? '' : 'hidden'}
+              style={{ backgroundColor: 'white', pointerEvents: 'all' }}
+              ref={rnd}
+              default={{
+                x: (mapWidth - 400 - 60) / 2,
+                y: 7.5,
+                width: '400px',
+                height: '410px',
+              }}
+              minWidth="275px"
+              minHeight="410px"
+              bounds="parent"
+              enableResizing={{
+                bottomRight: true,
+              }}
+              dragHandleClassName="drag-handle"
+              role="region"
+              tabIndex={0}
+            >
+              <AddSaveDataWidget />
+              <div css={resizeHandleStyles}>
+                <img src={resizeIcon} alt="Resize Handle"></img>
+              </div>
+            </Rnd>
+          )}
+        </div>
+      )}
     </Fragment>
   );
 }

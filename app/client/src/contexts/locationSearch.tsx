@@ -3,10 +3,9 @@ import Extent from '@arcgis/core/geometry/Extent';
 import Viewpoint from '@arcgis/core/Viewpoint';
 import React, { Component, createContext } from 'react';
 // types
-import type Basemap from '@arcgis/core/Basemap';
-import type Graphic from "@arcgis/core/Graphic";
-import type FeatureSet from "@arcgis/core/rest/support/FeatureSet";
-import type MapView from "@arcgis/core/views/MapView";
+import type Graphic from '@arcgis/core/Graphic';
+import type FeatureSet from '@arcgis/core/rest/support/FeatureSet';
+import type MapView from '@arcgis/core/views/MapView';
 import type { ReactNode } from 'react';
 import type {
   DischargerPermitComponents,
@@ -79,7 +78,7 @@ type State = {
   cipSummary: { status: Status; data: Huc12SummaryData };
   nonprofits: Object;
   mapView: MapView | null;
-  basemap: Basemap | null;
+  basemapId: string | null;
   homeWidget: Object;
   upstreamWidgetDisabled: boolean;
   hucBoundaries: Graphic | null;
@@ -147,7 +146,7 @@ export class LocationSearchProvider extends Component<Props, State> {
     mapView: null,
     homeWidget: null,
     upstreamWidgetDisabled: false,
-    basemap: null,
+    basemapId: null,
     hucBoundaries: null,
     atHucBoundaries: false,
     countyBoundaries: '',
@@ -280,8 +279,8 @@ export class LocationSearchProvider extends Component<Props, State> {
     setHomeWidget: (homeWidget) => {
       this.setState({ homeWidget });
     },
-    setBasemap: (basemap) => {
-      this.setState({ basemap });
+    setBasemapId: (basemapId) => {
+      this.setState({ basemapId });
     },
     setWaterbodyData: (waterbodyData) => {
       this.setState({ waterbodyData });

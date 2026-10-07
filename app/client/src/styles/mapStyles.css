@@ -188,6 +188,20 @@ hmw-popup-content .row-cell:nth-of-type(4n + 3) + * {
  * document, where this file is also loaded.
  * ------------------------------------------------------------------------ */
 
+/*
+ * The popup renders inside the view container, while the widgets are slotted
+ * into the overlay <section> that paints above it.
+ * Esri's `z-index: 0` here is a stacking context sealing the popup in; auto
+ * keeps the positioning without it, so .esri-ui can outrank the overlay.
+ */
+.arcgis-map {
+  z-index: auto;
+}
+
+.esri-ui {
+  z-index: calc(var(--calcite-z-index, 1) + 1);
+}
+
 /* attribution renders in this root too */
 .esri-attribution__powered-by {
   overflow: auto;

@@ -33,14 +33,8 @@ function Map({
 }: Readonly<Props>) {
   const { widgetLayers } = useAddSaveDataWidgetState();
   const services = useConfigFilesState().data.services;
-  const {
-    basemap,
-    highlightOptions,
-    homeWidget,
-    mapView,
-    setBasemap,
-    setMapView,
-  } = useContext(LocationSearchContext);
+  const { basemapId, highlightOptions, homeWidget, mapView, setMapView } =
+    useContext(LocationSearchContext);
 
   const { visibleLayers } = useLayers();
 
@@ -64,17 +58,10 @@ function Map({
     });
   }, [layers, map, visibleLayers, widgetLayers]);
 
-  const [basemapInitialized, setBasemapInitialized] = useState(false);
-  useEffect(() => {
-    if (basemapInitialized) return;
-
-    const mapBasemap = basemapFromPortalItem(
-      basemap?.portalItem?.id ?? services.basemaps.default,
-    );
-    if (basemap !== mapBasemap) setBasemap(mapBasemap);
-
-    setBasemapInitialized(true);
-  }, [basemap, basemapInitialized, services, setBasemap]);
+  // Create a basemap from the portal item ID.
+  const [mapBasemap] = useState(() =>
+    basemapFromPortalItem(basemapId ?? services.basemaps.default),
+  );
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -110,7 +97,7 @@ function Map({
         ref={mapContainerRef}
       >
         <arcgis-map
-          basemap={basemap}
+          basemap={mapBasemap}
           id="hmw-map-container"
           css={{
             height: '100%',
@@ -128,8 +115,12 @@ function Map({
             // TODO highlightOptions was deprecated, need to switch it out
             event.target.view.highlightOptions = highlightOptions;
             event.target.view.popupEnabled = false;
-            if (homeWidget?.viewpoint)
-              event.target.viewpoint = homeWidget.viewpoint;
+            // `viewpoint` ignores a viewpoint with no scale, and the home
+            // viewpoint is usually stored as an extent alone.
+            const homeViewpoint = homeWidget?.viewpoint;
+            if (homeViewpoint?.scale) event.target.viewpoint = homeViewpoint;
+            else if (homeViewpoint)
+              event.target.extent = homeViewpoint.targetGeometry.extent;
             else
               event.target.extent = (startingExtent as any) ?? initialExtent();
           }}
