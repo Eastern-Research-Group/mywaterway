@@ -1,4 +1,5 @@
 import { Global, css } from '@emotion/react';
+import Highcharts from 'highcharts';
 import 'react-app-polyfill/stable';
 import smoothscroll from 'smoothscroll-polyfill';
 // import { StrictMode } from 'react';
@@ -31,6 +32,9 @@ import '@esri/calcite-components/components/calcite-icon';
 import 'styles/mapStyles.css';
 
 smoothscroll.polyfill();
+
+// Highcharts defaults to the OS color scheme; HMW is light only.
+Highcharts.setOptions({ palette: { colorScheme: 'light' } });
 
 const globalStyles = css`
   #root {
