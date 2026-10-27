@@ -929,7 +929,7 @@ export function getPopupContent({
     }
 
     // wild scenic rivers
-    else if ('WSR_RIVER_NAME' in attributes) {
+    else if ('wsr_river_name' in attributes) {
       type = 'Wild and Scenic Rivers';
     }
 
