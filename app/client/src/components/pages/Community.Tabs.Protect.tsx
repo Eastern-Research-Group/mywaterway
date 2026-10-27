@@ -798,11 +798,11 @@ function Protect() {
                             const attributes = item.attributes;
                             return (
                               <FeatureItem
-                                key={attributes.OBJECTID}
+                                key={attributes.objectid}
                                 feature={item}
                                 title={
                                   <strong>
-                                    River Name: {attributes.WSR_RIVER_SHORTNAME}
+                                    River Name: {attributes.wsr_river_shortname}
                                   </strong>
                                 }
                               >
@@ -811,40 +811,40 @@ function Protect() {
                                     {
                                       label: 'Agency',
                                       value: convertAgencyCode(
-                                        attributes.AGENCY,
+                                        attributes.agency,
                                       ),
                                     },
                                     {
                                       label: 'Management Plan',
                                       value:
-                                        attributes.MANAGEMENT_PLAN === 'Y'
+                                        attributes.management_plan === 'Y'
                                           ? 'Yes'
                                           : 'No',
                                     },
                                     {
                                       label: 'Managing Entities',
                                       value: convertAgencyCode(
-                                        attributes.MANAGING_ENTITIES,
+                                        attributes.managing_entities,
                                       ),
                                     },
                                     {
                                       label: 'Public Law Name',
-                                      value: attributes.PUBLIC_LAW_NAME,
+                                      value: attributes.public_law_name,
                                     },
                                     {
                                       label: 'State',
-                                      value: attributes.STATE,
+                                      value: attributes.state,
                                     },
                                     {
                                       label: 'River Category',
-                                      value: attributes.RIVERCATEGORY,
+                                      value: attributes.rivercategory,
                                     },
                                     {
                                       label: 'Website',
-                                      value: attributes.WEBLINK ? (
+                                      value: attributes.weblink ? (
                                         <>
                                           <a
-                                            href={attributes.WEBLINK}
+                                            href={attributes.weblink}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                           >
@@ -865,7 +865,7 @@ function Protect() {
                                   <ViewOnMapButton
                                     layers={[wildScenicRiversLayer]}
                                     feature={item}
-                                    idField={'OBJECTID'}
+                                    idField={'objectid'}
                                     onClick={() => {
                                       if (wildScenicRiversDisplayed) return;
 
