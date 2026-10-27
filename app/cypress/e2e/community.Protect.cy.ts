@@ -148,7 +148,7 @@ describe('Protect Tab', () => {
   it('Check the wild and scenic rivers section', () => {
     // navigate to Protect tab of Community page
     cy.findByPlaceholderText('Search by address', { exact: false }).type(
-      '121002030202',
+      '050500020909',
     );
     cy.findByText('Go').click();
 
@@ -178,6 +178,9 @@ describe('Protect Tab', () => {
       'aria-checked',
       'true',
     );
+    cy.findByText('River Name: Bluestone');
+    cy.findByText('U.S. National Park Service');
+    cy.findByText('New River Gorge National River, U.S. National Park Service');
 
     // toggle switch off and back on
     cy.findByLabelText('Wild and Scenic Rivers').should(
