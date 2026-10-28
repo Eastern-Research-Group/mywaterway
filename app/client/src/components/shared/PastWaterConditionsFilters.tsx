@@ -112,7 +112,9 @@ function filterLocationMeasurementsByTimeframe(
     totalMeasurements: 0,
     totalsByCharacteristic: {},
     totalsByGroup: {},
-    totalsByLabel: {},
+    totalsByLabel: {
+      Other: 0,
+    },
     timeframe: [...timeframe],
   };
   // Include the label in the object even if zero

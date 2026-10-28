@@ -384,18 +384,16 @@ function buildMonitoringGroups(
   stations.forEach((station) => {
     // build up the monitoringLocationToggles and monitoringLocationGroups
     const subGroupsAdded = new Set();
-    mappings
-      .filter((mapping) => mapping.label !== 'All')
-      .forEach((mapping) => {
-        for (const subGroup in station.totalsByGroup) {
-          // if characteristic group exists in switch config object
-          if (!mapping.groupNames.includes(subGroup)) continue;
-          subGroupsAdded.add(subGroup);
-          // switch group (w/ label key) already exists, add the stations to it
-          locationGroups[mapping.label].stations.push(station);
-          locationGroups[mapping.label].characteristicGroups.push(subGroup);
-        }
-      });
+    mappings.forEach((mapping) => {
+      for (const subGroup in station.totalsByGroup) {
+        // if characteristic group exists in switch config object
+        if (!mapping.groupNames.includes(subGroup)) continue;
+        subGroupsAdded.add(subGroup);
+        // switch group (w/ label key) already exists, add the stations to it
+        locationGroups[mapping.label].stations.push(station);
+        locationGroups[mapping.label].characteristicGroups.push(subGroup);
+      }
+    });
 
     locationGroups['All'].stations.push(station);
 
@@ -581,19 +579,19 @@ function parseStationLabelTotals(
   totalsByGroup: MonitoringLocationAttributes['totalsByGroup'],
 ) {
   const subGroupsAdded = new Set();
-  const totalsByLabel: MonitoringLocationAttributes['totalsByLabel'] = {};
-  characteristicGroupMappings
-    .filter((mapping) => mapping.label !== 'All')
-    .forEach((mapping) => {
-      totalsByLabel[mapping.label] = 0;
-      for (const subGroup in totalsByGroup) {
-        // if characteristic group exists in switch config object
-        if (!mapping.groupNames.includes(subGroup)) continue;
-        subGroupsAdded.add(subGroup);
-        // add the lower-tier group counts to the corresponding top-tier group counts
-        totalsByLabel[mapping.label] += totalsByGroup[subGroup];
-      }
-    });
+  const totalsByLabel: MonitoringLocationAttributes['totalsByLabel'] = {
+    Other: 0,
+  };
+  characteristicGroupMappings.forEach((mapping) => {
+    totalsByLabel[mapping.label] = 0;
+    for (const subGroup in totalsByGroup) {
+      // if characteristic group exists in switch config object
+      if (!mapping.groupNames.includes(subGroup)) continue;
+      subGroupsAdded.add(subGroup);
+      // add the lower-tier group counts to the corresponding top-tier group counts
+      totalsByLabel[mapping.label] += totalsByGroup[subGroup];
+    }
+  });
 
   // add any leftover lower-tier group counts to the 'Other' top-tier group
   for (const subGroup in totalsByGroup) {

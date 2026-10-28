@@ -1,9 +1,5 @@
 [
   {
-    "label": "All",
-    "groupNames": []
-  },
-  {
     "label": "Algal Toxins",
     "groupNames": ["Cyanotoxins, Phytotoxins"]
   },
@@ -37,21 +33,5 @@
   {
     "label": "Physical",
     "groupNames": ["Physical"]
-  },
-  {
-    "label": "Other",
-    "groupNames": [
-      "Biological",
-      "Information",
-      "Organics, Other",
-      "Inorganics, Major, Non-metals",
-      "Inorganics, Minor, Non-metals",
-      "Organics, PCBs",
-      "Not Assigned",
-      "Population/Community",
-      "Radiochemical",
-      "Stable Isotopes",
-      "Toxicity"
-    ]
   }
 ]

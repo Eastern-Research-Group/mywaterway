@@ -19,7 +19,11 @@ import type {
 } from 'types';
 
 export const initialMonitoringGroups = (characteristicGroupMappings) => {
-  return characteristicGroupMappings.reduce((groups, next) => {
+  return [
+    { label: 'All', groupNames: [] },
+    { label: 'Other', groupNames: [] },
+    ...characteristicGroupMappings,
+  ].reduce((groups, next) => {
     groups[next.label] = {
       label: next.label,
       characteristicGroups: [...next.groupNames],
