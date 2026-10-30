@@ -33,6 +33,7 @@
   },
   "glossaryURL": "https://etss.epa.gov/synaptica_rest_services/api/vocabs/name/HMW%20Glossary/terms/full",
   "waterQualityPortal": {
+    "characteristicDomainValues": "https://cdx.epa.gov/wqx/download/DomainValues/Characteristic.CSV",
     "domainValues": "https://www.waterqualitydata.us/Codes",
     "userInterface": "https://www.waterqualitydata.us/",
     "stationSearch": "https://www.waterqualitydata.us/data/Station/search?",

@@ -26,6 +26,7 @@ import Educators from 'components/pages/Educators';
 import ErrorPage from 'components/pages/404';
 import LoadingSpinner from 'components/shared/LoadingSpinner';
 import AlertMessage from 'components/shared/AlertMessage';
+import Wqp from 'components/pages/Wqp';
 // styled components
 import { errorBoxStyles } from 'components/shared/MessageBoxes';
 // contexts
@@ -131,6 +132,7 @@ function AppRoutes() {
         <Route path="/about" element={<About />} />
         <Route path="/data" element={<Data />} />
         <Route path="/attains" element={<Attains />} />
+        <Route path="/wqp" element={<Wqp />} />
         <Route path="/community" element={<Community />}>
           <Route index element={<CommunityIntro />} />
           <Route path=":urlSearch" element={<CommunityTabs />} />

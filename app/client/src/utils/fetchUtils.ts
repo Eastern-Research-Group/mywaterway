@@ -42,10 +42,10 @@ export function proxyFetch(
   return fetchCheck(url, signal, {}, timeout, responseType);
 }
 
-export function fetchParseCsv(url: string) {
-  return new Promise((resolve, reject) => {
+export function fetchParseCsv<T = unknown>(url: string) {
+  return new Promise<T>((resolve, reject) => {
     Papa.parse(url, {
-      complete: (res) => resolve(res.data),
+      complete: (res) => resolve(res.data as T),
       download: true,
       dynamicTyping: true,
       error: (err) => reject(err),

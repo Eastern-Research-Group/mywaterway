@@ -671,6 +671,7 @@ export interface ServicesData {
     points: string;
   };
   waterQualityPortal: {
+    characteristicDomainValues: string;
     domainValues: string;
     monitoringLocation: string;
     monitoringLocationDetails: string;
