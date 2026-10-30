@@ -74,6 +74,9 @@ export type ConfigFiles = {
   parameters: any;
   reportStatusMapping: any;
   services: ServicesData;
+  settings: {
+    searchSuggestionDelay: number;
+  };
   stateNationalUses: any;
   statePage: { fishAdvisory: string };
   surveyMapping: any;

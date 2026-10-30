@@ -346,7 +346,7 @@ type Props = {
 function LocationSearch({ route, label }: Readonly<Props>) {
   const navigate = useNavigate();
 
-  const services = useConfigFilesState().data.services;
+  const { services, settings } = useConfigFilesState().data;
   const searchBox = useRef(null);
   const downPress = useKeyPress('ArrowDown', searchBox);
   const upPress = useKeyPress('ArrowUp', searchBox);
@@ -452,7 +452,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
       }),
       new LocatorSearchSource({
         name: MONITORING_LOCATIONS,
-        getSuggestions: async ({ maxSuggestions, suggestTerm }) => {
+        getSuggestions: async ({ maxSuggestions, suggestTerm }, options) => {
           setWebserviceErrorMessages((prev) => ({
             ...prev,
             [MONITORING_LOCATIONS]: '',
@@ -460,6 +460,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
           try {
             const res = await fetchCheck(
               `${services.waterQualityPortal.domainValues}/monitoringlocation?text=${suggestTerm}&mimeType=json&pagesize=${maxSuggestions}`,
+              options?.signal ?? null,
             );
             const sourceIndex = (
               searchWidget?.sources as Collection<LocationSearchSource>
@@ -477,6 +478,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
               }),
             );
           } catch (_err) {
+            if (options?.signal?.aborted) return;
             setWebserviceErrorMessages((prev) => ({
               ...prev,
               [MONITORING_LOCATIONS]:
@@ -487,7 +489,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
       }),
       new LocatorSearchSource({
         name: WATERBODIES,
-        getSuggestions: async ({ maxSuggestions, suggestTerm }) => {
+        getSuggestions: async ({ maxSuggestions, suggestTerm }, options) => {
           setWebserviceErrorMessages((prev) => ({
             ...prev,
             [WATERBODIES]: '',
@@ -505,6 +507,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
                 'Content-Type': 'application/json',
                 'X-Api-Key': services.expertQuery.apiKey,
               },
+              options?.signal ?? null,
             )) as WaterbodyCodesResult;
             const sourceIndex = (
               searchWidget?.sources as Collection<LocationSearchSource>
@@ -522,6 +525,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
               sourceIndex,
             }));
           } catch (_err) {
+            if (options?.signal?.aborted) return;
             setWebserviceErrorMessages((prev) => ({
               ...prev,
               [WATERBODIES]: customizedWebServiceErrorMessage('waterbody'),
@@ -616,6 +620,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
       includeDefaultSources: false,
       locationEnabled: false,
       sources: allSources,
+      suggestionDelay: settings.searchSuggestionDelay,
     });
 
     // create a watcher for the input text
@@ -638,7 +643,27 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     );
 
     setSearchWidget(search);
-  }, [searchWidget, services, searchText, allSources]);
+  }, [searchWidget, services, settings, searchText, allSources]);
+
+  // Abort the previous suggest(), whether it's still delayed or in flight.
+  const suggestController = useRef<AbortController | null>(null);
+  const suggest = useCallback(() => {
+    if (!searchWidget) return;
+
+    suggestController.current?.abort();
+    const controller = new AbortController();
+    suggestController.current = controller;
+
+    searchWidget
+      .suggest(searchWidget.searchTerm, null, { signal: controller.signal })
+      .catch((err) => {
+        if (!controller.signal.aborted) console.error(err);
+      });
+  }, [searchWidget]);
+
+  useEffect(() => {
+    return () => suggestController.current?.abort();
+  }, []);
 
   // Initialize the esri search view model value with the search text.
   useEffect(() => {
@@ -646,8 +671,8 @@ function LocationSearch({ route, label }: Readonly<Props>) {
 
     // Remove coordinates if search text was from non-esri suggestions
     searchWidget.searchTerm = splitSuggestedSearch(searchText).searchPart;
-    if (noGeocodeResults) searchWidget.suggest();
-  }, [noGeocodeResults, searchWidget, searchText]);
+    if (noGeocodeResults) suggest();
+  }, [noGeocodeResults, searchWidget, searchText, suggest]);
 
   // Updates the search view model sources whenever the user selects a source.
   const [sourcesVisible, setSourcesVisible] = useState(false);
@@ -672,9 +697,9 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     searchWidget.sources = sources;
 
     if (searchWidget.searchTerm) {
-      searchWidget.suggest();
+      suggest();
     }
-  }, [allSources, searchWidget, selectedGroup]);
+  }, [allSources, searchWidget, selectedGroup, suggest]);
 
   // Filter the suggestions down to just sources that have results and combine grouped sources.
   const [filteredSuggestions, setFilteredSuggestions] = useState<
@@ -1228,7 +1253,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
 
                     if (!searchWidget) return;
                     searchWidget.searchTerm = ev.target.value;
-                    searchWidget.suggest();
+                    suggest();
                   }}
                   onFocus={(_ev) => {
                     setSourcesVisible(false);
