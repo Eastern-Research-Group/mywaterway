@@ -159,6 +159,12 @@ const spinStyles = css`
   }
 `;
 
+const suggestionGroupHeaderStyles = css`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
 const suggestionStatusStyles = css`
   display: flex;
   align-items: center;
@@ -660,10 +666,13 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     const sources = (
       searchWidget.sources as Collection<LocationSearchSource>
     ).toArray();
-    setSuggestions(
+    setSuggestions((current) =>
       sources.map((source, sourceIndex) => ({
         status: 'pending',
-        results: [],
+        results:
+          current.find(
+            (suggestion) => suggestion.source.name === source.name,
+          )?.results ?? [],
         source,
         sourceIndex,
       })),
@@ -1510,19 +1519,25 @@ function LayerSuggestions({
   console.log('suggestions: ', suggestions);
   return (
     <>
-      <div className="esri-menu__header">{title}</div>
+      <div className="esri-menu__header" css={suggestionGroupHeaderStyles}>
+        {title}
+        {suggestions.status === 'pending' && (<>
+          <IconSpinner aria-hidden="true" css={spinStyles} />
+        </>)}
+      </div>
       {suggestions.error ? (
         <div css={errorBoxStyles}>{suggestions.error.message}</div>
       ) : (
         <>
-          {suggestions.status === 'pending' && (
-            <div css={suggestionStatusStyles} role="status">
-              <IconSpinner aria-hidden="true" css={spinStyles} />
-              Loading suggestions...
+          {suggestions.results.length === 0 && (
+            <div css={suggestionStatusStyles}>
+              {suggestions.status === 'pending' && (<>
+                <IconSpinner aria-hidden="true" css={spinStyles} /> Loading
+              </>)}
+              {suggestions.status === 'success' && (<>
+                No suggestions found.
+              </>)}
             </div>
-          )}
-          {suggestions.status === 'success' && suggestions.results.length === 0 && (
-            <div css={suggestionStatusStyles}>No suggestions found.</div>
           )}
           {suggestions.results.length > 0 && (
             <ul
