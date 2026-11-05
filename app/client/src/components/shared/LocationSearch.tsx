@@ -1153,6 +1153,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
   function handleCloseClick(ev: React.KeyboardEvent | React.MouseEvent) {
     if (!isClick(ev)) return;
 
+    suggestController.current?.abort();
     if (searchWidget) searchWidget.searchTerm = '';
     setInputText('');
     setSuggestions([]);
