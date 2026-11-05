@@ -824,8 +824,6 @@ function LocationSearch({ route, label }: Readonly<Props>) {
             },
           );
 
-          console.log('suggestions: ', suggestions);
-          const sug = suggestions.find((s) => s.source.name === group.name);
           return [
             ...acc1,
             {
@@ -1517,14 +1515,13 @@ function LayerSuggestions({
   title,
 }: Readonly<LayerSuggestionsProps>) {
   let index = 0;
-  console.log('suggestions: ', suggestions);
   return (
     <>
       <div className="esri-menu__header" css={suggestionGroupHeaderStyles}>
         {title}
-        {suggestions.status === 'pending' && (<>
+        {suggestions.status === 'pending' && (
           <IconSpinner aria-hidden="true" css={spinStyles} />
-        </>)}
+        )}
       </div>
       {suggestions.error ? (
         <div css={errorBoxStyles}>{suggestions.error.message}</div>
