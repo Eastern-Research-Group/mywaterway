@@ -631,17 +631,6 @@ function LocationSearch({ route, label }: Readonly<Props>) {
       },
     );
 
-    // create a watcher for the suggestions based on search input
-    reactiveUtils.watch(
-      () => search.suggestions,
-      () => {
-        const suggestions = search.suggestions as
-          | SearchResultsSuggestions[]
-          | null;
-        setSuggestions(suggestions ?? []);
-      },
-    );
-
     setSearchWidget(search);
   }, [searchWidget, services, settings, searchText, allSources]);
 
@@ -653,12 +642,45 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     suggestController.current?.abort();
     const controller = new AbortController();
     suggestController.current = controller;
+    setSuggestions([]);
 
-    searchWidget
-      .suggest(searchWidget.searchTerm, null, { signal: controller.signal })
-      .catch((err) => {
-        if (!controller.signal.aborted) console.error(err);
+    const sources = (
+      searchWidget.sources as Collection<LocationSearchSource>
+    ).toArray();
+
+    sources.forEach((source, sourceIndex) => {
+      const sourceSearch = new SearchViewModel({
+        includeDefaultSources: false,
+        sources: [source],
       });
+
+      sourceSearch
+        .suggest(searchWidget.searchTerm, null, {
+          signal: controller.signal,
+        })
+        .then((response) => {
+          if (controller.signal.aborted) return;
+
+          const result = response?.results[0];
+          setSuggestions((current) =>
+            [
+              ...current.filter(
+                (suggestion) => suggestion.source.name !== source.name,
+              ),
+              {
+                error: result?.error,
+                results: result?.results ?? [],
+                source,
+                sourceIndex,
+              },
+            ].sort((a, b) => a.sourceIndex - b.sourceIndex),
+          );
+        })
+        .catch((err) => {
+          if (!controller.signal.aborted) console.error(err);
+        })
+        .finally(() => sourceSearch.destroy());
+    });
   }, [searchWidget]);
 
   useEffect(() => {
