@@ -159,6 +159,19 @@ const spinStyles = css`
   }
 `;
 
+const suggestionGroupHeaderStyles = css`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const suggestionStatusStyles = css`
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.75em 1em;
+`;
+
 const textStyles = css`
   margin: 1em 0.5em 0;
   padding: 0 !important;
@@ -284,6 +297,7 @@ type WaterbodyCodesResult = Array<{
 
 type SearchResultsSuggestions = {
   error?: Error;
+  status: 'pending' | 'success' | 'failure';
   results: SuggestResult[];
   source: LocationSearchSource;
   sourceIndex: number;
@@ -294,6 +308,7 @@ type SourceGroupId = 'all' | 'arcGis' | 'monitoring' | 'tribal' | 'waterbody' | 
 type GroupedSearchResultsSuggestions = {
   error?: Error;
   group: SourceGroupId;
+  status: 'pending' | 'success' | 'failure';
   results: FlattenedResult[];
 };
 
@@ -631,17 +646,6 @@ function LocationSearch({ route, label }: Readonly<Props>) {
       },
     );
 
-    // create a watcher for the suggestions based on search input
-    reactiveUtils.watch(
-      () => search.suggestions,
-      () => {
-        const suggestions = search.suggestions as
-          | SearchResultsSuggestions[]
-          | null;
-        setSuggestions(suggestions ?? []);
-      },
-    );
-
     setSearchWidget(search);
   }, [searchWidget, services, settings, searchText, allSources]);
 
@@ -651,15 +655,77 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     if (!searchWidget) return;
 
     suggestController.current?.abort();
+    const minSuggestCharacters = 3;
+    if (searchWidget.searchTerm.trim().length < minSuggestCharacters) {
+      setSuggestions([]);
+      return;
+    }
+
     const controller = new AbortController();
     suggestController.current = controller;
 
-    searchWidget
-      .suggest(searchWidget.searchTerm, null, { signal: controller.signal })
-      .catch((err) => {
-        if (!controller.signal.aborted) console.error(err);
+    const sources = (
+      searchWidget.sources as Collection<LocationSearchSource>
+    ).toArray();
+    setSuggestions((current) =>
+      sources.map((source, sourceIndex) => ({
+        status: 'pending',
+        results:
+          current.find(
+            (suggestion) => suggestion.source.name === source.name,
+          )?.results ?? [],
+        source,
+        sourceIndex,
+      })),
+    );
+
+    sources.forEach((source, sourceIndex) => {
+      const sourceSearch = new SearchViewModel({
+        includeDefaultSources: false,
+        minSuggestCharacters,
+        sources: [source],
       });
-  }, [searchWidget]);
+
+      sourceSearch
+        .suggest(searchWidget.searchTerm, settings.searchSuggestionDelay, {
+          signal: controller.signal,
+        })
+        .then((response) => {
+          if (controller.signal.aborted) return;
+
+          const result = response?.results[0];
+          setSuggestions((current) =>
+            [
+              ...current.filter(
+                (suggestion) => suggestion.source.name !== source.name,
+              ),
+              {
+                error: result?.error,
+                status: result?.error ? 'failure' : 'success' as 'pending' | 'success' | 'failure',
+                results: result?.results ?? [],
+                source,
+                sourceIndex,
+              },
+            ].sort((a, b) => a.sourceIndex - b.sourceIndex),
+          );
+        })
+        .catch((err) => {
+          if (!controller.signal.aborted) console.error(err);
+        })
+        .finally(() => {
+          sourceSearch.destroy();
+          if (!controller.signal.aborted) {
+            setSuggestions((current) =>
+              current.map((suggestion) =>
+                suggestion.source.name === source.name
+                  ? { ...suggestion, status: 'success' }
+                  : suggestion,
+              ),
+            );
+          }
+        });
+    });
+  }, [searchWidget, settings.searchSuggestionDelay]);
 
   useEffect(() => {
     return () => suggestController.current?.abort();
@@ -701,74 +767,88 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     }
   }, [allSources, searchWidget, selectedGroup, suggest]);
 
-  // Filter the suggestions down to just sources that have results and combine grouped sources.
-  const [filteredSuggestions, setFilteredSuggestions] = useState<
-    GroupedSearchResultsSuggestions[]
-  >([]);
-  const [prevSuggestions, setPrevSuggestions] = useState<
-    SearchResultsSuggestions[]
-  >([]);
-  if (prevSuggestions !== suggestions) {
-    setPrevSuggestions(suggestions);
-    const newFilteredSuggestions = sourceGroups
-      .filter((group) => group.id !== 'all')
-      .reduce<GroupedSearchResultsSuggestions[]>((acc1, group) => {
-        // Combine group sources into a single source, i.e. combine the 3 tribes sources into one source.
-        const { results, error } = group.sources.reduce<{
-          results: FlattenedResult[];
-          error?: Error;
-        }>(
-          (acc2, source, i) => {
-            // If the source has an error message, return an empty results array with the error message.
-            if (
-              ['All', group.name].includes(selectedGroup.name) &&
-              [MONITORING_LOCATIONS, WATERBODIES].includes(source.name) &&
-              webserviceErrorMessages[source.name]
-            ) {
-              return {
-                results: [],
-                error: new Error(
-                  'WebServiceError',
-                  webserviceErrorMessages[source.name],
-                ),
-              };
-            }
+  // Filter suggestions to requested sources and combine grouped sources.
+  const filteredSuggestions = useMemo(
+    () =>
+      sourceGroups
+        .filter((group) => group.id !== 'all')
+        .reduce<GroupedSearchResultsSuggestions[]>((acc1, group) => {
+          const requestedSources = group.sources.filter((source) =>
+            suggestions.some(
+              (suggestion) => suggestion.source.name === source.name,
+            ),
+          );
+          if (requestedSources.length === 0) return acc1;
 
-            const sug = findSource(source.name, suggestions);
-            if (!sug) return acc2;
+          // Combine group sources into a single source, i.e. combine the 3 tribes sources into one source.
+          const { results, error } = requestedSources.reduce<{
+            results: FlattenedResult[];
+            error?: Error;
+          }>(
+            (acc2, source, i) => {
+              // If the source has an error message, return an empty results array with the error message.
+              if (
+                ['All', group.name].includes(selectedGroup.name) &&
+                [MONITORING_LOCATIONS, WATERBODIES].includes(source.name) &&
+                webserviceErrorMessages[source.name]
+              ) {
+                return {
+                  results: [],
+                  error: new Error(
+                    'WebServiceError',
+                    webserviceErrorMessages[source.name],
+                  ),
+                };
+              }
 
-            if (sug.results && sug.results.length > 0) {
-              return {
-                results: [
-                  ...acc2.results,
-                  ...sug.results.map((result: SuggestResult) => ({
-                    ...result,
-                    source,
-                    sourceIndex: i,
-                  })),
-                ],
-              };
-            }
+              const sug = findSource(source.name, suggestions);
+              if (!sug) return acc2;
 
-            return acc2;
-          },
-          {
-            results: [],
-            error: undefined,
-          },
-        );
+              if (sug.results && sug.results.length > 0) {
+                return {
+                  results: [
+                    ...acc2.results,
+                    ...sug.results.map((result: SuggestResult) => ({
+                      ...result,
+                      source,
+                      sourceIndex: i,
+                      status: sug.status,
+                    })),
+                  ],
+                };
+              }
 
-        if (error || results.length > 0) {
+              return acc2;
+            },
+            {
+              results: [],
+              error: undefined,
+            },
+          );
+
           return [
             ...acc1,
-            { results, error, group: group.id },
+            {
+              results,
+              error,
+              group: group.id,
+              status: requestedSources.some((source) =>
+                suggestions.some(
+                  (suggestion) =>
+                    suggestion.source.name === source.name &&
+                    suggestion.status === 'pending',
+                ),
+              ) ? 'pending' : 'success',
+            },
           ];
-        }
-
-        return acc1;
-      }, []);
-    setFilteredSuggestions(newFilteredSuggestions);
-  }
+        }, []),
+    [
+      selectedGroup.name,
+      sourceGroups,
+      suggestions,
+      webserviceErrorMessages,
+    ],
+  );
 
   const resultsFlat: FlattenedResult[] = useMemo(() => {
     return filteredSuggestions.flatMap((sug) => sug.results);
@@ -1073,8 +1153,10 @@ function LocationSearch({ route, label }: Readonly<Props>) {
   function handleCloseClick(ev: React.KeyboardEvent | React.MouseEvent) {
     if (!isClick(ev)) return;
 
+    suggestController.current?.abort();
     if (searchWidget) searchWidget.searchTerm = '';
     setInputText('');
+    setSuggestions([]);
     setSourcesVisible(false);
     setSuggestionsVisible(false);
     setCursor(-1);
@@ -1289,9 +1371,6 @@ function LocationSearch({ route, label }: Readonly<Props>) {
                       const title = getGroupTitle(suggestions, sourceGroups);
 
                       const results = suggestions.results ?? [];
-                      if (!suggestions.error && results.length === 0)
-                        return null;
-
                       layerEndIndex += results.length;
 
                       return (
@@ -1440,42 +1519,61 @@ function LayerSuggestions({
   let index = 0;
   return (
     <>
-      <div className="esri-menu__header">{title}</div>
+      <div className="esri-menu__header" css={suggestionGroupHeaderStyles}>
+        {title}
+        {suggestions.status === 'pending' && (
+          <IconSpinner aria-hidden="true" css={spinStyles} />
+        )}
+      </div>
       {suggestions.error ? (
         <div css={errorBoxStyles}>{suggestions.error.message}</div>
       ) : (
-        <ul
-          role="presentation"
-          className="esri-menu__list esri-search__suggestions-list"
-        >
-          {suggestions.results?.map((result: FlattenedResult, idx) => {
-            index = startIndex + idx;
+        <>
+          {suggestions.results.length === 0 && (
+            <div css={suggestionStatusStyles}>
+              {suggestions.status === 'pending' && (<>
+                <IconSpinner aria-hidden="true" css={spinStyles} /> Loading
+              </>)}
+              {suggestions.status === 'success' && (<>
+                No suggestions found.
+              </>)}
+            </div>
+          )}
+          {suggestions.results.length > 0 && (
+            <ul
+              role="presentation"
+              className="esri-menu__list esri-search__suggestions-list"
+            >
+              {suggestions.results.map((result: FlattenedResult, idx) => {
+                index = startIndex + idx;
 
-            return (
-              <li
-                id={`search-suggestion-${index}`}
-                role="menuitem"
-                className={`esri-menu__list-item ${
-                  index === cursor ? 'esri-menu__list-item-active' : ''
-                }`}
-                tabIndex={-1}
-                key={`suggestion-key-${index}`}
-                onClick={onSuggestionClick(result)}
-                onKeyDown={onSuggestionClick(result)}
-              >
-                {getHighlightParts(result.text ?? '', inputText).map(
-                  (part, index) => {
-                    if (part.toLowerCase() === inputText.toLowerCase()) {
-                      return <strong key={index}>{part}</strong>;
-                    } else {
-                      return <Fragment key={index}>{part}</Fragment>;
-                    }
-                  },
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                return (
+                  <li
+                    id={`search-suggestion-${index}`}
+                    role="menuitem"
+                    className={`esri-menu__list-item ${
+                      index === cursor ? 'esri-menu__list-item-active' : ''
+                    }`}
+                    tabIndex={-1}
+                    key={`suggestion-key-${index}`}
+                    onClick={onSuggestionClick(result)}
+                    onKeyDown={onSuggestionClick(result)}
+                  >
+                    {getHighlightParts(result.text ?? '', inputText).map(
+                      (part, index) => {
+                        if (part.toLowerCase() === inputText.toLowerCase()) {
+                          return <strong key={index}>{part}</strong>;
+                        } else {
+                          return <Fragment key={index}>{part}</Fragment>;
+                        }
+                      },
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
       )}
     </>
   );
