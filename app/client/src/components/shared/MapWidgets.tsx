@@ -13,7 +13,7 @@ import Polygon from '@arcgis/core/geometry/Polygon';
 import Graphic from '@arcgis/core/Graphic';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import Point from '@arcgis/core/geometry/Point';
-import PortalBasemapsSource from '@arcgis/core/widgets/BasemapGallery/support/PortalBasemapsSource';
+import PortalBasemapsSource from '@arcgis/core/basemapGallery/PortalBasemapsSource';
 import * as query from '@arcgis/core/rest/query';
 import SpatialReference from '@arcgis/core/geometry/SpatialReference';
 import Viewpoint from '@arcgis/core/Viewpoint';
