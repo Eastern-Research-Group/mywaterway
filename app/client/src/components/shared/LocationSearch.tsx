@@ -655,7 +655,8 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     if (!searchWidget) return;
 
     suggestController.current?.abort();
-    if (!searchWidget.searchTerm.trim()) {
+    const minSuggestCharacters = 3;
+    if (searchWidget.searchTerm.trim().length < minSuggestCharacters) {
       setSuggestions([]);
       return;
     }
@@ -681,11 +682,12 @@ function LocationSearch({ route, label }: Readonly<Props>) {
     sources.forEach((source, sourceIndex) => {
       const sourceSearch = new SearchViewModel({
         includeDefaultSources: false,
+        minSuggestCharacters,
         sources: [source],
       });
 
       sourceSearch
-        .suggest(searchWidget.searchTerm, null, {
+        .suggest(searchWidget.searchTerm, settings.searchSuggestionDelay, {
           signal: controller.signal,
         })
         .then((response) => {
@@ -723,7 +725,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
           }
         });
     });
-  }, [searchWidget]);
+  }, [searchWidget, settings.searchSuggestionDelay]);
 
   useEffect(() => {
     return () => suggestController.current?.abort();
