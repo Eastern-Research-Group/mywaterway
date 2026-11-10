@@ -1,5 +1,17 @@
 # Change Log
 
+## 2.19.1
+
+### Changed
+
+- Updated the search bar to debounce the searches to reduce strain on services behind the search bar.
+
+- Updated the search bar to show search suggestions from different providers as data becomes available. This prevents an issue of suggestions not showing up because one provider is running slow or down.
+
+- Fixed issue with add data widget not showing up when resizing the browser.
+
+- Fixed issue of Wild and Scenic rivers popups no longer working after changes to the service.
+
 ## 2.19.0
 
 ### Changed
