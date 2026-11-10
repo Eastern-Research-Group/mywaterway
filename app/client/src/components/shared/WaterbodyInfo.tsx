@@ -1007,28 +1007,28 @@ function WaterbodyInfo({
   // jsx
   const wildScenicRiversContent = (
     <>
-      {attributes.PHOTOLINK && attributes.PHOTOCREDIT && (
+      {attributes.photolink && attributes.photocredit && (
         <div css={imageContainerStyles}>
           <img
             css={imageStyles}
-            src={attributes.PHOTOLINK}
+            src={attributes.photolink}
             alt="Wild and Scenic River"
           />
           <br />
-          <em>Photo Credit: {attributes.PHOTOCREDIT}</em>
+          <em>Photo Credit: {attributes.photocredit}</em>
         </div>
       )}
       <p>
         <strong>Agency: </strong>
-        {convertAgencyCode(attributes.AGENCY)}
+        {convertAgencyCode(attributes.agency)}
       </p>
       <p>
         <strong>Category: </strong>
-        {attributes.RIVERCATEGORY}
+        {attributes.rivercategory}
         <br />
       </p>
       <p>
-        <a rel="noopener noreferrer" target="_blank" href={attributes.WEBLINK}>
+        <a rel="noopener noreferrer" target="_blank" href={attributes.weblink}>
           <IconInfoCircle css={iconStyles} aria-hidden="true" />
           More Information
         </a>

@@ -90,7 +90,6 @@ import type {
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type {
   MapSlot,
-  RndDraggableState,
   ServicesData,
   WatershedAttributes,
 } from 'types';
@@ -345,6 +344,9 @@ function updateLegend(
   );
   hmwLegendRoots.forEach((root) => root.render(legend));
 }
+
+const addSaveDataWidgetMinWidth = 275;
+const addSaveDataWidgetMinHeight = 410;
 
 const resizeHandleStyles = css`
   float: right;
@@ -611,48 +613,6 @@ function MapWidgets({
   // Creates and adds the add/save data widget to the map
   const rnd = useRef<Rnd | null>(null);
 
-  // Ensures the add data widget stays within the map div
-  const width = useRef(window.innerWidth);
-  const handleResize = useCallback(() => {
-    const difference = width.current - window.innerWidth;
-    width.current = window.innerWidth;
-    if (difference < 0 || !rnd?.current) return;
-
-    let mapRect = document
-      .getElementById('hmw-map-container')
-      ?.getBoundingClientRect();
-    let awdRect = document
-      .getElementById('add-save-data-widget')
-      ?.getBoundingClientRect();
-
-    if (!mapRect || !awdRect) return;
-
-    const maxLeft = mapRect.width - awdRect.width;
-    const curLeft = awdRect.left - mapRect.left;
-
-    // update the position of the add save data widget
-    const newPosition =
-      curLeft > maxLeft
-        ? maxLeft
-        : awdRect.left - mapRect.left - difference / 2;
-    rnd.current.updatePosition({
-      x: newPosition < 0 ? 0 : newPosition,
-      y: (rnd.current.draggable.state as RndDraggableState).y,
-    });
-  }, []);
-
-  const [addSaveDataWidgetInitialized, setAddSaveDataWidgetInitialized] =
-    useState<boolean>(false);
-  useEffect(() => {
-    if (addSaveDataWidgetInitialized) return;
-    window.addEventListener('resize', handleResize);
-    setAddSaveDataWidgetInitialized(true);
-
-    return function cleanup() {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [addSaveDataWidgetInitialized, handleResize]);
-
   // Fetch additional legend information. Data is stored in a dictionary
   // where the key is the layer id.
   const [additionalLegendInitialized, setAdditionalLegendInitialized] =
@@ -835,12 +795,15 @@ function MapWidgets({
 
   // Measured so the widget is laid out again when a hidden map is shown and goes back to a non-zero width.
   const [mapWidth, setMapWidth] = useState(0);
+  const [mapHeight, setMapHeight] = useState(0);
   useEffect(() => {
     if (!mapRef.current) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
       const map = entries.pop();
-      if (map) setMapWidth(map.contentRect.width);
+      if (!map) return;
+      setMapWidth(map.contentRect.width);
+      setMapHeight(map.contentRect.height);
     });
 
     resizeObserver.observe(mapRef.current);
@@ -850,7 +813,31 @@ function MapWidgets({
     };
   }, [mapRef]);
 
-  if (!addSaveDataWidgetInitialized) return null;
+  // Keeps the add/save data widget inside the map when the map shrinks.
+  useEffect(() => {
+    const widget = rnd.current?.getSelfElement();
+    if (!rnd.current || !widget || !addSaveDataWidgetVisible) return;
+    if (!mapWidth || !mapHeight) return;
+
+    const width = Math.max(
+      addSaveDataWidgetMinWidth,
+      Math.min(widget.offsetWidth, mapWidth),
+    );
+    const height = Math.max(
+      addSaveDataWidgetMinHeight,
+      Math.min(widget.offsetHeight, mapHeight),
+    );
+    if (width !== widget.offsetWidth || height !== widget.offsetHeight) {
+      rnd.current.updateSize({ width, height });
+    }
+
+    const { x, y } = rnd.current.getDraggablePosition();
+    const newX = Math.max(0, Math.min(x, mapWidth - width));
+    const newY = Math.max(0, Math.min(y, mapHeight - height));
+    if (newX !== x || newY !== y) {
+      rnd.current.updatePosition({ x: newX, y: newY });
+    }
+  }, [addSaveDataWidgetVisible, mapHeight, mapWidth]);
 
   const viewportWidth = window.innerWidth;
 
@@ -1012,16 +999,16 @@ function MapWidgets({
             <Rnd
               id="add-save-data-widget"
               className={addSaveDataWidgetVisible ? '' : 'hidden'}
-              style={{ backgroundColor: 'white', pointerEvents: 'all' }}
+              style={{ backgroundColor: 'white', pointerEvents: 'all', transition: 'none' }}
               ref={rnd}
               default={{
                 x: (mapWidth - 400 - 60) / 2,
                 y: 7.5,
                 width: '400px',
-                height: '410px',
+                height: `${addSaveDataWidgetMinHeight}px`,
               }}
-              minWidth="275px"
-              minHeight="410px"
+              minWidth={addSaveDataWidgetMinWidth}
+              minHeight={addSaveDataWidgetMinHeight}
               bounds="parent"
               enableResizing={{
                 bottomRight: true,

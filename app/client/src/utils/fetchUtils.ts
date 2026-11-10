@@ -124,6 +124,7 @@ export function fetchPost<T>(
       return checkResponse(response, responseType);
     })
     .catch((err) => {
+      if (isAbort(err)) return Promise.reject(err);
       onError(err, apiUrl, startTime);
     });
 }
