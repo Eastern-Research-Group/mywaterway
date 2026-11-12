@@ -15,6 +15,7 @@ import { HelpTooltip } from 'components/shared/HelpTooltip';
 import LoadingSpinner from 'components/shared/LoadingSpinner';
 import {
   errorBoxStyles,
+  infoBoxStyles,
   successBoxStyles,
 } from 'components/shared/MessageBoxes';
 import Switch from 'components/shared/Switch';
@@ -208,6 +209,12 @@ const listContainerStyles = css`
 
 const modifiedErrorBoxStyles = css`
   ${errorBoxStyles};
+  text-align: center;
+  margin-bottom: 0.625rem;
+`;
+
+const modifiedInfoBoxStyles = css`
+  ${infoBoxStyles};
   text-align: center;
   margin-bottom: 0.625rem;
 `;
@@ -932,7 +939,14 @@ function SavePanel({ visible }: Readonly<Props>) {
         />
       </div>
       <div css={submitSectionStyles}>
-        {publishResponse.status === 'pending' && <LoadingSpinner />}
+        {publishResponse.status === 'pending' && (
+          <>
+            <div css={modifiedInfoBoxStyles}>
+              <p>Note: The save process can take up to a few minutes to complete.</p>
+            </div>
+            <LoadingSpinner />
+          </> 
+        )}
         {publishResponse.status === 'failure' &&
           errorMessage(
             publishResponse.error?.message ||

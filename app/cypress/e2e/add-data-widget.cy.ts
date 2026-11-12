@@ -364,8 +364,10 @@ describe('Add & Save Data Widget', () => {
   it("Test that the save panel includes layers added from the widget's other tabs", () => {
     const agoSaveName = `CYPRESS-SAVE-TEST-HMW-${Date.now().toString(36)}`;
 
+    const wildfireLayerName = 'USA and Canada Current Wildfires';
+
     cy.get(adwId).within(() => {
-      cy.findByRole('listitem', { name: 'USA Current Wildfires' }).within(
+      cy.findByRole('listitem', { name: wildfireLayerName }).within(
         () => {
           // Add a new layer
           cy.findByRole('button', { name: 'Add' }).click();
@@ -377,14 +379,14 @@ describe('Add & Save Data Widget', () => {
       );
 
       cy.findByRole('tab', { name: 'Save' }).click();
-      cy.findByRole('switch', { name: 'Toggle USA Current Wildfires' }).should(
+      cy.findByRole('switch', { name: `Toggle ${wildfireLayerName}` }).should(
         'have.attr',
         'aria-checked',
         'true',
       );
 
       cy.findByRole('tab', { name: 'Search' }).click();
-      cy.findByRole('listitem', { name: 'USA Current Wildfires' }).within(
+      cy.findByRole('listitem', { name: wildfireLayerName }).within(
         () => {
           // Add a new layer
           cy.findByRole('button', { name: 'Remove' }).click();
@@ -394,7 +396,7 @@ describe('Add & Save Data Widget', () => {
       );
 
       cy.findByRole('tab', { name: 'Save' }).click();
-      cy.findByRole('switch', { name: 'Toggle USA Current Wildfires' }).should(
+      cy.findByRole('switch', { name: `Toggle ${wildfireLayerName}` }).should(
         'not.exist',
       );
 
@@ -404,7 +406,7 @@ describe('Add & Save Data Widget', () => {
         'This is a test description from a Cypress test.',
       );
       cy.findByRole('button', { name: 'Save to ArcGIS Online' }).click();
-      cy.waitForLoadFinish();
+      cy.waitForLoadFinish({ timeout: 480_000});
       cy.findByText('Save succeeded.');
 
       // test name already used message

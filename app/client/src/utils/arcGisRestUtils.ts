@@ -5,6 +5,7 @@ import { v4 as uuid } from 'uuid';
 import mapPin from 'images/pin.png';
 // utils
 import {
+  fetchCheck,
   fetchPostFile,
   fetchPostForm,
   getEnvironmentString,
@@ -57,6 +58,99 @@ type FeatureServiceType = {
   id: string;
   url: string;
 };
+
+type ArcGisErrorType = {
+  code?: number;
+  description?: string;
+  details?: string[];
+  message?: string;
+};
+
+type ArcGisAsyncResponseType = {
+  error?: ArcGisErrorType;
+  statusURL?: string;
+  statusUrl?: string;
+};
+
+type ArcGisJobResponseType = {
+  error?: ArcGisErrorType;
+  errorMessage?: ArcGisErrorType | string;
+  resultUrl?: string;
+  status?: string;
+};
+
+const arcGisJobPollInterval = 1000;
+const arcGisJobPollTimeout = 10 * 60 * 1000;
+
+function getArcGisErrorMessage(
+  error: ArcGisErrorType | string | undefined,
+  fallback: string,
+) {
+  if (typeof error === 'string') return error;
+  if (!error) return fallback;
+
+  return (
+    error.description || error.message || error.details?.join(' ') || fallback
+  );
+}
+
+async function pollArcGisJob(
+  statusUrl: string,
+  token: string,
+  operationName: string,
+): Promise<ArcGisJobResponseType> {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < arcGisJobPollTimeout) {
+    const data = {
+      f: 'json',
+      token,
+    };
+    appendEnvironmentObjectParam(data);
+
+    const response = (await fetchPostForm(
+      statusUrl,
+      data,
+    )) as ArcGisJobResponseType;
+    const status = response.status?.toLowerCase();
+
+    if (status === 'completed') return response;
+    if (status === 'failed') {
+      throw new Error(
+        getArcGisErrorMessage(
+          response.error || response.errorMessage,
+          `The ArcGIS Online ${operationName} job failed.`,
+        ),
+      );
+    }
+    if (!status) {
+      throw new Error(
+        `The ArcGIS Online ${operationName} job returned no status.`,
+      );
+    }
+
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, arcGisJobPollInterval);
+    });
+  }
+
+  throw new Error(
+    `The ArcGIS Online ${operationName} job did not complete within ${
+      arcGisJobPollTimeout / 60000
+    } minutes.`,
+  );
+}
+
+function getAuthenticatedUrl(url: string, token: string) {
+  const authenticatedUrl = new URL(url);
+  authenticatedUrl.searchParams.set('f', 'json');
+  authenticatedUrl.searchParams.set('token', token);
+
+  const environmentStr = getEnvironmentString();
+  if (environmentStr) authenticatedUrl.searchParams.set(environmentStr, '1');
+
+  return authenticatedUrl.toString();
+}
 
 /**
  * Returns an environment string query parameter to be passed into
@@ -554,6 +648,7 @@ export async function createFeatureLayers(
     const data = {
       f: 'json',
       token: portal.credential.token,
+      async: true,
       addToDefinition: {
         layers: layersParams,
         tables: [
@@ -582,10 +677,49 @@ export async function createFeatureLayers(
       'rest/services',
       'rest/admin/services',
     );
-    const response = (await fetchPostForm(
+    const asyncResponse = (await fetchPostForm(
       `${adminServiceUrl}/addToDefinition`,
       data,
-    )) as AddToDefinitionResponseType;
+    )) as ArcGisAsyncResponseType;
+    const statusUrl = asyncResponse.statusURL || asyncResponse.statusUrl;
+    if (!statusUrl) {
+      throw new Error(
+        getArcGisErrorMessage(
+          asyncResponse.error,
+          'The ArcGIS Online addToDefinition request returned no status URL.',
+        ),
+      );
+    }
+
+    await pollArcGisJob(statusUrl, portal.credential.token, 'addToDefinition');
+
+    const serviceData = {
+      f: 'json',
+      token: portal.credential.token,
+    };
+    appendEnvironmentObjectParam(serviceData);
+    const serviceResponse = (await fetchPostForm(
+      serviceUrl,
+      serviceData,
+    )) as Pick<AddToDefinitionResponseType, 'layers' | 'tables'> & {
+      error?: ArcGisErrorType;
+    };
+    if (
+      !Array.isArray(serviceResponse.layers) ||
+      !Array.isArray(serviceResponse.tables)
+    ) {
+      throw new Error(
+        getArcGisErrorMessage(
+          serviceResponse.error,
+          'The ArcGIS Online feature service returned no layer definitions.',
+        ),
+      );
+    }
+
+    const response: AddToDefinitionResponseType = {
+      ...serviceResponse,
+      success: true,
+    };
 
     // add the layer id back into the response
     response.layers.forEach((l, index: number) => {
@@ -721,13 +855,51 @@ async function applyEdits({
     const data = {
       f: 'json',
       token: portal.credential.token,
+      async: true,
       edits: changes,
       honorSequenceOfEdits: true,
       useGlobalIds: true,
     };
     appendEnvironmentObjectParam(data);
 
-    return await fetchPostForm(`${serviceUrl}/applyEdits`, data);
+    const asyncResponse = (await fetchPostForm(
+      `${serviceUrl}/applyEdits`,
+      data,
+    )) as ArcGisAsyncResponseType;
+    const statusUrl = asyncResponse.statusURL || asyncResponse.statusUrl;
+    if (!statusUrl) {
+      throw new Error(
+        getArcGisErrorMessage(
+          asyncResponse.error,
+          'The ArcGIS Online applyEdits request returned no status URL.',
+        ),
+      );
+    }
+
+    const jobResponse = await pollArcGisJob(
+      statusUrl,
+      portal.credential.token,
+      'applyEdits',
+    );
+    if (!jobResponse.resultUrl) {
+      throw new Error(
+        'The ArcGIS Online applyEdits job returned no result URL.',
+      );
+    }
+
+    const result = (await fetchCheck(
+      getAuthenticatedUrl(jobResponse.resultUrl, portal.credential.token),
+    )) as ApplyEditsResponseType[] | { error?: ArcGisErrorType };
+    if (!Array.isArray(result)) {
+      throw new Error(
+        getArcGisErrorMessage(
+          result.error,
+          'The ArcGIS Online applyEdits job returned no edit results.',
+        ),
+      );
+    }
+
+    return result;
   } catch (err) {
     window.logErrorToGa(err);
     throw err;

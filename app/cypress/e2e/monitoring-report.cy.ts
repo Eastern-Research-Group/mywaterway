@@ -21,7 +21,7 @@ describe('Entering URL parameters for an existent site', () => {
   });
 
   it('Should display the organization name', () => {
-    cy.findByText('illinois epa').should('be.visible');
+    cy.findByText('illinois epa (State)').should('be.visible');
   });
 
   it('Should instruct the user to select a characteristic for the graph', () => {
