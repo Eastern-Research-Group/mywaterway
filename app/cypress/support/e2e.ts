@@ -24,8 +24,12 @@ import '@cypress/code-coverage/support';
 // This is a workaround for making the tests more reliable when running
 // cypress in headless mode, particularly for running code coverage.
 // This also helps weed out some of the false errors from ArcGIS.
-Cypress.on('uncaught:exception', (_err, _runnable) => {
-  // returning false here prevents Cypress from
-  // failing the test
+Cypress.on('uncaught:exception', (err, _runnable) => {
+  // Do not suppress Cypress errors such as page-load timeouts, since doing so
+  // can leave the command queue stuck instead of failing and retrying the test.
+  if (err.name === 'CypressError') return;
+
+  // returning false here prevents Cypress from failing the test for
+  // application errors, including false errors from ArcGIS.
   return false;
 });

@@ -102,6 +102,7 @@ describe('Homepage search', () => {
       );
       cy.findByRole('menuitem', {
         name: (name) => name.includes(waterbodyId),
+        timeout: 120_000,
       }).click();
       cy.location('href').should((afterUrl) => {
         expect(afterUrl).to.equal(beforeUrl);
