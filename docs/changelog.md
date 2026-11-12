@@ -8,6 +8,8 @@
 
 - Updated the search bar to show search suggestions from different providers as data becomes available. This prevents an issue of suggestions not showing up because one provider is running slow or down.
 
+- Updated the save to ArcGIS Online strategy to save asynchronously and poll the service for status updates. This avoids timeout issues with the ArcGIS REST services. 
+
 - Fixed issue with add data widget not showing up when resizing the browser.
 
 - Fixed issue of Wild and Scenic rivers popups no longer working after changes to the service.
