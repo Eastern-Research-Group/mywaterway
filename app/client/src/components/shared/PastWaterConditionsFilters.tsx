@@ -1,7 +1,13 @@
 /** @jsxImportSource @emotion/react */
 
 import { css } from '@emotion/react';
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import IconFileCsv from '~icons/fa7-solid/file-csv';
 import IconFileExcel from '~icons/fa7-solid/file-excel';
 import IconFilter from '~icons/fa7-solid/filter';
@@ -224,14 +230,15 @@ export function PastWaterConditionsFilters({
     };
   }, [setMonitoringFeatureUpdates]);
 
-  const [allToggled, setAllToggled] = useState(true);
+  const allToggled = Object.values(monitoringGroups).every(
+    (group) => group.toggled,
+  );
   const toggleAll = useCallback(() => {
     const updatedGroups = { ...monitoringGroups };
     for (const label in updatedGroups) {
       updatedGroups[label].toggled = !allToggled;
     }
     setMonitoringDisplayed(!allToggled);
-    setAllToggled((prev) => !prev);
     setMonitoringGroups(updatedGroups);
   }, [
     allToggled,
@@ -246,12 +253,6 @@ export function PastWaterConditionsFilters({
         const updatedGroups = { ...monitoringGroups };
         updatedGroups[groupLabel].toggled = !updatedGroups[groupLabel].toggled;
         setMonitoringGroups(updatedGroups);
-
-        let allOthersToggled = true;
-        for (let key in updatedGroups) {
-          if (!updatedGroups[key].toggled) allOthersToggled = false;
-        }
-        setAllToggled(allOthersToggled);
 
         // only check the toggles that are on the screen (i.e., ignore Bacterial, Sediments, etc.)
         const someToggled = Object.keys(updatedGroups)
@@ -557,7 +558,7 @@ type Props = {
   setFilteredLocations: Dispatch<
     SetStateAction<MonitoringLocationAttributes[]>
   >;
-  setMonitoringDisplayed: Dispatch<SetStateAction<boolean>>;
+  setMonitoringDisplayed: (displayed: boolean) => void;
   wqxIds?: string[];
 };
 

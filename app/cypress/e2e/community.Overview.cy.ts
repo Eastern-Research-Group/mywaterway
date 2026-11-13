@@ -20,6 +20,22 @@ describe('Overview Tab', () => {
       .findAllByRole('listitem')
       .should('have.length', 0);
 
+    cy.findByRole('tab', { name: 'Waterbodies' }).click();
+    cy.findByRole('tab', { name: 'Permitted Dischargers' }).click();
+    cy.findByLabelText('All Permit Components').should(
+      'have.attr',
+      'aria-checked',
+      'true',
+    );
+    cy.findByLabelText('Urban Stormwater (Medium/Large MS4)').should(
+      'have.attr',
+      'aria-checked',
+      'true',
+    );
+
+    cy.findByLabelText('All Permit Components').click({
+      force: true,
+    });
     cy.findByLabelText('Urban Stormwater (Medium/Large MS4)').click({
       force: true,
     });

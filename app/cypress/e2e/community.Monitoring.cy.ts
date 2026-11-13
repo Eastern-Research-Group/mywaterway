@@ -36,10 +36,13 @@ describe('Monitoring Tab', () => {
     // check that there are no items displayed in accordion
     cy.findByTestId('monitoring-accordion-title').contains('0 of 100');
 
-    // check that clicking the Toggle All switch again toggles all switches back on
-    cy.findByLabelText('All Monitoring Locations').click({
-      force: true,
-    });
+    // switching away and back turns all Past Water Conditions switches on
+    cy.findByRole('tab', { name: 'Current Water Conditions' }).click();
+    cy.findAllByLabelText('Past Water Conditions', { exact: false })
+      .filter(':visible')
+      .filter('input')
+      .should('have.attr', 'aria-checked', 'false');
+    cy.findByRole('tab', { name: 'Past Water Conditions' }).click();
     cy.findByLabelText('All Monitoring Locations').should(
       'have.attr',
       'aria-checked',
@@ -290,6 +293,10 @@ describe('Monitoring Tab', () => {
       .click({
         force: true,
       });
+    cy.findAllByLabelText('Current Water Conditions', { exact: false })
+      .filter(':visible')
+      .filter('input')
+      .should('have.attr', 'aria-checked', 'false');
     cy.findAllByLabelText('USGS Sensors')
       .filter(':visible')
       .should('have.attr', 'aria-checked', 'false');
@@ -308,6 +315,10 @@ describe('Monitoring Tab', () => {
       .should('have.attr', 'aria-checked', 'true');
     cy.findAllByLabelText('Potential Harmful Algal Blooms (HABs)')
       .filter(':visible')
+      .should('have.attr', 'aria-checked', 'true');
+    cy.findAllByLabelText('Current Water Conditions', { exact: false })
+      .filter(':visible')
+      .filter('input')
       .should('have.attr', 'aria-checked', 'true');
   });
 });
