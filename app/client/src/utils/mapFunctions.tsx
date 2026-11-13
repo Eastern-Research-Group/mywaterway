@@ -743,8 +743,8 @@ export function getPopupTitle(attributes: PopupAttributes | null) {
   }
 
   // wild scenic rivers
-  else if ('WSR_RIVER_NAME' in attributes) {
-    title = attributes.WSR_RIVER_NAME;
+  else if ('wsr_river_name' in attributes) {
+    title = attributes.wsr_river_name;
   }
 
   // WSIO Health Index
