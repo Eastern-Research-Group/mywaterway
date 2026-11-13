@@ -1,7 +1,14 @@
 /** @jsxImportSource @emotion/react */
 
 import uniqueId from 'lodash/uniqueId';
-import { useEffect, useCallback, useContext, useMemo, useState } from 'react';
+import {
+  useEffect,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from '@reach/tabs';
 import { css } from '@emotion/react';
 // components
@@ -157,6 +164,8 @@ function Overview() {
 
   const [permittedDischargersDisplayed, setPermittedDischargersDisplayed] =
     useState(false);
+  const [permittedDischargersResetCount, setPermittedDischargersResetCount] =
+    useState(0);
 
   // Syncs the toggles with the visible layers on the map. Mainly
   // used for when the user toggles layers in full screen mode and then
@@ -215,7 +224,10 @@ function Overview() {
     (index) => {
       if (index === 0) handleWaterbodiesToggle(true);
       if (index === 1) handleMonitoringLocationsToggle(true);
-      if (index === 2) handlePermittedDischargersToggle(true);
+      if (index === 2) {
+        handlePermittedDischargersToggle(true);
+        setPermittedDischargersResetCount((count) => count + 1);
+      }
     },
     [
       handleMonitoringLocationsToggle,
@@ -350,10 +362,12 @@ function Overview() {
 
             <TabPanel>
               <PermittedDischargersTab
+                resetCount={permittedDischargersResetCount}
                 setPermittedDischargersDisplayed={
                   setPermittedDischargersDisplayed
                 }
                 totalPermittedDischargers={totalPermittedDischargers}
+                updateVisibleLayers={updateVisibleLayers}
               />
             </TabPanel>
           </TabPanels>
@@ -425,24 +439,27 @@ function MonitoringAndSensorsTab({
 
   const [expandedRows, setExpandedRows] = useState([]);
 
-  // if any of the "USGS Sensors", "Potential Harmful Algal Blooms", or "Past Water Conditions" switches
-  // are turned on, or if all switches are turned off, keep the "Water Monitoring
-  // Locations" switch in sync
-  useEffect(() => {
-    setMonitoringAndSensorsDisplayed(
-      usgsStreamgagesDisplayed || monitoringLocationsDisplayed || cyanDisplayed,
-    );
-  }, [
-    cyanDisplayed,
-    usgsStreamgagesDisplayed,
-    monitoringLocationsDisplayed,
-    setMonitoringAndSensorsDisplayed,
-  ]);
-
   const { streamgages, streamgagesStatus } = useStreamgages();
   const { monitoringLocations, monitoringLocationsStatus } =
     useMonitoringLocations();
   const { cyanWaterbodies, cyanWaterbodiesStatus } = useCyanWaterbodies();
+
+  // Keep the overview switch in sync with enabled switches in this tab.
+  useEffect(() => {
+    setMonitoringAndSensorsDisplayed(
+      (streamgages.length > 0 && usgsStreamgagesDisplayed) ||
+        (monitoringLocations.length > 0 && monitoringLocationsDisplayed) ||
+        (cyanWaterbodies.length > 0 && cyanDisplayed),
+    );
+  }, [
+    cyanDisplayed,
+    cyanWaterbodies.length,
+    monitoringLocations.length,
+    monitoringLocationsDisplayed,
+    setMonitoringAndSensorsDisplayed,
+    streamgages.length,
+    usgsStreamgagesDisplayed,
+  ]);
 
   const allMonitoringAndSensors = [
     ...streamgages,
@@ -1057,8 +1074,10 @@ function sortDischarchers(dischargers, sortBy) {
 }
 
 function PermittedDischargersTab({
+  resetCount,
   setPermittedDischargersDisplayed,
   totalPermittedDischargers,
+  updateVisibleLayers,
 }) {
   const { dischargers, dischargersStatus } = useDischargers();
 
@@ -1077,6 +1096,33 @@ function PermittedDischargersTab({
 
   const [permittedDischargersSortedBy, setPermittedDischargersSortedBy] =
     useState('CWPName');
+  const previousResetCount = useRef(0);
+
+  useEffect(() => {
+    if (
+      resetCount === previousResetCount.current ||
+      !dischargerPermitComponents
+    ) {
+      return;
+    }
+    previousResetCount.current = resetCount;
+
+    const groups = Object.values(dischargerPermitComponents);
+    if (groups.every((group) => group.toggled)) return;
+
+    const updatedGroups = Object.fromEntries(
+      Object.entries(dischargerPermitComponents).map(([key, group]) => [
+        key,
+        { ...group, toggled: true },
+      ]),
+    );
+    setAllToggled(true);
+    setDischargerPermitComponents(updatedGroups);
+  }, [
+    dischargerPermitComponents,
+    resetCount,
+    setDischargerPermitComponents,
+  ]);
 
   // Filter dischargers
   useEffect(() => {
@@ -1166,6 +1212,7 @@ function PermittedDischargersTab({
       updatedGroups[label].toggled = !allToggled;
     }
     setPermittedDischargersDisplayed(!allToggled);
+    updateVisibleLayers({ dischargersLayer: !allToggled });
     setAllToggled((prev) => !prev);
     setDischargerPermitComponents(updatedGroups);
   }, [
@@ -1173,6 +1220,7 @@ function PermittedDischargersTab({
     dischargerPermitComponents,
     setDischargerPermitComponents,
     setPermittedDischargersDisplayed,
+    updateVisibleLayers,
   ]);
 
   const groupToggleHandler = useCallback(
@@ -1198,12 +1246,14 @@ function PermittedDischargersTab({
           .filter((label) => label !== 'All')
           .some((key) => updatedGroups[key].toggled);
         setPermittedDischargersDisplayed(someToggled);
+        updateVisibleLayers({ dischargersLayer: someToggled });
       };
     },
     [
       dischargerPermitComponents,
       setDischargerPermitComponents,
       setPermittedDischargersDisplayed,
+      updateVisibleLayers,
     ],
   );
 

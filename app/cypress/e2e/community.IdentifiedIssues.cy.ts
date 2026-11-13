@@ -139,8 +139,23 @@ describe('Identified Issues Tab', () => {
     cy.findAllByLabelText('All Other Permitted Dischargers')
       .filter(':visible')
       .should('have.attr', 'aria-checked', 'false');
+    cy.findAllByLabelText('Permitted Dischargers', { exact: false })
+      .filter(':visible')
+      .filter('input')
+      .should('have.attr', 'aria-checked', 'false');
 
     // verify other discharger is not shown in list
     cy.findByText(nonViolationDischarger).should('not.exist');
+
+    cy.findByRole('tab', { name: 'Impaired Assessed Waters' }).click();
+    cy.findByRole('tab', { name: 'Permitted Dischargers' }).click();
+    cy.findAllByLabelText('All Other Permitted Dischargers')
+      .filter(':visible')
+      .should('have.attr', 'aria-checked', 'true');
+    cy.findAllByLabelText('Permitted Dischargers', { exact: false })
+      .filter(':visible')
+      .filter('input')
+      .should('have.attr', 'aria-checked', 'true');
+    cy.findByText(nonViolationDischarger);
   });
 });

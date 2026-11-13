@@ -123,6 +123,9 @@ function Monitoring() {
   } = useLayers();
   const { cyanWaterbodies, monitoringLocations, usgsStreamgages } =
     useFetchedDataState();
+  const { monitoringGroups, setMonitoringGroups } = useContext(
+    LocationSearchContext,
+  );
 
   const [currentWaterConditionsDisplayed, setCurrentWaterConditionsDisplayed] =
     useState(true);
@@ -139,9 +142,14 @@ function Monitoring() {
   // exits full screen.
   useEffect(() => {
     setUsgsStreamgagesDisplayed(visibleLayers.usgsStreamgagesLayer);
-    setMonitoringDisplayed(visibleLayers.monitoringLocationsLayer);
+    const someMonitoringGroupDisplayed = Object.entries(monitoringGroups)
+      .filter(([label]) => label !== 'All')
+      .some(([, group]) => group.toggled);
+    setMonitoringDisplayed(
+      visibleLayers.monitoringLocationsLayer && someMonitoringGroupDisplayed,
+    );
     setCyanDisplayed(visibleLayers.cyanLayer);
-  }, [visibleLayers]);
+  }, [monitoringGroups, visibleLayers]);
 
   const handleCurrentWaterConditionsToggle = useCallback(
     (checked) => {
@@ -164,12 +172,25 @@ function Monitoring() {
       if (!monitoringLocationsLayer) return;
 
       setMonitoringDisplayed(checked);
+      setMonitoringGroups(
+        Object.fromEntries(
+          Object.entries(monitoringGroups).map(([key, group]) => [
+            key,
+            { ...group, toggled: checked },
+          ]),
+        ),
+      );
 
       updateVisibleLayers({
         monitoringLocationsLayer: checked,
       });
     },
-    [monitoringLocationsLayer, updateVisibleLayers],
+    [
+      monitoringGroups,
+      monitoringLocationsLayer,
+      setMonitoringGroups,
+      updateVisibleLayers,
+    ],
   );
 
   const handleTabClick = useCallback(
@@ -276,20 +297,6 @@ function CurrentConditionsTab({
   setCurrentWaterConditionsDisplayed,
   updateVisibleLayers,
 }) {
-  useEffect(() => {
-    if (usgsStreamgagesDisplayed || cyanDisplayed) {
-      setCurrentWaterConditionsDisplayed(true);
-    }
-
-    if (!usgsStreamgagesDisplayed && !cyanDisplayed) {
-      setCurrentWaterConditionsDisplayed(false);
-    }
-  }, [
-    usgsStreamgagesDisplayed,
-    cyanDisplayed,
-    setCurrentWaterConditionsDisplayed,
-  ]);
-
   // draw the waterbody on the map
   useWaterbodyOnMap();
 
@@ -299,6 +306,22 @@ function CurrentConditionsTab({
 
   const { cyanWaterbodies, cyanWaterbodiesStatus } = useCyanWaterbodies();
   const { streamgages, streamgagesStatus } = useStreamgages();
+
+  useEffect(() => {
+    setCurrentWaterConditionsDisplayed(
+      (streamgages.length > 0 && usgsStreamgagesDisplayed) ||
+        (cyanWaterbodiesStatus === 'success' &&
+          cyanWaterbodies.length > 0 &&
+          cyanDisplayed),
+    );
+  }, [
+    cyanDisplayed,
+    cyanWaterbodies.length,
+    cyanWaterbodiesStatus,
+    setCurrentWaterConditionsDisplayed,
+    streamgages.length,
+    usgsStreamgagesDisplayed,
+  ]);
 
   const [sortedBy, setSortedBy] = useState('locationName');
 
@@ -596,9 +619,17 @@ function PastConditionsTab({ setMonitoringDisplayed }) {
   } = useContext(LocationSearchContext);
   const annualRecordsReady = monitoringPeriodOfRecordStatus === 'success';
 
-  const { monitoringLocationsLayer } = useLayers();
+  const { monitoringLocationsLayer, updateVisibleLayers } = useLayers();
   const { monitoringLocations } = useFetchedDataState();
   const { monitoringGroups } = useMonitoringGroups();
+
+  const setPastConditionsDisplayed = useCallback(
+    (displayed: boolean) => {
+      setMonitoringDisplayed(displayed);
+      updateVisibleLayers({ monitoringLocationsLayer: displayed });
+    },
+    [setMonitoringDisplayed, updateVisibleLayers],
+  );
 
   const [
     locationsFilteredByCharcGroupAndTime,
@@ -835,7 +866,7 @@ function PastConditionsTab({ setMonitoringDisplayed }) {
               locationName={watershed.name}
               locationType="watershed"
               setFilteredLocations={setLocationsFilteredByCharcGroupAndTime}
-              setMonitoringDisplayed={setMonitoringDisplayed}
+              setMonitoringDisplayed={setPastConditionsDisplayed}
             />
 
             <AccordionList

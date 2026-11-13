@@ -456,34 +456,25 @@ function IdentifiedIssues() {
     cipServiceReady &&
     !cipSummary.data.items[0].containImpairedWatersCatchmentAreaPercent;
 
-  let toggleIssuesChecked;
+  const toggleIssuesChecked = !zeroPollutedWaterbodies && showIssuesLayer;
 
-  if (zeroPollutedWaterbodies) {
-    // if there are no polluted waterbodies, uncheck the toggle
-    toggleIssuesChecked = false;
-  } else if (showIssuesLayer) {
-    // there are polluted waterbodies and the .state toggle is true
-    toggleIssuesChecked = true;
-  } else {
-    // there are polluted waterbodies and the .state toggle is false
-    toggleIssuesChecked = false;
-  }
+  const violatingDischargers = [];
+  const compliantDischargers = [];
+  dischargers.forEach((discharger) => {
+    if (discharger['CWPSNCStatus']?.toLowerCase().includes('effluent')) {
+      violatingDischargers.push(discharger);
+    } else {
+      compliantDischargers.push(discharger);
+    }
+  });
 
-  // true if 0 facilities in violation are found
   const zeroDischargers = !dischargers.length;
 
-  let toggleDischargersChecked;
-
-  if (zeroDischargers) {
-    // if there are no dischargers in violation, uncheck the toggle
-    toggleDischargersChecked = false;
-  } else if (showDischargersLayer) {
-    // there are dischargers in violation and the .state toggle is true
-    toggleDischargersChecked = true;
-  } else {
-    // there are dischargers in violation and the state toggle is false
-    toggleDischargersChecked = false;
-  }
+  const toggleDischargersChecked =
+    !zeroDischargers &&
+    showDischargersLayer &&
+    ((violatingDischargers.length > 0 && showViolatingDischargers) ||
+      (compliantDischargers.length > 0 && showCompliantDischargers));
 
   function handleTabClick(index) {
     if (index === 0 && !toggleIssuesChecked)
@@ -503,16 +494,6 @@ function IdentifiedIssues() {
       setEffluentToggleObject(null);
     };
   }, [dischargersLayer, setEffluentToggleObject]);
-
-  const violatingDischargers = [];
-  const compliantDischargers = [];
-  dischargers.forEach((discharger) => {
-    if (discharger['CWPSNCStatus']?.toLowerCase().includes('effluent')) {
-      violatingDischargers.push(discharger);
-    } else {
-      compliantDischargers.push(discharger);
-    }
-  });
 
   const displayedDischargers = [
     ...(showViolatingDischargers ? violatingDischargers : []),

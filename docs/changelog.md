@@ -14,6 +14,8 @@
 
 - Fixed issue of Wild and Scenic rivers popups no longer working after changes to the service.
 
+- Fixed issue with switches above sub tabs not always syncing with tabs within the sub tab content.
+
 ## 2.19.0
 
 ### Changed

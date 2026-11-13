@@ -79,7 +79,7 @@ type ArcGisJobResponseType = {
   status?: string;
 };
 
-const arcGisJobPollInterval = 1000;
+const arcGisJobPollInterval = 4000;
 const arcGisJobPollTimeout = 10 * 60 * 1000;
 
 function getArcGisErrorMessage(
