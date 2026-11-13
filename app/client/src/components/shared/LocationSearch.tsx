@@ -1121,6 +1121,7 @@ function LocationSearch({ route, label }: Readonly<Props>) {
   // Detect clicks outside of the search input and search suggestions list.
   // This is used for closing the suggestions list when the user clicks outside.
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const isInteractingWithSuggestions = useRef(false);
   useEffect(() => {
     function handleClickOutside(ev: Event) {
       if (
@@ -1132,11 +1133,17 @@ function LocationSearch({ route, label }: Readonly<Props>) {
       }
     }
 
+    function handleMouseUp() {
+      isInteractingWithSuggestions.current = false;
+    }
+
     // Bind the event listener
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mouseup', handleMouseUp);
     return () => {
       // Unbind the event listener on clean up
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [suggestionsRef]);
 
@@ -1344,8 +1351,9 @@ function LocationSearch({ route, label }: Readonly<Props>) {
                   }}
                   onBlur={(ev) => {
                     if (
-                      !suggestionsRef.current?.contains(ev.relatedTarget) ||
-                      ev.relatedTarget?.tagName !== 'LI'
+                      !isInteractingWithSuggestions.current &&
+                      (!suggestionsRef.current?.contains(ev.relatedTarget) ||
+                        ev.relatedTarget?.tagName !== 'LI')
                     ) {
                       setSuggestionsVisible(false);
                       setSourceCursor(-1);
@@ -1366,6 +1374,9 @@ function LocationSearch({ route, label }: Readonly<Props>) {
                     className="esri-menu esri-search__suggestions-menu"
                     role="menu"
                     data-node-ref="_suggestionListNode"
+                    onMouseDown={() => {
+                      isInteractingWithSuggestions.current = true;
+                    }}
                   >
                     {filteredSuggestions.map((suggestions) => {
                       const title = getGroupTitle(suggestions, sourceGroups);
