@@ -671,7 +671,7 @@ function IdentifiedIssues() {
                                             toggleSwitch('Toggle All');
                                           }}
                                         />
-                                        <span>Identified Issues</span>
+                                        <span>All Identified Issues</span>
                                       </label>
                                     </th>
                                     <th>% of Assessed Area</th>

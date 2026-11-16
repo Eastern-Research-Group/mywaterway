@@ -101,6 +101,22 @@ describe('Overview Tab', () => {
     // turn off permitted dischargers switch
     clickSwitch('Permitted Dischargers');
     checkSwitch('Permitted Dischargers', 'false');
+    cy.findByLabelText('All Permit Components')
+      .closest('table')
+      .find('[role="switch"]')
+      .each(($switch) => {
+        cy.wrap($switch).should('have.attr', 'aria-checked', 'false');
+      });
+
+    // turn on permitted dischargers switch
+    clickSwitch('Permitted Dischargers');
+    checkSwitch('Permitted Dischargers', 'true');
+    cy.findByLabelText('All Permit Components')
+      .closest('table')
+      .find('[role="switch"]')
+      .each(($switch) => {
+        cy.wrap($switch).should('have.attr', 'aria-checked', 'true');
+      });
 
     // go back to waterbodies tab and verify switches are on
     cy.findByRole('tab', { name: 'Waterbodies' }).click();
