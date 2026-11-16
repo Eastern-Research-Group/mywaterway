@@ -21,6 +21,36 @@ describe('Monitoring Tab', () => {
     cy.findByText('Water Monitoring').click();
     cy.findByRole('tab', { name: 'Past Water Conditions' }).click();
 
+    const parentSwitch = () =>
+      cy
+        .findAllByLabelText('Past Water Conditions', { exact: false })
+        .filter(':visible')
+        .filter('input');
+
+    // the parent switch controls every switch in the tab
+    parentSwitch().click({ force: true });
+    cy.findByRole('table', { name: 'Monitoring Location Summary' })
+      .find('[role="switch"]')
+      .each(($switch) => {
+        cy.wrap($switch).should('have.attr', 'aria-checked', 'false');
+      });
+    parentSwitch().click({ force: true });
+    cy.findByRole('table', { name: 'Monitoring Location Summary' })
+      .find('[role="switch"]')
+      .each(($switch) => {
+        cy.wrap($switch).should('have.attr', 'aria-checked', 'true');
+      });
+
+    // turning off every individual switch turns off the parent switch
+    cy.findByRole('table', { name: 'Monitoring Location Summary' })
+      .find('tbody [role="switch"]')
+      .each(($switch) => {
+        const label = $switch.closest('label').text().trim();
+        cy.findByRole('switch', { name: label }).click({ force: true });
+      });
+    parentSwitch().should('have.attr', 'aria-checked', 'false');
+    parentSwitch().click({ force: true });
+
     // click Toggle All Monitoring Locations switch and check that all switches are toggled off
     cy.findByLabelText('All Monitoring Locations').click({
       force: true,
