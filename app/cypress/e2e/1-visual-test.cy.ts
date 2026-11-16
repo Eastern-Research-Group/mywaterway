@@ -26,7 +26,7 @@ describe('Community Visual Regression Testing', () => {
     cy.get(mapId).matchSnapshot('dc-all-impairment-categories');
 
     // test no impairment categories on
-    cy.findByRole('switch', { name: 'Identified Issues' }).click({
+    cy.findByRole('switch', { name: 'All Identified Issues' }).click({
       force: true,
     });
     cy.get(mapId).matchSnapshot('dc-no-impairment-categories');

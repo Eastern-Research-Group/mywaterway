@@ -25,7 +25,7 @@ describe('Identified Issues Tab', () => {
     );
 
     // check that all switches are turned off
-    cy.findByRole('switch', { name: 'Identified Issues' }).should(
+    cy.findByRole('switch', { name: 'All Identified Issues' }).should(
       'have.attr',
       'aria-checked',
       'false',
