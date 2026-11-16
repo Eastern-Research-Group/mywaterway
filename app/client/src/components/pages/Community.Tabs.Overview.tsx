@@ -164,7 +164,7 @@ function Overview() {
 
   const [permittedDischargersDisplayed, setPermittedDischargersDisplayed] =
     useState(false);
-  const [permittedDischargersResetCount, setPermittedDischargersResetCount] =
+  const [permittedDischargersToggleCount, setPermittedDischargersToggleCount] =
     useState(0);
 
   // Syncs the toggles with the visible layers on the map. Mainly
@@ -216,6 +216,7 @@ function Overview() {
       if (!dischargersLayer) return;
       setPermittedDischargersDisplayed(checked);
       updateVisibleLayers({ dischargersLayer: checked });
+      setPermittedDischargersToggleCount((count) => count + 1);
     },
     [dischargersLayer, updateVisibleLayers],
   );
@@ -226,7 +227,6 @@ function Overview() {
       if (index === 1) handleMonitoringLocationsToggle(true);
       if (index === 2) {
         handlePermittedDischargersToggle(true);
-        setPermittedDischargersResetCount((count) => count + 1);
       }
     },
     [
@@ -362,10 +362,11 @@ function Overview() {
 
             <TabPanel>
               <PermittedDischargersTab
-                resetCount={permittedDischargersResetCount}
+                permittedDischargersDisplayed={permittedDischargersDisplayed}
                 setPermittedDischargersDisplayed={
                   setPermittedDischargersDisplayed
                 }
+                toggleCount={permittedDischargersToggleCount}
                 totalPermittedDischargers={totalPermittedDischargers}
                 updateVisibleLayers={updateVisibleLayers}
               />
@@ -1074,8 +1075,9 @@ function sortDischarchers(dischargers, sortBy) {
 }
 
 function PermittedDischargersTab({
-  resetCount,
+  permittedDischargersDisplayed,
   setPermittedDischargersDisplayed,
+  toggleCount,
   totalPermittedDischargers,
   updateVisibleLayers,
 }) {
@@ -1096,32 +1098,38 @@ function PermittedDischargersTab({
 
   const [permittedDischargersSortedBy, setPermittedDischargersSortedBy] =
     useState('CWPName');
-  const previousResetCount = useRef(0);
+  const previousToggleCount = useRef(0);
 
   useEffect(() => {
     if (
-      resetCount === previousResetCount.current ||
+      toggleCount === previousToggleCount.current ||
       !dischargerPermitComponents
     ) {
       return;
     }
-    previousResetCount.current = resetCount;
+    previousToggleCount.current = toggleCount;
 
-    const groups = Object.values(dischargerPermitComponents);
-    if (groups.every((group) => group.toggled)) return;
+    if (
+      Object.values(dischargerPermitComponents).every(
+        (group) => group.toggled === permittedDischargersDisplayed,
+      )
+    ) {
+      return;
+    }
 
     const updatedGroups = Object.fromEntries(
       Object.entries(dischargerPermitComponents).map(([key, group]) => [
         key,
-        { ...group, toggled: true },
+        { ...group, toggled: permittedDischargersDisplayed },
       ]),
     );
-    setAllToggled(true);
+    setAllToggled(permittedDischargersDisplayed);
     setDischargerPermitComponents(updatedGroups);
   }, [
     dischargerPermitComponents,
-    resetCount,
+    permittedDischargersDisplayed,
     setDischargerPermitComponents,
+    toggleCount,
   ]);
 
   // Filter dischargers
