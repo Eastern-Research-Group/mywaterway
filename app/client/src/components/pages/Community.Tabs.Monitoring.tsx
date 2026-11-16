@@ -143,7 +143,7 @@ function Monitoring() {
   useEffect(() => {
     setUsgsStreamgagesDisplayed(visibleLayers.usgsStreamgagesLayer);
     const someMonitoringGroupDisplayed = Object.entries(monitoringGroups)
-      .filter(([label]) => label !== 'All')
+      .filter(([label, group]) => label !== 'All' && group.stations.length > 0)
       .some(([, group]) => group.toggled);
     setMonitoringDisplayed(
       visibleLayers.monitoringLocationsLayer && someMonitoringGroupDisplayed,

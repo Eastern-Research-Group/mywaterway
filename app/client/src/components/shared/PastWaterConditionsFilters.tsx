@@ -230,34 +230,52 @@ export function PastWaterConditionsFilters({
     };
   }, [setMonitoringFeatureUpdates]);
 
-  const allToggled = Object.values(monitoringGroups).every(
-    (group) => group.toggled,
+  const displayedMonitoringGroups = Object.values(monitoringGroups).filter(
+    (group) => group.label !== 'All' && group.stations.length > 0,
   );
+  const allToggled =
+    displayedMonitoringGroups.length > 0 &&
+    displayedMonitoringGroups.every((group) => group.toggled);
+
+  const setAllGroupsToggled = useCallback(
+    (toggled: boolean) => {
+      setMonitoringGroups(
+        Object.fromEntries(
+          Object.entries(monitoringGroups).map(([label, group]) => [
+            label,
+            { ...group, toggled },
+          ]),
+        ),
+      );
+    },
+    [monitoringGroups, setMonitoringGroups],
+  );
+
   const toggleAll = useCallback(() => {
-    const updatedGroups = { ...monitoringGroups };
-    for (const label in updatedGroups) {
-      updatedGroups[label].toggled = !allToggled;
-    }
     setMonitoringDisplayed(!allToggled);
-    setMonitoringGroups(updatedGroups);
-  }, [
-    allToggled,
-    monitoringGroups,
-    setMonitoringDisplayed,
-    setMonitoringGroups,
-  ]);
+    setAllGroupsToggled(!allToggled);
+  }, [allToggled, setAllGroupsToggled, setMonitoringDisplayed]);
 
   const groupToggleHandler = useCallback(
     (groupLabel: string) => {
       return function toggleGroup(_ev: boolean) {
-        const updatedGroups = { ...monitoringGroups };
-        updatedGroups[groupLabel].toggled = !updatedGroups[groupLabel].toggled;
-        setMonitoringGroups(updatedGroups);
+        const updatedGroups = {
+          ...monitoringGroups,
+          [groupLabel]: {
+            ...monitoringGroups[groupLabel],
+            toggled: !monitoringGroups[groupLabel].toggled,
+          },
+        };
 
-        // only check the toggles that are on the screen (i.e., ignore Bacterial, Sediments, etc.)
-        const someToggled = Object.keys(updatedGroups)
-          .filter((label) => label !== 'All')
-          .some((key) => updatedGroups[key].toggled);
+        const displayedGroups = Object.values(updatedGroups).filter(
+          (group) => group.label !== 'All' && group.stations.length > 0,
+        );
+        const someToggled = displayedGroups.some((group) => group.toggled);
+        updatedGroups.All = {
+          ...updatedGroups.All,
+          toggled: displayedGroups.every((group) => group.toggled),
+        };
+        setMonitoringGroups(updatedGroups);
         setMonitoringDisplayed(someToggled);
       };
     },
@@ -429,10 +447,7 @@ export function PastWaterConditionsFilters({
         </thead>
 
         <tbody>
-          {Object.values(monitoringGroups)
-            .filter(
-              (group) => group.label !== 'All' && group.stations.length > 0,
-            )
+          {displayedMonitoringGroups
             .sort((a, b) => {
               // sort the switches with Other at the end
               if (a.label === 'Other') return 1;
